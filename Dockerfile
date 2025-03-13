@@ -137,6 +137,16 @@ COPY operator/go.mod operator/go.mod
 COPY perf/go.mod perf/go.mod
 RUN gradle --no-daemon --parallel assemble
 
+# SBOM
+FROM alpine:3.19 AS sbom
+WORKDIR /
+ADD . /SBOM
+RUN apk add --no-cache curl
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
+RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
+RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
+
+
 # Stage 3: Pull together runtime
 FROM ubuntu:24.04 AS runtime
 
@@ -181,6 +191,8 @@ COPY --from=full-builder /app/build /app
 
 # Copy the db migration files
 COPY --from=full-builder /app/core/go/db /app/db
+
+COPY --from=sbom /sbom.spdx.json /sbom.spdx.json
 
 # Add tools we installed to the path
 ENV PATH=$PATH:/usr/local/java/bin

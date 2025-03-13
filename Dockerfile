@@ -6,13 +6,14 @@ ARG GO_VERSION=1.22.7
 ARG GO_MIGRATE_VERSION=4.18.2
 ARG GRADLE_VERSION=8.5
 ARG WASMER_VERSION=4.3.7
+ARG BASE_IMAGE=ubuntu:24.04
 
 # Additional JVM selection options
 ARG JVM_TYPE=hotspot
 ARG JVM_HEAP=normal
 
 # Stage 1: Builder base for all the sub-builds
-FROM ubuntu:24.04 AS base-builder   
+FROM $BASE_IMAGE AS base-builder   
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -148,7 +149,7 @@ RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository 
 
 
 # Stage 3: Pull together runtime
-FROM ubuntu:24.04 AS runtime
+FROM $BASE_IMAGE AS runtime
 
 ARG TARGETOS
 ARG TARGETARCH

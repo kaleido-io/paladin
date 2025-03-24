@@ -154,7 +154,7 @@ RUN apt update && apt install git jq build-essential -y
 WORKDIR /build
 RUN git clone https://github.com/golang-migrate/migrate.git && \
     cd migrate && \
-    make build-docker \
+    make build-docker && \
     ls
 
 # Stage 3: Pull together runtime

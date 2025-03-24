@@ -147,6 +147,13 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
+FROM  golang:1.22-bookworm as gomigratebuilder
+ENV GO111MODULE=on
+RUN apt update && apt install git jq build-essential -y
+WORKDIR /build
+RUN git clone https://github.com/golang-migrate/migrate.git && \
+    cd migrate && \
+    make build-docker
 
 # Stage 3: Pull together runtime
 FROM $BASE_IMAGE AS runtime
@@ -178,11 +185,14 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
     tar -C /usr/local -xzf - && \
     ln -s /usr/local/jdk-* /usr/local/java
 
-# Install DB migration tool
-RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
-    curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
-    tar -C /usr/local/bin -xzf - migrate
 
+# Install DB migration tool
+# RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
+#     curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
+#    tar -C /usr/local/bin -xzf - migrate
+# For 
+COPY --from=gomigratebuilder /build/migrate/build/migrate.linux-386 /usr/local/bin/migrate
+RUN chmod +x /usr/local/bin/migrate
 
 # Copy Wasmer shared libraries to the runtime container
 COPY --from=full-builder /usr/local/wasmer/lib/libwasmer.so /usr/local/wasmer/lib/libwasmer.so

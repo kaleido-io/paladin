@@ -139,9 +139,12 @@ RUN gradle --no-daemon --parallel assemble
 
 # Build go migrate tool
 WORKDIR /build
-RUN git clone https://github.com/golang-migrate/migrate.git && \
+RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
+    git clone https://github.com/golang-migrate/migrate.git && \
     cd migrate && \
-    make build-docker
+    make build-docker && \
+    mv /build/migrate/build/migrate.${TARGETOS}-${GO_MIRGATE_ARCH} /build/migrate/build/migrate
+
 
 # SBOM
 FROM alpine:3.19 AS sbom
@@ -183,7 +186,7 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
     ln -s /usr/local/jdk-* /usr/local/java
 
 # Copy the migrate tool
-COPY --from=full-builder /build/migrate/build/migrate.linux-386 /usr/local/bin/migrate
+COPY --from=full-builder /build/migrate/build/migrate /usr/local/bin/migrate
 RUN chmod +x /usr/local/bin/migrate
 
 # Copy Wasmer shared libraries to the runtime container

@@ -3,7 +3,7 @@ ARG JAVA_VERSION=21.0.4+7
 ARG NODE_VERSION=20.17.0
 ARG PROTO_VERSION=28.2
 ARG GO_VERSION=1.22.7
-#ARG GO_MIGRATE_VERSION=4.18.2
+ARG GO_MIGRATE_VERSION=4.18.2
 ARG GRADLE_VERSION=8.5
 ARG WASMER_VERSION=4.3.7
 ARG BASE_IMAGE=ubuntu:24.04
@@ -148,14 +148,14 @@ RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
 # GOMIGRATE - build due to CVE
-FROM  golang:1.22-bookworm AS gomigratebuilder
-ENV GO111MODULE=on
-RUN apt update && apt install git jq build-essential -y
-WORKDIR /build
-RUN git clone https://github.com/golang-migrate/migrate.git && \
-    cd migrate && \
-    make build-docker && \
-    ls
+#FROM  golang:1.22-bookworm AS gomigratebuilder
+#ENV GO111MODULE=on
+#RUN apt update && apt install git jq build-essential -y
+#WORKDIR /build
+#RUN git clone https://github.com/golang-migrate/migrate.git && \
+#   cd migrate && \
+#    make build-docker && \
+#   ls
 
 # Stage 3: Pull together runtime
 FROM $BASE_IMAGE AS runtime
@@ -165,7 +165,7 @@ ARG TARGETARCH
 ARG JAVA_VERSION
 ARG JVM_TYPE
 ARG JVM_HEAP
-#ARG GO_MIGRATE_VERSION
+ARG GO_MIGRATE_VERSION
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -189,11 +189,11 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
 
 
 # Install DB migration tool
-# RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
-#     curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
-#    tar -C /usr/local/bin -xzf - migrate
-COPY --from=gomigratebuilder /build/migrate/build/migrate.linux-386 /usr/local/bin/migrate
-RUN chmod +x /usr/local/bin/migrate
+ RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
+     curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
+    tar -C /usr/local/bin -xzf - migrate
+#COPY --from=gomigratebuilder /build/migrate/build/migrate.linux-386 /usr/local/bin/migrate
+#RUN chmod +x /usr/local/bin/migrate
 
 # Copy Wasmer shared libraries to the runtime container
 COPY --from=full-builder /usr/local/wasmer/lib/libwasmer.so /usr/local/wasmer/lib/libwasmer.so

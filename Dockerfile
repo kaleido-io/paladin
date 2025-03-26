@@ -3,7 +3,8 @@ ARG JAVA_VERSION=21.0.4+7
 ARG NODE_VERSION=20.17.0
 ARG PROTO_VERSION=28.2
 ARG GO_VERSION=1.22.7
-ARG GO_MIGRATE_VERSION=4.18.2
+ARG GO_MIGRATE_FORK=kaleido-io
+ARG GO_MIGRATE_VERSION=4.18.2-cve-patch
 ARG GRADLE_VERSION=8.5
 ARG WASMER_VERSION=4.3.7
 ARG BASE_IMAGE=ubuntu:24.04
@@ -42,7 +43,7 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     xz-utils \
     && apt-get clean
-  
+
 # Install JDK
 RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else echo -n "x64"; fi ) && \
     curl -sLo - https://api.adoptium.net/v3/binary/version/jdk-${JAVA_VERSION}/${TARGETOS}/${JAVA_ARCH}/jdk/${JVM_TYPE}/${JVM_HEAP}/eclipse | \
@@ -58,7 +59,7 @@ RUN NODE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo
 # Install Protoc
 RUN PROTO_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch_64"; else echo -n "x86_64"; fi ) && \
     curl -sLo protoc-$PROTO_VERSION-${TARGETOS}-${PROTO_ARCH}.zip \
-      https://github.com/protocolbuffers/protobuf/releases/download/v$PROTO_VERSION/protoc-$PROTO_VERSION-${TARGETOS}-${PROTO_ARCH}.zip && \
+    https://github.com/protocolbuffers/protobuf/releases/download/v$PROTO_VERSION/protoc-$PROTO_VERSION-${TARGETOS}-${PROTO_ARCH}.zip && \
     unzip protoc-$PROTO_VERSION-${TARGETOS}-${PROTO_ARCH}.zip -d /usr/local/protoc && \
     rm protoc-$PROTO_VERSION-${TARGETOS}-${PROTO_ARCH}.zip
 
@@ -156,6 +157,7 @@ ARG TARGETARCH
 ARG JAVA_VERSION
 ARG JVM_TYPE
 ARG JVM_HEAP
+ARG GO_MIGRATE_FORK
 ARG GO_MIGRATE_VERSION
 
 # Install runtime dependencies
@@ -179,9 +181,10 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
     ln -s /usr/local/jdk-* /usr/local/java
 
 # Install DB migration tool
-RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
-    curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
-    tar -C /usr/local/bin -xzf - migrate
+RUN GO_MIGRATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
+    curl -sLo - https://github.com/${GO_MIGRATE_FORK}/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIGRATE_ARCH}.tar.gz | \
+    tar -xzf - -O migrate.${TARGETOS}-${GO_MIGRATE_ARCH} > /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
 
 
 # Copy Wasmer shared libraries to the runtime container
@@ -208,4 +211,4 @@ ENTRYPOINT [                         \
     "-Djna.library.path=/app/libs",  \
     "-jar",                          \
     "/app/libs/paladin.jar"          \
-]
+    ]

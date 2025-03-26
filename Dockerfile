@@ -148,7 +148,6 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
-
 # Stage 3: Pull together runtime
 FROM $BASE_IMAGE AS runtime
 
@@ -179,6 +178,7 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
     curl -sLo - https://api.adoptium.net/v3/binary/version/jdk-${JAVA_VERSION}/${TARGETOS}/${JAVA_ARCH}/jre/${JVM_TYPE}/${JVM_HEAP}/eclipse | \
     tar -C /usr/local -xzf - && \
     ln -s /usr/local/jdk-* /usr/local/java
+
 
 # Install DB migration tool
 RUN GO_MIGRATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \

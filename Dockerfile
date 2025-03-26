@@ -183,7 +183,7 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
 # Install DB migration tool
 RUN GO_MIGRATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
     curl -sLo - https://github.com/${GO_MIGRATE_FORK}/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIGRATE_ARCH}.tar.gz | \
-    tar -xzf - -O migrate.${TARGETOS}-${GO_MIGRATE_ARCH} > /usr/local/bin/migrate && \
+    tar -xzf - -O > /usr/local/bin/migrate && \
     chmod +x /usr/local/bin/migrate
 
 

@@ -139,7 +139,9 @@ RUN gradle --no-daemon --parallel assemble
 
 # Build go migrate tool
 WORKDIR /build
-RUN git clone https://github.com/golang-migrate/migrate.git && \
+RUN GOOS=linux && \
+    GOARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi  ) && \
+    git clone https://github.com/golang-migrate/migrate.git && \
     cd migrate && \
     make build-docker
 

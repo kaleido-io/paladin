@@ -181,10 +181,9 @@ RUN JAVA_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "aarch64"; else ec
     ln -s /usr/local/jdk-* /usr/local/java
 
 # Install DB migration tool
-RUN GO_MIGRATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
-    curl -sLo - https://github.com/${GO_MIGRATE_FORK}/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIGRATE_ARCH}.tar.gz | \
-    tar -xzf - -O > /usr/local/bin/migrate && \
-    chmod +x /usr/local/bin/migrate
+RUN GO_MIRGATE_ARCH=$( if [ "$TARGETARCH" = "arm64" ]; then echo -n "arm64"; else echo -n "amd64"; fi ) && \
+    curl -sLo - https://github.com/golang-migrate/migrate/releases/download/v$GO_MIGRATE_VERSION/migrate.${TARGETOS}-${GO_MIRGATE_ARCH}.tar.gz | \
+    tar -C /usr/local/bin -xzf - migrate
 
 # Copy Wasmer shared libraries to the runtime container
 COPY --from=full-builder /usr/local/wasmer/lib/libwasmer.so /usr/local/wasmer/lib/libwasmer.so

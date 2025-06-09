@@ -5,24 +5,7 @@ description: A Helm chart for Kubernetes
 type: application
 
 # The chart version is overwritten at the release 
-version: 0.0.0
+version: 0.7.1
 
 # The app version is overwritten at the release 
 appVersion: "0.0.0"
-
-dependencies:
-  - name: paladin-operator-crd
-    version: 0.0.3
-    repository: "file://../paladin-operator-crd/"
-    condition: installCRDs
-
-# install prometheus dependencies if prometheus is enabled
-  - name: prometheus-namespace
-    version: 0.0.0
-    repository: "file://../prometheus-namespace/"
-    condition: prometheus.enabled
-  - name: prometheus
-    version: "15.8.0"  # Update this to the version you prefer
-    repository: "https://prometheus-community.github.io/helm-charts"
-    condition: prometheus.enabled
-

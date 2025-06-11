@@ -152,6 +152,8 @@ RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository 
 # Stage 3: Pull together runtime
 FROM ubuntu:24.04 AS runtime
 
+ADD kaleido_software_license.pdf LICENSE /
+
 ARG TARGETOS
 ARG TARGETARCH
 ARG JAVA_VERSION

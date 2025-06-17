@@ -41,11 +41,48 @@
 
 
 \begin{abstract}
+
+\textsc{Paladin} is a platform for building privacy-preserving tokens and contracts on the Ethereum Virtual Machine (EVM). Previous attempts at privacy in blockchain technologies have come at the expense of \textit{siloing}, or isolating private assets into their own ecosystem, and \textit{rigidity}, or an inability to define custom privacy models for specific use cases. In contrast, the Paladin architecture enables \textbf{programmable privacy}. This is the ability to easily define new assets with a particular privacy model, and also allow these assets to interface with any other assets defined on the underlying EVM blockchain, without requiring any modifications to the base blockchain. The Paladin runtime client serves as a side-car process to manage private state, interface with contracts on the public blockchain, and privately communicate with other paladin clients. Included with Paladin are implementations of three privacy domains: \textsc{Noto}, for notarized assets, \textsc{Zeto}, for assets with privacy and correctness guaranteed by zero-knowledge proofs, and \textsc{Pente}, which enables privacy of contract logic while still using the base chain as a shared root of trust.
+
 \end{abstract}
 
 \section{Introduction}
 
 Intro goes here
+
+\section{Background}
+
+\section{Goals and Overview}
+
+\section{Paladin}
+
+\begin{itemize}
+  \item infrastructure enabling programmable privacy
+  \item client-side process running alongside an EVM node
+  \item handles private state, off-chain secure communication, key management, etc.
+\end{itemize}
+
+\section{Noto}
+
+\begin{itemize}
+  \item Notary model token implementation
+  \item Notary sits in the critical path for every transaction, and signs all transactions to confirm that they're valid
+  \item Private elements are hidden from everyone except the notary
+\end{itemize}
+
+\section{Zeto}
+
+\begin{itemize}
+  \item Token implementations using zero-knowledge proofs to guarantee validity of transactions without revealing relevant secrets
+\end{itemize}
+
+\section{Pente}
+
+\begin{itemize}
+  \item privacy groups for hiding information about private transactions
+\end{itemize}
+
+
 % \input{intro}
 % \input{background}
 % \input{overview}

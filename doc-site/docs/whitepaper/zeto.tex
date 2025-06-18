@@ -4,6 +4,7 @@ The Zeto privacy domain consists of a collection of privacy-preserving, UTXO-bas
 
 This section starts by outlining the security properties targeted by Zeto tokens. We then describe how Zeto tokens achieve these properties while ensuring correctness with zero-knowledge proofs, and we illustrate how these tokens are implemented with an example.
 
+
 \subsection{Security Goals}
 
 \paragraph{Anonymity.}
@@ -18,6 +19,7 @@ This section starts by outlining the security properties targeted by Zeto tokens
 % encrypts the output UTXO information: the tx value and salt for the UTXO
 % No additional privacy over "anonymity". the difference is that here we store encryptions of the output UTXO values and salts on the base chain.
 % don't rely on off-chain channels for receivers to get necessary secrets
+% malicious sender can't hide the sent tokens from the receiver
 
 \paragraph{History masking.}
 
@@ -31,12 +33,20 @@ This section starts by outlining the security properties targeted by Zeto tokens
 \paragraph{Non-repudiation}
 
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
-% identical to qurrency but not post-quantum secure
+% identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
+
 
 \subsection{Zero-Knowledge Proofs}
 
-\subsection{Example Token: \texttt{anon\_nullifier\_kyc}}
+\subsubsection{Preliminaries}
+% what is a zk proof
+% groth16
 
-\begin{itemize}
-  \item Token implementations using zero-knowledge proofs to guarantee validity of transactions without revealing relevant secrets
-\end{itemize}
+\subsubsection{Implementation}
+% snarkjs, circom
+
+
+\subsection{Example Token: \texttt{anon\_nullifier\_kyc}} % we can maybe change which token this section is focused on
+
+% show diagram of the ZK circuit
+% reiterate points from "preliminaries": ZK proof ensures honest transaction generation, but only a subset of the values are revealed publicly

@@ -1,5 +1,42 @@
 \section{Zeto}
 
+The Zeto privacy domain consists of a collection of privacy-preserving, UTXO-based token implementations built using zero-knowledge proofs. Each Zeto token achieves a targeted subset of security properties. If the provided token implementations satisfy the security requirements for a given use case, then they can be deployed as-is. Otherwise, they can be used as templates for implementations that achieve new combinations of security goals.
+
+This section starts by outlining the security properties targeted by Zeto tokens. We then describe how Zeto tokens achieve these properties while ensuring correctness with zero-knowledge proofs, and we illustrate how these tokens are implemented with an example.
+
+\subsection{Security Goals}
+
+\paragraph{Anonymity.}
+
+% instead of revealing input values for each input and output UTXO, we just reveal the UTXOs themselves
+% UTXO == commitment (these are used interchangably in the code)
+% this is like "input and output hiding"
+
+\paragraph{Encryption of secrets} % TODO: find a better name for this
+
+% uses poseidon encryption
+% encrypts the output UTXO information: the tx value and salt for the UTXO
+% No additional privacy over "anonymity". the difference is that here we store encryptions of the output UTXO values and salts on the base chain.
+% don't rely on off-chain channels for receivers to get necessary secrets
+
+\paragraph{History masking.}
+
+% nullifiers hide which input UTXOs are used
+% this achieves "unlinkability" of input values to outputs, while guaranteeing that valid inputs do exist
+
+\paragraph{Know Your Customer (KYC).}
+
+% verifies that the input user is a member of a sparse merkle tree (SMT) that holds known users
+
+\paragraph{Non-repudiation}
+
+% encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
+% identical to qurrency but not post-quantum secure
+
+\subsection{Zero-Knowledge Proofs}
+
+\subsection{Example Token: \texttt{anon\_nullifier\_kyc}}
+
 \begin{itemize}
   \item Token implementations using zero-knowledge proofs to guarantee validity of transactions without revealing relevant secrets
 \end{itemize}

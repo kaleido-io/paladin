@@ -5,9 +5,31 @@ The Zeto privacy domain consists of a collection of privacy-preserving, UTXO-bas
 This section starts by outlining the security properties targeted by Zeto tokens. We then describe how Zeto tokens achieve these properties while ensuring correctness with zero-knowledge proofs, and we illustrate how these tokens are implemented with an example.
 
 
+\subsection{Preliminaries}
+
+\subsubsection{UTXO Model}
+
+All Zeto tokens are based on the ``unspent transaction output'' (UTXO) model~\cite{TODO}. In this model, all value is stored as records representing a certain amount of tokens that is available for a certain party to spend. We can conceptualize this as records $(\pk, v)$, where $\pk$ is the token owner's public key and $v$ is the amount of tokens they have available. A wallet will track all UTXO records corresponding to the owner's public key, and enable the owner to send tokens to other users.
+
+UTXO-based transactions are constructed functionally: each transaction has a set of input UTXOs and output UTXOs, and the sender proves ownership of the inputs by signing the transaction with their private key. The output UTXO records can be assigned to any valid public key, including that of the sender themself.
+
+This model achieves greater scalability and throughput than tokens using an account model~\cite{TODO}, where race conditions of simultaneous transactions touching the same account must be serialized. The UTXO model avoids this problem because all unique UTXOs stay in the memory of chain nodes, and double-spending can be prevented by simply checking for uniqueness of input UTXOs within each block. However, if $(\pk, v)$ pairs are stored in plaintext on-chain, this comes at the cost of privacy, because all tokens can be linked to their owners' public keys. Additionally, the movement of tokens through transactions reveals which parties are transacting, and how much value they exchange.
+
+
+\subsubsection{Zero-Knowledge Proofs}
+
+Zero-knowledge proofs~\cite{TODO} (ZK proofs or ZKP) allow a prover to convince a verifier that a given statement is true, without the verifier learning anything except that the statement is true. For example, a prover can convince a verifier that a given transaction is valid, i.e. the sum of the input values matches the sum of the output values, without revealing any of the transaction values themselves. The prover does this by performing a computation that would be impossible (with overwhelming probability) without knowledge of secret inputs. This type of argument is referred to as a succinct non-interactive argument of knowledge (SNARK)~\cite{TODO}. SNARKs serve as the engine underlying Zeto, enabling transaction privacy while enforcing transaction correctness in zero-knowledge. A user sending assets can generate proofs that assets are valid, and the proofs are verified on-chain by the Zeto token contract.
+
+\paragraph{Implementation.} We implement our ZK proofs using \texttt{snarkjs}~\cite{TODO} and \texttt{circom}~\cite{TODO}. The \texttt{circom} library provides a high-level, developer-friendly syntax for specifying ZK proofs as circuits. Each proof that a computation is performed honestly is represented as an arithmetic circuit over a prime-order field, with public inputs and outputs as well as private inputs. The generated proof then confirms knowledge of the secret input values such that the circuit computation is valid, without revealing any secret inputs. The \texttt{snarkjs} library provides the backend proof infrastructure that transforms a \texttt{circom} circuit and a set of inputs and outputs into a ZK proof. Several ZKP protocols are available: Groth16~\cite{TODO}, PLONK~\cite{TODO}, and FFLONK~\cite{TODO}. In Zeto we use Groth16. This system has the smallest proof size and fastest verifier algorithm (and therefore the lowest gas costs), at the expense of slower proof generation times. But these backends are easily swappable, so the provided token templates can be modified to use other backends for any given use case.
+
+
 \subsection{Security Goals}
 
+In this section, we describe the various security properties targeted by Zeto tokens.
+
 \paragraph{Anonymity.}
+
+
 
 % instead of revealing input values for each input and output UTXO, we just reveal the UTXOs themselves
 % UTXO == commitment (these are used interchangably in the code)
@@ -34,16 +56,6 @@ This section starts by outlining the security properties targeted by Zeto tokens
 
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
 % identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
-
-
-\subsection{Zero-Knowledge Proofs}
-
-\subsubsection{Preliminaries}
-% what is a zk proof
-% groth16
-
-\subsubsection{Implementation}
-% snarkjs, circom
 
 
 \subsection{Example Token: \texttt{anon\_nullifier\_kyc}} % we can maybe change which token this section is focused on

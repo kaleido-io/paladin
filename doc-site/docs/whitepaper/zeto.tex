@@ -20,16 +20,23 @@ This model achieves greater scalability and throughput than tokens using an acco
 
 Zero-knowledge proofs~\cite{TODO} (ZK proofs or ZKP) allow a prover to convince a verifier that a given statement is true, without the verifier learning anything except that the statement is true. For example, a prover can convince a verifier that a given transaction is valid, i.e. the sum of the input values matches the sum of the output values, without revealing any of the transaction values themselves. The prover does this by performing a computation that would be impossible (with overwhelming probability) without knowledge of secret inputs. This type of argument is referred to as a succinct non-interactive argument of knowledge (SNARK)~\cite{TODO}. SNARKs serve as the engine underlying Zeto, enabling transaction privacy while enforcing transaction correctness in zero-knowledge. A user sending assets can generate proofs that assets are valid, and the proofs are verified on-chain by the Zeto token contract.
 
-\paragraph{Implementation.} We implement our ZK proofs using \texttt{snarkjs}~\cite{TODO} and \texttt{circom}~\cite{TODO}. The \texttt{circom} library provides a high-level, developer-friendly syntax for specifying ZK proofs as circuits. Each proof that a computation is performed honestly is represented as an arithmetic circuit over a prime-order field, with public inputs and outputs as well as private inputs. The generated proof then confirms knowledge of the secret input values such that the circuit computation is valid, without revealing any secret inputs. The \texttt{snarkjs} library provides the backend proof infrastructure that transforms a \texttt{circom} circuit and a set of inputs and outputs into a ZK proof. Several ZKP protocols are available: Groth16~\cite{TODO}, PLONK~\cite{TODO}, and FFLONK~\cite{TODO}. In Zeto we use Groth16. This system has the smallest proof size and fastest verifier algorithm (and therefore the lowest gas costs), at the expense of slower proof generation times. But these backends are easily swappable, so the provided token templates can be modified to use other backends for any given use case.
+\paragraph{Implementation.} We implement our ZK proofs using \texttt{snarkjs}~\cite{TODO} and \texttt{circom}~\cite{TODO}. The \texttt{circom} library provides a high-level, developer-friendly syntax for specifying ZK proofs as circuits. Each proof demonstrates that a computation is performed honestly, and is represented as an arithmetic circuit over a prime-order field, with public inputs and outputs as well as private inputs. The generated proof then confirms knowledge of the secret input values such that the circuit computation is valid, without revealing any secret inputs. The \texttt{snarkjs} library provides the backend proof infrastructure that transforms a \texttt{circom} circuit and a set of inputs and outputs into a ZK proof. Several ZKP protocols are available: Groth16~\cite{TODO}, PLONK~\cite{TODO}, and FFLONK~\cite{TODO}. In Zeto we use Groth16. This system has the smallest proof size and fastest verifier algorithm (and therefore the lowest gas costs), at the expense of slower proof generation times. Groth16 also requires a once-per-circuit trusted setup ceremony. But these backends are easily swappable, so the provided token templates can be modified to use other backends for any given use case.
 
 
 \subsection{Security Goals}
 
-In this section, we describe the various security properties targeted by Zeto tokens.
+In this section, we describe the various security properties targeted by Zeto tokens. Each can be achieved independently, by adding a component to the ZK proof for a given token. We therefore also describe how each property is achieved within Zeto.
 
-\paragraph{Anonymity.}
+\paragraph{Anonymity.} This property ensures that no transaction reveals which user maintains ownership of a particular UTXO. Ownership of a particular UTXO is tied not to the \texttt{msg.signer} of a particular transaction, but to a private key stored off-chain. In this way, users can generate fresh signing keys for each EVM transaction without ever revealing the public key tied to a UTXO.
 
+To achieve anonymity, we only store \textit{commitments} to UTXOs on chain, rather than the contents of the UTXO themselves. Each commitment is instantiated as a salted hash of $(\pk, v)$ pairs. In each token transfer, senders provide commitments to input UTXOs, and generate a SNARK to prove knowledge of the following values:
+\begin{itemize}
+  \item $(\pk, v_i)$ and salt values $\rho_i$ that constitute valid pre-images of each input commitment $i$.
+  \item A secret key $\sk$ such that $(\pk, \sk)$ is a valid key pair.
+  \item $(\pk_j, v_j)$ and salt values $\rho_j$ that constitute valid pre-images of each output commitment $j$.
+\end{itemize}
 
+The contract maintains a list of all valid UTXO commitments, and marks them as spent as they are consumed to prevent double-spending. When the Zeto contract verifies this proof, it is convinced that the input and output commitments it sees commit to a set of UTXOs that form a valid transaction. The sender can then reveal output UTXO information to the receivers out-of-band so they can use the committed-to UTXOs in future transactions. Note that anonymity (as described here) \textit{does not} hide relationships between input and output UTXOs. All UTXOs have a fixed salt and a fixed commitment stored on-chain. Unlinkability between any UTXOs in a given transaction is achieved by using nullifiers, as described below.
 
 % instead of revealing input values for each input and output UTXO, we just reveal the UTXOs themselves
 % UTXO == commitment (these are used interchangably in the code)
@@ -56,6 +63,15 @@ In this section, we describe the various security properties targeted by Zeto to
 
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
 % identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
+
+In addition to the above security properties, all contracts enforce transaction correctness with ZK proofs. Specifically, the proofs ensure the following.
+\begin{itemize}
+  \item The sum of input UTXO values is equal to the sum of the output values.
+  \item All output UTXO values are positive.
+  \item The sender owns private keys corresponding to public keys for all input UTXOs.
+\end{itemize}
+
+
 
 
 \subsection{Example Token: \texttt{anon\_nullifier\_kyc}} % we can maybe change which token this section is focused on

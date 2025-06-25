@@ -25,14 +25,23 @@ Zero-knowledge proofs~\cite{TODO} (ZK proofs or ZKP) allow a prover to convince 
 
 \subsection{Security Goals}
 
+% TODO: eventually add figures specifying all ZK proofs used in Zeto
+% Zeto contains a *framework* for designing new privacy-preserving tokens. The pieces of Zeto ZK proofs can be combined sort of like modular blocks. Each proof contains transaction correctness validation, but can also include anonymity and any other properties that build on anonymity. I'd like to present the ZK proofs as modules somehow, with each having its own separate statement.
+
 In this section, we describe the various security properties targeted by Zeto tokens. Each can be achieved independently, by adding a component to the ZK proof for a given token. We therefore also describe how each property is achieved within Zeto.
 
-\paragraph{Anonymity.} This property ensures that no transaction reveals which user maintains ownership of a particular UTXO. Ownership of a particular UTXO is tied not to the \texttt{msg.signer} of a particular transaction, but to a private key stored off-chain. In this way, users can generate fresh signing keys for each EVM transaction without ever revealing the public key tied to a UTXO.
+In addition to the below security properties, all contracts enforce transaction correctness with ZK proofs. Specifically, the proofs ensure the following.
+\begin{itemize}
+  \item The sum of input UTXO values is equal to the sum of the output values.
+  \item All output UTXO values are positive.
+  \item The sender owns private keys corresponding to public keys for all input UTXOs.
+\end{itemize}
 
-To achieve anonymity, we only store \textit{commitments} to UTXOs on chain, rather than the contents of the UTXO themselves. Each commitment is instantiated as a salted hash of $(\pk, v)$ pairs. In each token transfer, senders provide commitments to input UTXOs, and generate a SNARK to prove knowledge of the following values:
+\paragraph{Anonymity.} This property ensures that no transaction reveals which user maintains ownership of a particular UTXO. All other security goals for Zeto tokens assume anonymity. For example, masking transaction history does not make sense unless the contents of each transaction are also masked.
+
+To achieve this property, ownership of a particular UTXO is tied not to the \texttt{msg.sender} of a transaction, but to a private key stored off-chain. In this way, users can generate fresh signing keys for each EVM transaction without ever revealing the public key tied to a UTXO. We also only store \textit{commitments} to UTXOs on chain, rather than the contents of the UTXO themselves. Each commitment is instantiated as a salted hash of $(\pk, v)$ pairs. In each token transfer, senders provide commitments to input UTXOs, and generate a SNARK to prove knowledge of the following values:
 \begin{itemize}
   \item $(\pk, v_i)$ and salt values $\rho_i$ that constitute valid pre-images of each input commitment $i$.
-  \item A secret key $\sk$ such that $(\pk, \sk)$ is a valid key pair.
   \item $(\pk_j, v_j)$ and salt values $\rho_j$ that constitute valid pre-images of each output commitment $j$.
 \end{itemize}
 
@@ -42,7 +51,7 @@ The contract maintains a list of all valid UTXO commitments, and marks them as s
 % UTXO == commitment (these are used interchangably in the code)
 % this is like "input and output hiding"
 
-\paragraph{Encryption of secrets} % TODO: find a better name for this
+\paragraph{On-chain encrypted secrets.} In isolation, satisfying anonymity (as described above) requires senders to reveal the output UTXOs to their respective receivers out-of-band. If a Zeto token only implements anonymity, a malicious sender could generate a valid transaction (consuming UTXOs that they own) but simply not reveal the output UTXOs to the intended recipients. Zeto provides ZK proofs and contracts that not only enforce honesty in the anonymous setting, but also require that the sender encrypts output UTXOs for the intended recipients so that these ciphertexts can be stored on-chain.
 
 % uses poseidon encryption
 % encrypts the output UTXO information: the tx value and salt for the UTXO
@@ -50,7 +59,11 @@ The contract maintains a list of all valid UTXO commitments, and marks them as s
 % don't rely on off-chain channels for receivers to get necessary secrets
 % malicious sender can't hide the sent tokens from the receiver
 
-\paragraph{History masking.}
+\paragraph{History masking.} This property further guarantees that no party can identify which UTXOs are input to any transaction. In effect, this hides the history of a particular quantity of tokens, as the connection between inputs and outputs of a transfer is not revealed on-chain.
+
+History masking is implemented using nullifiers~\cite{TODO}. For a UTXO computed as $H(\pk, v, \rho)$, its nullifier is the quantity $H(\sk, v, \rho)$ using the corresponding secret key. This is a quantity that only the token owner can compute, but by the hiding of this commitment scheme, does not reveal either \sk or $v$. At transfer time, the sender provides nullifiers corresponding to each input UTXO, and proves knowledge of corresponding UTXOs and their commitments. Then to prove that these UTXOs are valid, the sender also proves knowledge of merkle proofs that each of these UTXOs are in a merkle tree with a root maintained by the token contract. The contract then checks whether the provided root is one of the historical ones it's maintained, and if so it verifies and accepts the proof.
+
+Note that in order to use nullifiers, the client must maintain state representing the merkle tree of UTXO commitments so that it can generate merkle proofs. To prevent race conditions and improve transaction throughput, we allow the provided merkle root to be historical, as long as it was valid at some point. This storage can also be optimized significantly: because clients only use portions of the merkle tree surrounding their own transactions, they can ignore all other portions and still generate valid proofs. This means clients only need to store data of size linear in the number of UTXOs they own and logarithmic in the size of the tree.
 
 % nullifiers hide which input UTXOs are used
 % this achieves "unlinkability" of input values to outputs, while guaranteeing that valid inputs do exist
@@ -63,13 +76,6 @@ The contract maintains a list of all valid UTXO commitments, and marks them as s
 
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
 % identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
-
-In addition to the above security properties, all contracts enforce transaction correctness with ZK proofs. Specifically, the proofs ensure the following.
-\begin{itemize}
-  \item The sum of input UTXO values is equal to the sum of the output values.
-  \item All output UTXO values are positive.
-  \item The sender owns private keys corresponding to public keys for all input UTXOs.
-\end{itemize}
 
 
 

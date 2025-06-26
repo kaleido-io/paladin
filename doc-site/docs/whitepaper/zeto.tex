@@ -73,10 +73,44 @@ Note that in order to use nullifiers, the client must maintain state representin
 
 To address this, Zeto includes tokens that achieve the same properties as non-repudiation tokens, but establish a shared secret using the NIST-standardized ML-KEM key establishment scheme~\cite{TODO}.
 
+Figure~\ref{zeto_proofs} contains the zero-knowledge proofs used to verify each of the above security properties, as well as the proof for correctness. We use the Camenisch-Stadler notation~\cite{TODO} to express the statements being proved.
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
 % identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
 
+\begin{figure*}
+    \centering
+    \begin{pcvstack}[boxed, center, space=2em]
 
+        \procedure{\textbf{Correctness}}{
+            \\[-2ex]
+            \{(\pk, v_i, \rho_i)_{i\in N}, (\pk_i) : \}
+        }
+
+
+        \procedure{\textbf{Anonymity}}{
+            \\[-2ex]
+        }
+
+        \procedure{\textbf{On-chain encrypted secrets}}{
+            \\[-2ex]
+        }
+
+         \procedure{\textbf{History masking}}{
+            \\[-2ex]
+        }
+
+         \procedure{\textbf{Know Your Customer}}{
+            \\[-2ex]
+        }
+
+         \procedure{\textbf{Non-repudiation}}{
+            \\[-2ex]
+        }
+
+    \end{pcvstack}
+    \caption{Collection of zero-knowledge proofs for achieving Zeto privacy goals, written in Camenisch-Stadler notation.}
+    \label{fig:zeto_proofs}
+\end{figure*}
 
 
 \subsection{Example Token: \texttt{anon\_nullifier\_kyc}} % we can maybe change which token this section is focused on

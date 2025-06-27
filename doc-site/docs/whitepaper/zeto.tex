@@ -81,34 +81,84 @@ Figure~\ref{zeto_proofs} contains the zero-knowledge proofs used to verify each 
     \centering
     \begin{pcvstack}[boxed, center, space=2em]
 
+      \begin{pchstack}[center, space=1em]
+
         \procedure{\textbf{Correctness}}{
             \\[-2ex]
-            \{(\pk, v_i, \rho_i)_{i\in N}, (\pk_i) : \}
+            \big\{\left(\pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]}\right) \;\mathrm{s.t.} \\
+            \t \exists\; \sk \;\mathrm{s.t.}\; \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land \\
+            \t \forall\; j\in[M],\; v_j > 0 \big\}
         }
 
 
         \procedure{\textbf{Anonymity}}{
             \\[-2ex]
+            \big\{\left(\textcolor{red}{(\ms{utxo}_i)_{i\in [N]}, (\ms{utxo}_j)_{j\in [M]}}\right) \;\mathrm{s.t.} \\
+            \t \exists\; \sk \textcolor{red}{, \pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]}} \;\mathrm{s.t.} \\
+            \t \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land\; \forall\; j\in[M],\; v_j > 0 \;\land \\
+            \t \textcolor{red}{\forall\; i\in [N],\; \ms{utxo}_i = H(\pk, v_i, \rho_i) \;\land} \\
+            \t \textcolor{red}{\forall\; j\in [M],\; \ms{utxo}_j = H(\pk_j, v_j, \rho_j)} \big\}
         }
+
+      \end{pchstack}
+
+      \begin{pchstack}[center, space=1em]
 
         \procedure{\textbf{On-chain encrypted secrets}}{
             \\[-2ex]
+            \big\{\left((\ms{utxo}_i)_{i\in [N]}, (\ms{utxo}_j, \textcolor{red}{\ms{ct}_j})_{j\in [M]}\right) \;\mathrm{s.t.} \\
+            \t \exists\; \sk, \pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]} \;\mathrm{s.t.} \\
+            \t \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land\; \forall\; j\in[M],\; v_j > 0 \;\land \\
+            \t \forall\; i\in [N],\; \ms{utxo}_i = H(\pk, v_i, \rho_i) \;\land \\
+            \t \forall\; j\in [M],\; \ms{utxo}_j = H(\pk_j, v_j, \rho_j) \;\land \\
+            \t \textcolor{red}{\forall\; j\in [M],\; \ms{ct}_j = \ms{PKE}.\ms{Enc}(\pk_j, (v_j, \rho_j))}\big\}
         }
 
-         \procedure{\textbf{History masking}}{
+        \procedure{\textbf{History masking}}{
             \\[-2ex]
+            \big\{\left(\textcolor{red}{(\ms{null}_i)_{i\in [N]}}, (\ms{utxo}_j)_{j\in [M]}\right), \sk \;\mathrm{s.t.} \\
+            \t \exists\; \sk, \pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]}, \\
+            \t \t \textcolor{red}{(\ms{utxo}_i)_{i\in [N]}, \ms{root}, (\pi_i)_{i\in [N]}} \;\mathrm{s.t.} \\
+            \t \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land\; \forall\; j\in[M],\; v_j > 0 \;\land \\
+            \t \textcolor{red}{\forall\; i\in [N],\; \ms{null}_i = H(\sk, v_i, \rho_i) \;\land} \\
+            \t \forall\; i\in [N],\; \ms{utxo}_i = H(\pk, v_i, \rho_i) \;\land \\
+            \t \textcolor{red}{\forall\; i\in [N], \ms{SMT}.\ms{Verify}(\ms{root}, (\ms{utxo}_i, \ms{utxo}_i), \pi_i) = 1 \;\land} \\
+            \t \forall\; j\in [M],\; \ms{utxo}_j = H(\pk_j, v_j, \rho_j) \big\}
         }
 
-         \procedure{\textbf{Know Your Customer}}{
+      \end{pchstack}
+
+      \begin{pchstack}[center, space=1em]
+
+        \procedure{\textbf{Know Your Customer}}{
             \\[-2ex]
+            \big\{\left((\ms{utxo}_i)_{i\in [N]}, (\ms{utxo}_j)_{j\in [M]}\right) \;\mathrm{s.t.} \\
+            \t \exists\; \sk, \pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]} \textcolor{red}{, \ms{root}, \pi} \;\mathrm{s.t.} \\
+            \t \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \textcolor{red}{\ms{SMT}.\ms{Verify}(\ms{root}, (\pk, \pk), \pi) = 1 \;\land} \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land\; \forall\; j\in[M],\; v_j > 0 \;\land \\
+            \t \forall\; i\in [N],\; \ms{utxo}_i = H(\pk, v_i, \rho_i) \;\land \\
+            \t \forall\; j\in [M],\; \ms{utxo}_j = H(\pk_j, v_j, \rho_j)\big\}
         }
 
-         \procedure{\textbf{Non-repudiation}}{
+        \procedure{\textbf{Non-repudiation}}{
             \\[-2ex]
+            \big\{\left((\ms{utxo}_i)_{i\in [N]}, (\ms{utxo}_j)_{j\in [M]} \textcolor{red}{, \ms{ct}} \right) \;\mathrm{s.t.} \\
+            \t \exists\; \sk, \pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]} \;\mathrm{s.t.} \\
+            \t \ms{PKE}.\ms{KeyGen}(\sk) = \pk \;\land \\
+            \t \textcolor{red}{\ms{ct} = \ms{PKE}.\ms{Enc}(\pk_\ms{audit}, (\pk, (v_i, \rho_i)_{i\in [N]}, (\pk_j, v_j, \rho_j)_{j\in [M]})) \;\land} \\
+            \t \sum\limits_{i=1}^N v_i = \sum\limits_{j=1}^M v_j \;\land\; \forall\; j\in[M],\; v_j > 0 \;\land \\
+            \t \forall\; i\in [N],\; \ms{utxo}_i = H(\pk, v_i, \rho_i) \;\land \\
+            \t \forall\; j\in [M],\; \ms{utxo}_j = H(\pk_j, v_j, \rho_j)\big\}
         }
 
+      \end{pchstack}
     \end{pcvstack}
-    \caption{Collection of zero-knowledge proofs for achieving Zeto privacy goals, written in Camenisch-Stadler notation.}
+    \caption{Collection of languages verified by zero-knowledge proofs to achieve Zeto privacy goals. In this notation, public inputs (the statement) are on the first line, and secret inputs (the witness) are on the second line. Additional components over standard anonymity are shown in \textcolor{red}{red}. For the anonymity language, red components are additional to standard correctness.}
     \label{fig:zeto_proofs}
 \end{figure*}
 

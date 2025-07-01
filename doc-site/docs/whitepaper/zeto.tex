@@ -51,7 +51,7 @@ The contract maintains a list of all valid UTXO commitments, and marks them as s
 % UTXO == commitment (these are used interchangably in the code)
 % this is like "input and output hiding"
 
-\paragraph{On-chain encrypted secrets.} In isolation, satisfying anonymity (as described above) requires senders to reveal the output UTXOs to their respective receivers out-of-band. If a Zeto token only implements anonymity, a malicious sender could generate a valid transaction (consuming UTXOs that they own) but simply not reveal the output UTXOs to the intended recipients. Zeto provides ZK proofs and contracts that not only enforce honesty in the anonymous setting, but also require that the sender encrypts output UTXOs for the intended recipients so that these ciphertexts can be stored on-chain.
+\paragraph{On-chain encrypted secrets.} In isolation, satisfying anonymity (as described above) requires senders to reveal the output UTXOs to their respective receivers out-of-band. If a Zeto token only implements anonymity, a malicious sender could generate a valid transaction (consuming UTXOs that they own) but simply not reveal the output UTXOs to the intended recipients. Zeto provides ZK proofs and contracts that not only enforce honesty in the anonymous setting, but also require that the sender encrypts output UTXOs for the intended recipients so that these ciphertexts can be stored on-chain. Therefore sender honesty is enforced by auditability of the underlying blockchain and soundness of the ZKP scheme.
 
 % uses poseidon encryption
 % encrypts the output UTXO information: the tx value and salt for the UTXO
@@ -67,13 +67,13 @@ Note that in order to use nullifiers, the client must maintain state representin
 
 \paragraph{Know Your Customer (KYC).} Financial institutions often have policy or legal requirements that enforce verification of customers' identities. In this setting, we define KYC as the property that clients are able to prove membership to a list of vetted clients, without revealing their identity. For example, the platform maintaining a KYC Zeto contract could verify the ID of a user, and then add their client's public key to a merkle tree containing vetted clients. Our KYC contracts do just this. Clients prove (in zero-knowledge) ownership of a secret key corresponding to a public key with a valid merkle proof, relative to the merkle tree of client identities.
 
-\paragraph{Non-repudiation.} For regulatory or policy reasons, a token may also need to be auditable to an auditing authority. Non-repudiation requires that all transactions are auditable, i.e. users can't deny to the auditor that a particular transaction took place. To achieve non-repudiation while maintaining anonymity, we require users to encrypt a record of each transaction to the auditor, which is stored on-chain. This record includes owner identities, transaction values, and salts for each input and output UTXO commitment. We use the Poseidon encryption system, and augment our ZK proof to verify that the ciphertext encrypts the correct plaintext.
+\paragraph{Non-repudiation.} For regulatory or policy reasons, a token may also need to be auditable to an auditing authority. Non-repudiation requires that all transactions are auditable, i.e. users can't deny to the auditor that a particular transaction took place. To achieve non-repudiation while maintaining anonymity, we require users to encrypt a record of each transaction to the auditor, which is stored on-chain. This record includes owner identities, transaction values, and salts for each input and output UTXO commitment. We use the Poseidon encryption system, and augment our ZK proof to verify that the ciphertext encrypts the correct plaintext. Therefore non-repudiation is guaranteed by the soundness of the ZKP scheme.
 
 \paragraph{Post-quantum security.} Large-scale quantum computers have the potential to compromise a large number of cryptographic primitives. As described above, Poseidon encryption for non-repudiation uses the Diffie-Hellman key exchange~\cite{TODO} to arrive at a shared secret key. While this is highly efficient, it relies on the hardness of the discrete logarithm problem~\cite{TODO}, for which known quantum attacks exist. While cryptographically relevant quantum computers are likely decades away, progress in the field can enable ``harvest now, decrypt later'' attacks~\cite{TODO}. Any ciphertexts sent today with quantum-insecure encryption may be stored until a quantum computer is powerful enough to decrypt them. This is why highly sensitive applications are beginning to transition to post-quantum encryption, and why NIST is deprecating some lower-security versions of Diffie-Hellman as early as 2030~\cite{TODO}.
 
 To address this, Zeto includes tokens that achieve the same properties as non-repudiation tokens, but establish a shared secret using the NIST-standardized ML-KEM key establishment scheme~\cite{TODO}.
 
-Figure~\ref{zeto_proofs} contains the zero-knowledge proofs used to verify each of the above security properties, as well as the proof for correctness. We use the Camenisch-Stadler notation~\cite{TODO} to express the statements being proved.
+Figure~\ref{fig:zeto_proofs} contains the languages that verify each of the above security properties, as well as the language for transaction correctness.
 % encrypts tx info (input and output owner, input and output values and salts) to be decrypted by an authority
 % identical to qurrency but not post-quantum secure < ** maybe note qurrency here **
 
@@ -159,7 +159,7 @@ Figure~\ref{zeto_proofs} contains the zero-knowledge proofs used to verify each 
 
       \end{pchstack}
     \end{pcvstack} % TODO: this figure is a bit too wide because of the non-repudiation language. Maybe this is fixable later.
-    \caption{Collection of languages verified by zero-knowledge proofs to achieve Zeto privacy goals. In this notation, public inputs (the statement) are on the first line, and secret inputs (the witness) are on the second line. Additional components over standard anonymity are shown in \textcolor{red}{red}. For the anonymity language, red components are additional to standard correctness.}
+    \caption{Collection of languages verified by zero-knowledge proofs to achieve Zeto privacy goals. In this notation, public inputs (the statement) are on the first line, and secret inputs (the witness) are on the second line. Additional components and modifications over standard anonymity are shown in \textcolor{red}{red}. For the anonymity language, red components are additional to standard correctness.}
     \label{fig:zeto_proofs}
 \end{figure*}
 
@@ -209,9 +209,20 @@ How the smart contract enforces the fourth requirement varies by token. For Zeto
 
 For Zeto tokens with history masking, the contract is unable to perform these checks on input UTXO commitments, because the commitments are not revealed publicly. (It can, however, verify that the revealed output UTXOs do not yet exist.) Therefore input UTXOs are validated within the ZK proof. The sender proves knowledge of UTXO commitments corresponding to each publicly revealed nullifier, and also proves knowledge of merkle proofs that confirm each UTXO commitment's membership within a sparse merkle tree which has the revealed \ms{root}. Furthermore, since each nullifier is a deterministic function of a UTXO's $(\sk, v, \rho)$, each UTXO can only be nullified once. In order to be convinced that each input UTXO exists and is unspent, the contract only needs to verify the proof, and mark all input nullifiers as consumed. Therefore the final two transaction correctness requirements follow from soundness of the ZKP scheme and correctness of the smart contract logic.
 
-\paragraph{Privacy Goals.} 
+\paragraph{Privacy Goals.} % follows directly from zero-knowledge
+Each language shown in Figure~\ref{fig:zeto_proofs} enforces a specific security or privacy goal. Privacy goals ensure that some subset of the transaction information (shown as public signals in the ``Correctness'' language in Figure~\ref{fig:zeto_proofs}) are hidden on-chain. For example, anonymity ensures that all public keys, values, and salts are not revealed on-chain, and instead only commitments to these values are revealed. History masking goes further, and ensures that not even commitments to the input values are revealed on-chain. These privacy goals all follow directly from the zero-knowledge property of the underlying ZKP scheme.
 
-\subsection{Example Token: \texttt{anon\_nullifier\_kyc}} % we can maybe change which token this section is focused on
+\subsection{Example Token: \texttt{anon\_nullifier\_kyc}}
 
-% show diagram of the ZK circuit
+A block diagram representing the zero-knowledge proof circuit for the \texttt{anon\_nullifier\_kyc} token is shown in Figure~\ref{fig:zeto_circuit}. In this section, we further highlight how information is processed in this circuit, and how different components of the circuit enforce our desired privacy and security properties.
+
+All inputs that the prover needs are shown on the left. Private inputs (those that are hidden from the perspective of the verifier) are shown in orange, and publicly revealed inputs are shown in teal. Output bits are on blue wires. These are the results of assertions: if all output bits are 1, then the circuit has confirmed that the supplied inputs form a valid transaction.
+
+
+\begin{figure*}
+\centering
+\includegraphics[width=\linewidth]{anon_nullifier_kyc.pdf}
+\caption{Block diagram of the circuit verified by the zero-knowledge proof for the \texttt{anon\_nullifier\_kyc} Zeto token.}\label{fig:zeto_circuit}
+\end{figure*}
+
 % reiterate points from "preliminaries": ZK proof ensures honest transaction generation, but only a subset of the values are revealed publicly

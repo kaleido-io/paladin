@@ -165,7 +165,11 @@ func (km *keyManager) Sign(ctx context.Context, mapping *pldapi.KeyMappingAndVer
 	if err != nil {
 		return nil, err
 	}
-	return w.sign(ctx, mapping, payloadType, payload)
+	sig, err := w.sign(ctx, mapping, payloadType, payload)
+	if err == nil {
+		log.L(ctx).Debugf("signed payload: %s", sig)
+	}
+	return sig, err
 }
 
 func (km *keyManager) lockAllocationOrGetOwner(kr *keyResolver) *keyResolver {

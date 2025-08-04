@@ -17,6 +17,7 @@ package keymanager
 
 import (
 	"context"
+	"encoding/base64"
 	"sync"
 
 	"github.com/google/uuid"
@@ -167,7 +168,8 @@ func (km *keyManager) Sign(ctx context.Context, mapping *pldapi.KeyMappingAndVer
 	}
 	sig, err := w.sign(ctx, mapping, payloadType, payload)
 	if err == nil {
-		log.L(ctx).Debugf("signed payload: %s", sig)
+		log.L(ctx).Debugf("signed payload: %s", base64.StdEncoding.EncodeToString(payload))
+		log.L(ctx).Debugf("signed signature: %s", base64.StdEncoding.EncodeToString(sig))
 	}
 	return sig, err
 }

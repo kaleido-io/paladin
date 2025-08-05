@@ -27,6 +27,7 @@ type ResolveKeyRequest struct {
 	PublicIdentifierTypesToResolve []string       `json:"publicIdentifierTypesToResolve,omitempty"`
 	KeySpec                        string         `json:"spec,omitempty"`
 	AutoKeyCreation                bool           `json:"autoKeyCreation"`
+	AutoPublicIdentifiersCreation  bool           `json:"autoPublicIdentifierCreation"`
 }
 
 type ResolveKeyResponse struct {
@@ -53,9 +54,4 @@ type KeyIdentifier struct {
 type PublicIdentifier struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
-}
-
-type PublicIdentifierCreationInput struct {
-	KeyID string `json:"keyId"`
-	Type  string `json:"type"`
 }

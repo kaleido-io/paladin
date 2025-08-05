@@ -473,40 +473,28 @@ func TestResolveKeyWithAutoKeyCreation(t *testing.T) {
 	assert.Equal(t, testKeyID, res.KeyHandle)
 }
 
-func TestResolveKeyKA058002ErrorWithAutoKeyCreation(t *testing.T) {
+func TestResolveKeyWithAutoPublicIdentifiersCreation(t *testing.T) {
 	ctx, httpEndpoint, done := newTestServer(t, func(r *http.Request) (int, interface{}) {
 		switch r.URL.Path {
 		case "/resolve":
-			// First resolve request - return KA058002 error
 			if r.Body != nil {
 				var resolveReq ResolveKeyRequest
 				err := json.NewDecoder(r.Body).Decode(&resolveReq)
 				assert.NoError(t, err)
 
-				// If this request includes PublicIdentifierTypesToResolve, return the error
-				if len(resolveReq.PublicIdentifierTypesToResolve) > 0 {
-					return 400, createErrorResponse("KA058002: Key doesn't have a public identifier of type address_ethereum")
-				}
+				// Verify that AutoPublicIdentifiersCreation is set to true
+				assert.True(t, resolveReq.AutoPublicIdentifiersCreation)
 
-				// If this request doesn't include PublicIdentifierTypesToResolve, return the key ID
+				// Return successful response with key ID and identifiers
 				return 200, &ResolveKeyResponse{
 					ID: testKeyID,
+					Identifiers: []*PublicIdentifier{
+						{
+							Type:  ADDRESS_ETH,
+							Value: testEthAddress,
+						},
+					},
 				}
-			}
-		case "/public-identifiers":
-			// Public identifier creation request
-			assert.Equal(t, "POST", r.Method)
-
-			var createReq PublicIdentifierCreationInput
-			err := json.NewDecoder(r.Body).Decode(&createReq)
-			assert.NoError(t, err)
-			assert.Equal(t, testKeyID, createReq.KeyID)
-			assert.Equal(t, ADDRESS_ETH, createReq.Type)
-
-			// Return successful public identifier creation
-			return 200, &PublicIdentifier{
-				Type:  ADDRESS_ETH,
-				Value: testEthAddress,
 			}
 		}
 
@@ -528,138 +516,6 @@ func TestResolveKeyKA058002ErrorWithAutoKeyCreation(t *testing.T) {
 	assert.Equal(t, algorithms.ECDSA_SECP256K1, res.Identifiers[0].Algorithm)
 	assert.Equal(t, verifiers.ETH_ADDRESS, res.Identifiers[0].VerifierType)
 	assert.Equal(t, testEthAddress, res.Identifiers[0].Verifier)
-}
-
-func TestResolveKeyKA058002ErrorWithoutAutoKeyCreation(t *testing.T) {
-	ctx, httpEndpoint, done := newTestServer(t, func(r *http.Request) (int, interface{}) {
-		switch r.URL.Path {
-		case "/resolve":
-			// First resolve request - return KA058002 error
-			if r.Body != nil {
-				var resolveReq ResolveKeyRequest
-				err := json.NewDecoder(r.Body).Decode(&resolveReq)
-				assert.NoError(t, err)
-
-				// If this request includes PublicIdentifierTypesToResolve, return the error
-				if len(resolveReq.PublicIdentifierTypesToResolve) > 0 {
-					return 400, createErrorResponse("KA058002: Key doesn't have a public identifier of type address_ethereum")
-				}
-
-				// If this request doesn't include PublicIdentifierTypesToResolve, return the key ID
-				return 200, &ResolveKeyResponse{
-					ID: testKeyID,
-				}
-			}
-		case "/public-identifiers":
-			// Public identifier creation request
-			assert.Equal(t, "POST", r.Method)
-
-			var createReq PublicIdentifierCreationInput
-			err := json.NewDecoder(r.Body).Decode(&createReq)
-			assert.NoError(t, err)
-			assert.Equal(t, testKeyID, createReq.KeyID)
-			assert.Equal(t, ADDRESS_ETH, createReq.Type)
-
-			// Return successful public identifier creation
-			return 200, &PublicIdentifier{
-				Type:  ADDRESS_ETH,
-				Value: testEthAddress,
-			}
-		}
-
-		return 404, createErrorResponse("not found")
-	})
-	defer done()
-
-	signingModule := newTestSigningModule(t)
-	configureTestSigningModule(t, ctx, signingModule, httpEndpoint)
-
-	res, err := signingModule.ResolveKey(ctx, &prototk.ResolveKeyRequest{
-		Name:                testKeyName,
-		Path:                testPathSegments,
-		RequiredIdentifiers: testRequiredIdentifiers,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, testKeyID, res.KeyHandle)
-	assert.Len(t, res.Identifiers, 1)
-	assert.Equal(t, algorithms.ECDSA_SECP256K1, res.Identifiers[0].Algorithm)
-	assert.Equal(t, verifiers.ETH_ADDRESS, res.Identifiers[0].VerifierType)
-	assert.Equal(t, testEthAddress, res.Identifiers[0].Verifier)
-}
-
-func TestResolveKeyKA058002ErrorSecondResolveFails(t *testing.T) {
-	ctx, httpEndpoint, done := newTestServer(t, func(r *http.Request) (int, interface{}) {
-		switch r.URL.Path {
-		case "/resolve":
-			if r.Body != nil {
-				var resolveReq ResolveKeyRequest
-				err := json.NewDecoder(r.Body).Decode(&resolveReq)
-				assert.NoError(t, err)
-
-				// If this request includes PublicIdentifierTypesToResolve, return the error
-				if len(resolveReq.PublicIdentifierTypesToResolve) > 0 {
-					return 400, createErrorResponse("KA058002: Key doesn't have a public identifier of type address_ethereum")
-				}
-
-				// If this request doesn't include PublicIdentifierTypesToResolve, return an error
-				return 500, createErrorResponse("internal server error")
-			}
-		}
-
-		return 404, createErrorResponse("not found")
-	})
-	defer done()
-
-	signingModule := newTestSigningModule(t)
-	configureTestSigningModule(t, ctx, signingModule, httpEndpoint)
-
-	_, err := signingModule.ResolveKey(ctx, &prototk.ResolveKeyRequest{
-		Name:                testKeyName,
-		Path:                testPathSegments,
-		RequiredIdentifiers: testRequiredIdentifiers,
-	})
-	require.Regexp(t, "KA180010", err) // Should return KMS API call failed error
-	require.Regexp(t, "internal server error", err)
-}
-
-func TestResolveKeyKA058002ErrorPublicIdentifierCreationFails(t *testing.T) {
-	ctx, httpEndpoint, done := newTestServer(t, func(r *http.Request) (int, interface{}) {
-		switch r.URL.Path {
-		case "/resolve":
-			if r.Body != nil {
-				var resolveReq ResolveKeyRequest
-				err := json.NewDecoder(r.Body).Decode(&resolveReq)
-				assert.NoError(t, err)
-
-				// If this request includes PublicIdentifierTypesToResolve, return the error
-				if len(resolveReq.PublicIdentifierTypesToResolve) > 0 {
-					return 400, createErrorResponse("KA058002: Key doesn't have a public identifier of type address_ethereum")
-				}
-
-				// If this request doesn't include PublicIdentifierTypesToResolve, return the key ID
-				return 200, &ResolveKeyResponse{
-					ID: testKeyID,
-				}
-			}
-		case "/public-identifiers":
-			// Public identifier creation request fails
-			return 500, createErrorResponse("public identifier creation failed")
-		}
-
-		return 404, createErrorResponse("not found")
-	})
-	defer done()
-
-	signingModule := newTestSigningModule(t)
-	configureTestSigningModule(t, ctx, signingModule, httpEndpoint)
-
-	_, err := signingModule.ResolveKey(ctx, &prototk.ResolveKeyRequest{
-		Name:                testKeyName,
-		Path:                testPathSegments,
-		RequiredIdentifiers: testRequiredIdentifiers,
-	})
-	require.Regexp(t, "KA180010", err) // Should return KMS API call failed error
-	require.Regexp(t, "public identifier creation failed", err)
 }
 
 func TestSignOkECDSA_SECP256K1(t *testing.T) {

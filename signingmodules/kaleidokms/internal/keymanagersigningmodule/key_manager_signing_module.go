@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 
@@ -154,8 +153,9 @@ func (rsm *keyManagerSigningModule) ResolveKey(ctx context.Context, req *prototk
 		PublicIdentifierTypesToResolve: []string{
 			ADDRESS_ETH,
 		},
-		AutoKeyCreation: true,
-		KeySpec:         EC_NIST_P256,
+		AutoKeyCreation:               true,
+		AutoPublicIdentifiersCreation: true,
+		KeySpec:                       EC_NIST_P256,
 	}
 
 	var response ResolveKeyResponse
@@ -169,10 +169,6 @@ func (rsm *keyManagerSigningModule) ResolveKey(ctx context.Context, req *prototk
 		Post("/resolve")
 
 	if err != nil || (!res.IsSuccess() && res.StatusCode() != http.StatusNotFound) {
-		// Check if this is the KA058002 error (key doesn't have public identifier of type address_ethereum)
-		if errInfo.Error != "" && strings.Contains(errInfo.Error, "KA058002") {
-			return rsm.handleMissingPublicIdentifier(ctx, uri)
-		}
 		return nil, rsm.kmsRequestError(ctx, err, errInfo)
 	}
 
@@ -191,62 +187,6 @@ func (rsm *keyManagerSigningModule) ResolveKey(ctx context.Context, req *prototk
 				Algorithm:    algorithms.ECDSA_SECP256K1,
 				VerifierType: verifiers.ETH_ADDRESS,
 				Verifier:     response.Identifiers[0].Value,
-			},
-		}}, nil
-}
-
-// handleMissingPublicIdentifier handles the case where a key exists but doesn't have a public identifier
-// of type address_ethereum. It creates the public identifier and returns the response.
-func (rsm *keyManagerSigningModule) handleMissingPublicIdentifier(ctx context.Context, uri string) (*prototk.ResolveKeyResponse, error) {
-	// First, make a second resolve request to get the key ID
-	keyManagerResolveRequest := ResolveKeyRequest{
-		KeyIdentifier: &KeyIdentifier{
-			KeyURI: &uri,
-		},
-		// Don't request public identifiers this time, just get the key ID
-	}
-
-	var response ResolveKeyResponse
-	var errInfo ErrorResponse
-
-	res, err := rsm.httpClient.R().
-		SetContext(ctx).
-		SetBody(keyManagerResolveRequest).
-		SetResult(&response).
-		SetError(&errInfo).
-		Post("/resolve")
-
-	if err != nil || !res.IsSuccess() {
-		return nil, rsm.kmsRequestError(ctx, err, errInfo)
-	}
-
-	// Now create the public identifier
-	publicIdentifierRequest := PublicIdentifierCreationInput{
-		KeyID: response.ID,
-		Type:  ADDRESS_ETH,
-	}
-
-	var publicIdentifierResponse PublicIdentifier
-	var publicIdentifierErrInfo ErrorResponse
-
-	publicIdentifierRes, err := rsm.httpClient.R().
-		SetContext(ctx).
-		SetBody(publicIdentifierRequest).
-		SetResult(&publicIdentifierResponse).
-		SetError(&publicIdentifierErrInfo).
-		Post("/public-identifiers")
-
-	if err != nil || !publicIdentifierRes.IsSuccess() {
-		return nil, rsm.kmsRequestError(ctx, err, publicIdentifierErrInfo)
-	}
-
-	return &prototk.ResolveKeyResponse{
-		KeyHandle: response.ID,
-		Identifiers: []*prototk.PublicKeyIdentifier{
-			{
-				Algorithm:    algorithms.ECDSA_SECP256K1,
-				VerifierType: verifiers.ETH_ADDRESS,
-				Verifier:     publicIdentifierResponse.Value,
 			},
 		}}, nil
 }

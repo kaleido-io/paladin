@@ -1,3 +1,4 @@
+import https from "https";
 import PaladinClient, {
   PenteFactory,
 } from "@lfdecentralizedtrust-labs/paladin-sdk";
@@ -8,21 +9,49 @@ import { PrivateStorage } from "./helpers/storage";
 const logger = console;
 
 // Initialize Paladin clients for three nodes
-const paladinNode1 = new PaladinClient({ url: "http://127.0.0.1:31548" });
-const paladinNode2 = new PaladinClient({ url: "http://127.0.0.1:31648" });
-const paladinNode3 = new PaladinClient({ url: "http://127.0.0.1:31748" });
+//central bank
+const centralBank = new PaladinClient({ 
+  url: "https://central-bank.kaleido.dev/endpoint/cbdc-sandbox/central-bank/jsonrpc",
+  requestConfig: {
+    headers: {
+      // 4e5e8d2c-19fd-46e6-9efa-cd775201099404a0881d-8119-4de7-8c32-de746efe2554
+      Authorization: "Basic a2V5MTo0ZTVlOGQyYy0xOWZkLTQ2ZTYtOWVmYS1jZDc3NTIwMTA5OTQwNGEwODgxZC04MTE5LTRkZTctOGMzMi1kZTc0NmVmZTI1NTQ="
+    },
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  },
+ });
+const bank1 = new PaladinClient({ 
+  url: "https://bank1.kaleido.dev/endpoint/cbdc-sandbox/bank1/jsonrpc",
+  requestConfig: {
+    headers: {
+      // 2e565af1-d542-4e70-94f4-ba04317cc9542024e096-3d3e-4549-a527-28aec043873c
+      Authorization: "Basic a2V5MToyZTU2NWFmMS1kNTQyLTRlNzAtOTRmNC1iYTA0MzE3Y2M5NTQyMDI0ZTA5Ni0zZDNlLTQ1NDktYTUyNy0yOGFlYzA0Mzg3M2M="
+    },
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  },
+ });
+const bank2 = new PaladinClient({ 
+  url: "https://bank2.kaleido.dev/endpoint/cbdc-sandbox/bank2/jsonrpc",
+  requestConfig: {
+    headers: {
+      // 78047006-a2d0-42ad-a6a6-3d126dab644d846d5873-2fa2-4ee5-b6a4-ab860e20ed12
+      Authorization: "Basic a2V5MTo3ODA0NzAwNi1hMmQwLTQyYWQtYTZhNi0zZDEyNmRhYjY0NGQ4NDZkNTg3My0yZmEyLTRlZTUtYjZhNC1hYjg2MGUyMGVkMTI="
+    },
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  },
+ });
 
 async function main(): Promise<boolean> {
   // Get verifiers for each node
-  const [verifierNode1] = paladinNode1.getVerifiers("member@node1");
-  const [verifierNode2] = paladinNode2.getVerifiers("member@node2");
-  const [verifierNode3] = paladinNode3.getVerifiers("outsider@node3");
+  const [verifierCentralBank] = centralBank.getVerifiers("member@central-bank");
+  const [verifierBank1] = bank1.getVerifiers("member@bank1");
+  const [verifierBank2] = bank2.getVerifiers("outsider@bank2");
 
   // Step 1: Create a privacy group for members
-  logger.log("Creating a privacy group for Node1 and Node2...");
-  const penteFactory = new PenteFactory(paladinNode1, "pente");
+  logger.log("Creating a privacy group for central bank and bank1...");
+  const penteFactory = new PenteFactory(centralBank, "pente");
   const memberPrivacyGroup = await penteFactory.newPrivacyGroup({
-    members: [verifierNode1, verifierNode2],
+    members: [verifierCentralBank, verifierBank1],
     evmVersion: "shanghai",
     externalCallsEnabled: true,
   }).waitForDeploy();
@@ -35,7 +64,7 @@ async function main(): Promise<boolean> {
   const contractAddress = await memberPrivacyGroup.deploy({
     abi: storageJson.abi,
     bytecode: storageJson.bytecode,
-    from: verifierNode1.lookup,
+    from: verifierCentralBank.lookup,
   }).waitForDeploy();
   if (!contractAddress) {
     logger.error("Failed to deploy the contract. No address returned.");
@@ -54,7 +83,7 @@ async function main(): Promise<boolean> {
   const valueToStore = 125; // Example value to store
   logger.log(`Storing a value "${valueToStore}" in the contract...`);
   const storeReceipt = await privateStorageContract.sendTransaction({
-    from: verifierNode1.lookup,
+    from: verifierCentralBank.lookup,
     function: "store",
     data: { num: valueToStore },
   }).waitForReceipt();
@@ -63,44 +92,44 @@ async function main(): Promise<boolean> {
     storeReceipt?.transactionHash
   );
 
-  // Retrieve the value as Node1
-  logger.log("Node1 retrieving the value from the contract...");
-  const retrievedValueNode1 = await privateStorageContract.call({
-    from: verifierNode1.lookup,
+  // Retrieve the value as central bank
+  logger.log("Central bank retrieving the value from the contract...");
+  const retrievedValueCentralBank = await privateStorageContract.call({
+    from: verifierCentralBank.lookup,
     function: "retrieve",
   });
   logger.log(
-    "Node1 retrieved the value successfully:",
-    retrievedValueNode1["value"]
+    "Central bank retrieved the value successfully:",
+    retrievedValueCentralBank["value"]
   );
 
-  // Retrieve the value as Node2
-  logger.log("Node2 retrieving the value from the contract...");
-  const retrievedValueNode2 = await privateStorageContract
-    .using(paladinNode2)
+  // Retrieve the value as bank1
+  logger.log("bank1 retrieving the value from the contract...");
+  const retrievedValueBank1 = await privateStorageContract
+    .using(bank1)
     .call({
-      from: verifierNode2.lookup,
+      from: verifierBank1.lookup,
       function: "retrieve",
     });
   logger.log(
-    "Node2 retrieved the value successfully:",
-    retrievedValueNode2["value"]
+    "Bank1 retrieved the value successfully:",
+    retrievedValueBank1["value"]
   );
 
-  // Attempt to retrieve the value as Node3 (outsider)
+  // Attempt to retrieve the value as bank2 (outsider)
   try {
-    logger.log("Node3 (outsider) attempting to retrieve the value...");
-    await privateStorageContract.using(paladinNode3).call({
-      from: verifierNode3.lookup,
+    logger.log("Bank2 (outsider) attempting to retrieve the value...");
+    await privateStorageContract.using(bank2).call({
+      from: verifierBank2.lookup,
       function: "retrieve",
     });
     logger.error(
-      "Node3 (outsider) should not have access to the privacy group!"
+      "Bank2 (outsider) should not have access to the privacy group!"
     );
     return false;
   } catch (error) {
     logger.info(
-      "Expected behavior - Node3 (outsider) cannot retrieve the data from the privacy group. Access denied."
+      "Expected behavior - Bank2 (outsider) cannot retrieve the data from the privacy group. Access denied."
     );
   }
 

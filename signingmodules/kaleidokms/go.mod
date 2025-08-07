@@ -1,27 +1,27 @@
 module github.com/kaleido-io/key-manager/signingmodules/kaleidokms
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.3
 
 require (
+	github.com/LF-Decentralized-Trust-labs/paladin/common/go v0.0.0-00010101000000-000000000000
+	github.com/LF-Decentralized-Trust-labs/paladin/config v0.0.0-00010101000000-000000000000
+	github.com/LF-Decentralized-Trust-labs/paladin/sdk/go v0.0.0-00010101000000-000000000000
+	github.com/LF-Decentralized-Trust-labs/paladin/toolkit v0.0.0-00010101000000-000000000000
 	github.com/go-resty/resty/v2 v2.16.5
-	github.com/hyperledger/firefly-signer v1.1.22-0.20250527171735-c3e1c8559c15
-	github.com/kaleido-io/paladin/common/go v0.0.0-20250616183610-765318500a8d
-	github.com/kaleido-io/paladin/config v0.0.0-20250527141604-bafc391c2c29
-	github.com/kaleido-io/paladin/sdk/go v0.0.0-20250616183610-765318500a8d
-	github.com/kaleido-io/paladin/toolkit v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.25.0
 )
 
 require (
 	github.com/aidarkhanov/nanoid v1.0.8 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hyperledger/firefly-common v1.5.6-0.20250630201730-e234335c0381 // indirect
+	github.com/hyperledger/firefly-signer v1.1.22-0.20250527171735-c3e1c8559c15 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
@@ -47,10 +47,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/kaleido-io/paladin/toolkit => ../../toolkit/go
+replace github.com/LF-Decentralized-Trust-labs/paladin/toolkit => ../../toolkit/go
 
-replace github.com/kaleido-io/paladin/sdk/go => ../../sdk/go
+replace github.com/LF-Decentralized-Trust-labs/paladin/sdk/go => ../../sdk/go
 
-replace github.com/kaleido-io/paladin/common/go => ../../common/go
+replace github.com/LF-Decentralized-Trust-labs/paladin/common/go => ../../common/go
 
-replace github.com/kaleido-io/paladin/config => ../../config
+replace github.com/LF-Decentralized-Trust-labs/paladin/config => ../../config

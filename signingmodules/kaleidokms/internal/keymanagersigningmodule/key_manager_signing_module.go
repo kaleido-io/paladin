@@ -239,7 +239,6 @@ func (rsm *keyManagerSigningModule) Sign(ctx context.Context, req *prototk.SignW
 	if len(payloadBytes) != 65 {
 		return nil, i18n.NewError(ctx, msgs.MsgSignInvalidSignatureLength, len(payloadBytes))
 	}
-	payloadBytes[64] = payloadBytes[64] + 27
 
 	return &prototk.SignWithKeyResponse{
 		Payload: payloadBytes,

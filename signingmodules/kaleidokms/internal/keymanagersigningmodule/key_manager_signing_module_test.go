@@ -522,7 +522,6 @@ func TestSignOkECDSA_SECP256K1(t *testing.T) {
 	// Use deterministic bytes instead of random bytes for consistent test results
 	payloadRespBase64 := "72ujCh4Eg8gl4+PpjQ9aAZovHshn5X1yv1j0t2jCTzg3GswBSu1c/6NsWCxGIJTXaGiXYGUK2kIODSRbDu+3mgE="
 	expectedPayloadBytes, err := base64.StdEncoding.DecodeString(payloadRespBase64)
-	expectedPayloadBytes[64] = expectedPayloadBytes[64] + 27
 	require.NoError(t, err)
 
 	ctx, httpEndpoint, done := newTestServer(t, func(r *http.Request) (int, interface{}) {

@@ -1,0 +1,57 @@
+name: Sync Upstream Main
+
+on:
+  schedule:
+    # Runs every hour at the top of the hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+jobs:
+  sync_and_pr:
+    runs-on: ubuntu-latest
+    
+    # Ensures this workflow only runs in your fork, not the upstream repo
+    if: github.repository == 'kaleido-io/paladin'
+
+    steps:
+      - name: Checkout Fork
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set Upstream Remote
+        run: |
+          git remote add upstream https://github.com/LF-Decentralized-Trust-labs/paladin.git
+          git fetch upstream main
+
+      - name: Check for New Commits in Upstream
+        id: check_diff
+        run: |
+          # Compare release-main branch with upstream main branch
+          AHEAD_COUNT=$(git rev-list --count release-main..upstream/main)
+          
+          echo "Upstream is ${AHEAD_COUNT} commits ahead."
+          echo "ahead_count=${AHEAD_COUNT}" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request if Upstream has New Commits
+        if: steps.check_diff.outputs.ahead_count > 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create a branch name with a timestamp to ensure it's unique
+          SYNC_BRANCH="sync-upstream-$(date +%Y%m%d%H%M%S)"
+          echo "Creating sync branch: ${SYNC_BRANCH}"
+          
+          # Create the new branch directly from the latest state of upstream/main
+          git checkout -b ${SYNC_BRANCH} upstream/main
+          
+          # Push the new branch to your fork
+          git push origin ${SYNC_BRANCH}
+          
+          # Create the Pull Request targeting your release-main branch
+          gh pr create \
+            --title "Automated Sync: New commits from LF-Decentralized-Trust-labs/paladin" \
+            --body "This PR was automatically generated to sync new commits from the upstream repository's main branch. Please review the changes and merge into \`release-main\`." \
+            --base release-main \
+            --head ${SYNC_BRANCH}

@@ -430,9 +430,10 @@ func (p *privateTxManager) evaluateDeployment(ctx context.Context, domain compon
 		{
 			Bindings: []*components.PaladinTXReference{
 				{
-					TransactionID:   tx.ID,
-					TransactionType: pldapi.TransactionTypePrivate.Enum(),
-					Sender:          tx.From,
+					TransactionID:              tx.ID,
+					TransactionType:            pldapi.TransactionTypePrivate.Enum(),
+					TransactionSender:          tx.From,
+					TransactionContractAddress: "", // no contract address for deployment transactions
 				},
 			},
 			PublicTxInput: pldapi.PublicTxInput{
@@ -975,6 +976,7 @@ func (p *privateTxManager) NotifyFailedPublicTx(ctx context.Context, dbTX persis
 		if tx.ContractAddress != nil {
 			contractAddr = tx.ContractAddress.String()
 		}
+		// We calculate the failure message - all errors handled mapped internally here
 		privateFailureReceipts[i] = &components.ReceiptInputWithOriginator{
 			Originator:            tx.Sender,
 			DomainContractAddress: contractAddr,

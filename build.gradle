@@ -21,6 +21,7 @@ def transports = [
 
 def signingmodules = [
     'signingmodules/example/build/libs',
+    'signingmodules/kaleidokms/build/libs',
 ]
 
 def uiClient = [
@@ -37,6 +38,7 @@ def assembleSubprojects = [
     ':registries:static',
     ':registries:evm',
     ':signingmodules:example',
+    ':signingmodules:kaleidokms',
     ':transports:grpc',
     ':ui:client',
 ]

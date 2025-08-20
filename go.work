@@ -15,6 +15,7 @@ use (
 	./registries/static
 	./sdk/go
 	./signingmodules/example
+	./signingmodules/kaleidokms
 	./testinfra
 	./toolkit/go
 	./transports/grpc

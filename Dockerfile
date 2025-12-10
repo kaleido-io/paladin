@@ -133,6 +133,7 @@ COPY registries/static registries/static
 COPY registries/evm registries/evm
 COPY rpcauth/basicauth rpcauth/basicauth
 COPY signingmodules/example signingmodules/example
+COPY signingmodules/kaleidokms signingmodules/kaleidokms
 COPY transports/grpc transports/grpc
 COPY ui/client ui/client
 # No build of these three, but we need to go.mod to make the go.work valid

@@ -17,7 +17,6 @@ package sequencer
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
 
@@ -90,16 +89,17 @@ func (sMgr *sequencerManager) PostInit(c components.AllComponents) error {
 
 func (sMgr *sequencerManager) Start() error {
 	log.L(log.WithLogField(sMgr.ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Infof("Starting distributed sequencer manager")
-
 	sMgr.syncPoints.Start()
-
-	sMgr.pollForIncompleteTransactions(sMgr.ctx, confutil.DurationMin(sMgr.config.TransactionResumePollInterval, pldconf.SequencerMinimum.TransactionResumePollInterval, *pldconf.SequencerDefaults.TransactionResumePollInterval))
+	sMgr.pollForIncompleteTransactions(sMgr.ctx, confutil.DurationMinIfPositive(sMgr.config.TransactionResumePollInterval, pldconf.SequencerMinimum.TransactionResumePollInterval, *pldconf.SequencerDefaults.TransactionResumePollInterval))
 
 	return nil
 }
 
 func (sMgr *sequencerManager) Stop() {
 	log.L(log.WithLogField(sMgr.ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Infof("Stopping distributed sequencer manager")
+	sMgr.StopAllSequencers(sMgr.ctx)
+	log.L(log.WithLogField(sMgr.ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Infof("Stopped all sequencers")
+	sMgr.syncPoints.Close()
 	sMgr.cancelCtx()
 }
 
@@ -119,6 +119,10 @@ func NewDistributedSequencerManager(ctx context.Context, config *pldconf.Sequenc
 
 // We may have in-flight transactions that never completed. Load any we have pending and and resume them
 func (sMgr *sequencerManager) pollForIncompleteTransactions(ctx context.Context, rePollInterval time.Duration) {
+	if rePollInterval <= 0 {
+		log.L(ctx).Warnf("Sequencer transaction resume disabled")
+		return
+	}
 	// Repeat getting pending transactions until none are returned. Run in a goroutine to avoid blocking the main thread
 	go func() {
 	waitForIndexerReady:
@@ -602,7 +606,10 @@ func (sMgr *sequencerManager) HandlePublicTXSubmission(ctx context.Context, dbTX
 			},
 		}
 
-		senderNode := strings.Split(sender, "@")[1]
+		senderNode, err := pldtypes.PrivateIdentityLocator(sender).Node(ctx, false)
+		if err != nil {
+			return err
+		}
 		if senderNode != sMgr.nodeName {
 			// Send reliable message to the node under the current DBTX
 			err = sMgr.components.TransportManager().SendReliable(ctx, dbTX, &pldapi.ReliableMessage{
@@ -629,7 +636,10 @@ func (sMgr *sequencerManager) HandlePublicTXsWritten(ctx context.Context, dbTX p
 				continue
 			}
 
-			senderNode := strings.Split(binding.TransactionSender, "@")[1]
+			senderNode, err := pldtypes.PrivateIdentityLocator(binding.TransactionSender).Node(ctx, false)
+			if err != nil {
+				return err
+			}
 			if senderNode != sMgr.nodeName {
 				log.L(sMgr.ctx).Debugf("Send public TX to %s", binding.TransactionSender)
 				// Send reliable message to the node under the current DBTX

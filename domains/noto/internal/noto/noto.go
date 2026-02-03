@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sync"
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
@@ -40,6 +41,33 @@ import (
 	"github.com/hyperledger/firefly-signer/pkg/ethtypes"
 	"github.com/hyperledger/firefly-signer/pkg/secp256k1"
 )
+
+// rawDataCache stores raw user data from decoded transaction data.
+// This is used to pass data from event handlers to BuildReceipt when
+// info states are not available (e.g., for public unlocks via atoms).
+var (
+	rawDataCache      = make(map[string]pldtypes.HexBytes)
+	rawDataCacheMutex sync.RWMutex
+)
+
+// storeRawDataForReceipt stores raw user data that can be retrieved during receipt building.
+func storeRawDataForReceipt(txID string, data pldtypes.HexBytes) {
+	if len(data) == 0 {
+		return
+	}
+	rawDataCacheMutex.Lock()
+	defer rawDataCacheMutex.Unlock()
+	rawDataCache[txID] = data
+}
+
+// retrieveRawDataForReceipt retrieves and removes raw user data stored for receipt building.
+func retrieveRawDataForReceipt(txID string) pldtypes.HexBytes {
+	rawDataCacheMutex.Lock()
+	defer rawDataCacheMutex.Unlock()
+	data := rawDataCache[txID]
+	delete(rawDataCache, txID)
+	return data
+}
 
 // ParamValidator defines the interface for validating transaction parameters
 type ParamValidator interface {
@@ -850,13 +878,31 @@ func (n *Noto) parseCoinList(ctx context.Context, label string, states []*protot
 
 func (n *Noto) encodeTransactionData(ctx context.Context, domainConfig *types.NotoParsedConfig, transaction *prototk.TransactionSpecification, infoStates []*prototk.EndorsableState) (pldtypes.HexBytes, error) {
 	if domainConfig.IsV1() {
-		return n.encodeTransactionDataV1(ctx, infoStates)
+		return n.encodeTransactionDataV1(ctx, infoStates, nil)
 	} else {
-		return n.encodeTransactionDataV0(ctx, transaction, infoStates)
+		return n.encodeTransactionDataV0(ctx, transaction, infoStates, nil)
 	}
 }
 
-func (n *Noto) encodeTransactionDataV0(ctx context.Context, transaction *prototk.TransactionSpecification, infoStates []*prototk.EndorsableState) (pldtypes.HexBytes, error) {
+// encodeTransactionDataWithRawData encodes transaction data with raw user data included inline.
+// This is used for unlock calls where info states won't be available during event processing.
+func (n *Noto) encodeTransactionDataWithRawData(ctx context.Context, variant pldtypes.HexUint64, transactionID pldtypes.Bytes32, rawData pldtypes.HexBytes) (pldtypes.HexBytes, error) {
+	if variant == types.NotoVariantDefault {
+		return n.encodeTransactionDataV1(ctx, nil, rawData)
+	} else {
+		return n.encodeTransactionDataV0WithTxID(ctx, transactionID, nil, rawData)
+	}
+}
+
+func (n *Noto) encodeTransactionDataV0(ctx context.Context, transaction *prototk.TransactionSpecification, infoStates []*prototk.EndorsableState, rawData pldtypes.HexBytes) (pldtypes.HexBytes, error) {
+	transactionID, err := pldtypes.ParseBytes32Ctx(ctx, transaction.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+	return n.encodeTransactionDataV0WithTxID(ctx, transactionID, infoStates, rawData)
+}
+
+func (n *Noto) encodeTransactionDataV0WithTxID(ctx context.Context, transactionID pldtypes.Bytes32, infoStates []*prototk.EndorsableState, rawData pldtypes.HexBytes) (pldtypes.HexBytes, error) {
 	var err error
 	stateIDs := make([]pldtypes.Bytes32, len(infoStates))
 	for i, state := range infoStates {
@@ -866,13 +912,15 @@ func (n *Noto) encodeTransactionDataV0(ctx context.Context, transaction *prototk
 		}
 	}
 
-	transactionID, err := pldtypes.ParseBytes32Ctx(ctx, transaction.TransactionId)
-	if err != nil {
-		return nil, err
+	// Ensure data is not nil (ABI encoder requires the field)
+	if rawData == nil {
+		rawData = pldtypes.HexBytes{}
 	}
+
 	dataValues := &types.NotoTransactionData_V0{
 		TransactionID: transactionID,
 		InfoStates:    stateIDs,
+		Data:          rawData,
 	}
 	dataJSON, err := json.Marshal(dataValues)
 	if err != nil {
@@ -889,7 +937,7 @@ func (n *Noto) encodeTransactionDataV0(ctx context.Context, transaction *prototk
 	return data, nil
 }
 
-func (n *Noto) encodeTransactionDataV1(ctx context.Context, infoStates []*prototk.EndorsableState) (pldtypes.HexBytes, error) {
+func (n *Noto) encodeTransactionDataV1(ctx context.Context, infoStates []*prototk.EndorsableState, rawData pldtypes.HexBytes) (pldtypes.HexBytes, error) {
 	var err error
 	stateIDs := make([]pldtypes.Bytes32, len(infoStates))
 	for i, state := range infoStates {
@@ -899,8 +947,14 @@ func (n *Noto) encodeTransactionDataV1(ctx context.Context, infoStates []*protot
 		}
 	}
 
+	// Ensure data is not nil (ABI encoder requires the field)
+	if rawData == nil {
+		rawData = pldtypes.HexBytes{}
+	}
+
 	dataValues := &types.NotoTransactionData_V1{
 		InfoStates: stateIDs,
+		Data:       rawData,
 	}
 	dataJSON, err := json.Marshal(dataValues)
 	if err != nil {
@@ -922,6 +976,7 @@ func (n *Noto) decodeTransactionDataV0(ctx context.Context, data pldtypes.HexByt
 	if len(data) >= 4 {
 		dataPrefix := data[0:4]
 		if dataPrefix.String() == types.NotoTransactionDataID_V0.String() {
+			// Try decoding with the new format (with data field) first
 			dataDecoded, err := types.NotoTransactionDataABI_V0.DecodeABIDataCtx(ctx, data, 4)
 			if err == nil {
 				var dataJSON []byte
@@ -931,7 +986,18 @@ func (n *Noto) decodeTransactionDataV0(ctx context.Context, data pldtypes.HexByt
 				}
 			}
 			if err != nil {
-				return nil, err
+				// Fall back to legacy format (without data field) for backward compatibility
+				dataDecoded, err = types.NotoTransactionDataABI_V0_Legacy.DecodeABIDataCtx(ctx, data, 4)
+				if err == nil {
+					var dataJSON []byte
+					dataJSON, err = dataDecoded.JSON()
+					if err == nil {
+						err = json.Unmarshal(dataJSON, &dataValues)
+					}
+				}
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -948,6 +1014,7 @@ func (n *Noto) decodeTransactionDataV1(ctx context.Context, data pldtypes.HexByt
 	if len(data) >= 4 {
 		dataPrefix := data[0:4]
 		if dataPrefix.String() == types.NotoTransactionDataID_V1.String() {
+			// Try decoding with the new format (with data field) first
 			dataDecoded, err := types.NotoTransactionDataABI_V1.DecodeABIDataCtx(ctx, data, 4)
 			if err == nil {
 				var dataJSON []byte
@@ -957,7 +1024,18 @@ func (n *Noto) decodeTransactionDataV1(ctx context.Context, data pldtypes.HexByt
 				}
 			}
 			if err != nil {
-				return nil, err
+				// Fall back to legacy format (without data field) for backward compatibility
+				dataDecoded, err = types.NotoTransactionDataABI_V1_Legacy.DecodeABIDataCtx(ctx, data, 4)
+				if err == nil {
+					var dataJSON []byte
+					dataJSON, err = dataDecoded.JSON()
+					if err == nil {
+						err = json.Unmarshal(dataJSON, &dataValues)
+					}
+				}
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

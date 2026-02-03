@@ -75,10 +75,12 @@ type NotoConfigData_V0 struct {
 type NotoTransactionData_V0 struct {
 	TransactionID pldtypes.Bytes32   `json:"transactionId"` // in V0 the data was the primary place for the transaction ID, but there was some duplication with parameters. Moved to parameter consistently in V1.
 	InfoStates    []pldtypes.Bytes32 `json:"infoStates"`
+	Data          pldtypes.HexBytes  `json:"data"` // Raw user data - used when info states are not available (e.g., public unlock via atom)
 }
 
 type NotoTransactionData_V1 struct {
 	InfoStates []pldtypes.Bytes32 `json:"infoStates"`
+	Data       pldtypes.HexBytes  `json:"data"` // Raw user data - used when info states are not available (e.g., public unlock via atom)
 }
 
 // This is the structure we parse the config into in InitConfig and gets passed back to us on every call
@@ -116,12 +118,27 @@ type PentePrivateGroup struct {
 	Members []string         `json:"members"`
 }
 
+// NotoTransactionDataABI_V0 is the new format with raw data field (for encoding)
 var NotoTransactionDataABI_V0 = &abi.ParameterArray{
+	{Name: "transactionId", Type: "bytes32"},
+	{Name: "infoStates", Type: "bytes32[]"},
+	{Name: "data", Type: "bytes"},
+}
+
+// NotoTransactionDataABI_V0_Legacy is the old format without raw data field (for decoding old data)
+var NotoTransactionDataABI_V0_Legacy = &abi.ParameterArray{
 	{Name: "transactionId", Type: "bytes32"},
 	{Name: "infoStates", Type: "bytes32[]"},
 }
 
+// NotoTransactionDataABI_V1 is the new format with raw data field (for encoding)
 var NotoTransactionDataABI_V1 = &abi.ParameterArray{
+	{Name: "infoStates", Type: "bytes32[]"},
+	{Name: "data", Type: "bytes"},
+}
+
+// NotoTransactionDataABI_V1_Legacy is the old format without raw data field (for decoding old data)
+var NotoTransactionDataABI_V1_Legacy = &abi.ParameterArray{
 	{Name: "infoStates", Type: "bytes32[]"},
 }
 

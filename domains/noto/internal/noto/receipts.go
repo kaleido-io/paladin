@@ -39,6 +39,12 @@ func (n *Noto) BuildReceipt(ctx context.Context, req *prototk.BuildReceiptReques
 		}
 		receipt.Data = info.Data
 		variant = info.Variant
+	} else {
+		// No info states available - check if raw data was stored during event handling
+		// (e.g., for public unlocks via atoms)
+		if rawData := retrieveRawDataForReceipt(req.TransactionId); len(rawData) > 0 {
+			receipt.Data = rawData
+		}
 	}
 
 	lockInfoStates := n.filterSchema(req.InfoStates, []string{n.lockInfoSchemaV0.Id, n.lockInfoSchemaV1.Id})
@@ -89,6 +95,18 @@ func (n *Noto) BuildReceipt(ctx context.Context, req *prototk.BuildReceiptReques
 		var paramsJSON []byte
 		if variant == types.NotoVariantDefault {
 			interfaceABI = n.getInterfaceABI(types.NotoVariantDefault)
+
+			// Encode the raw user data in transaction data format so it can be decoded
+			// when the unlock is executed (e.g., by an atom as a public transaction)
+			var unlockTxId pldtypes.Bytes32
+			if receipt.LockInfo.UnlockTxId != nil {
+				unlockTxId = *receipt.LockInfo.UnlockTxId
+			}
+			encodedData, err := n.encodeTransactionDataWithRawData(ctx, variant, unlockTxId, receipt.Data)
+			if err != nil {
+				return nil, err
+			}
+
 			receipt.LockInfo.UnlockParams = map[string]any{
 				"txId":   receipt.LockInfo.UnlockTxId,
 				"lockId": receipt.LockInfo.LockID,
@@ -97,23 +115,31 @@ func (n *Noto) BuildReceipt(ctx context.Context, req *prototk.BuildReceiptReques
 					LockedOutputs: endorsableStateIDs(n.filterSchema(req.InfoStates, []string{n.lockedCoinSchema.Id})),
 					Outputs:       endorsableStateIDs(n.filterSchema(req.InfoStates, []string{n.coinSchema.Id})),
 					Signature:     pldtypes.HexBytes{},
-					Data:          receipt.Data,
+					Data:          encodedData,
 				},
 			}
 			paramsJSON, err = json.Marshal(receipt.LockInfo.UnlockParams)
 		} else {
 			interfaceABI = n.getInterfaceABI(types.NotoVariantLegacy)
-			unlockTxId := pldtypes.Bytes32UUIDFirst16(uuid.New()).String()
+			unlockTxId := pldtypes.Bytes32UUIDFirst16(uuid.New())
 			if receipt.LockInfo != nil && receipt.LockInfo.UnlockTxId != nil && !receipt.LockInfo.UnlockTxId.IsZero() {
-				unlockTxId = receipt.LockInfo.UnlockTxId.HexString0xPrefix()
+				unlockTxId = *receipt.LockInfo.UnlockTxId
 			}
+
+			// Encode the raw user data in transaction data format so it can be decoded
+			// when the unlock is executed (e.g., by an atom as a public transaction)
+			encodedData, err := n.encodeTransactionDataWithRawData(ctx, variant, unlockTxId, receipt.Data)
+			if err != nil {
+				return nil, err
+			}
+
 			receipt.LockInfo.UnlockParams = map[string]any{
-				"txId":          unlockTxId,
+				"txId":          unlockTxId.HexString0xPrefix(),
 				"lockedInputs":  endorsableStateIDs(n.filterSchema(req.ReadStates, []string{n.lockedCoinSchema.Id})),
 				"lockedOutputs": endorsableStateIDs(n.filterSchema(req.InfoStates, []string{n.lockedCoinSchema.Id})),
 				"outputs":       endorsableStateIDs(n.filterSchema(req.InfoStates, []string{n.coinSchema.Id})),
 				"signature":     pldtypes.HexBytes{},
-				"data":          receipt.Data,
+				"data":          encodedData,
 			}
 			paramsJSON, err = json.Marshal(receipt.LockInfo.UnlockParams)
 		}

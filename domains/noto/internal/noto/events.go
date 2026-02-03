@@ -101,6 +101,12 @@ func (n *Noto) handleV1Event(ctx context.Context, ev *prototk.OnChainEvent, res 
 			res.ConfirmedStates = append(res.ConfirmedStates, n.parseStatesFromEvent(unlock.TxId, unlock.LockedOutputs)...)
 			res.ConfirmedStates = append(res.ConfirmedStates, n.parseStatesFromEvent(unlock.TxId, unlock.Outputs)...)
 
+			// Store raw data for receipt building if no info states are available
+			// (e.g., for public unlocks via atoms)
+			if len(txData.InfoStates) == 0 && len(txData.Data) > 0 {
+				storeRawDataForReceipt(unlock.TxId.String(), txData.Data)
+			}
+
 			var domainConfig *types.NotoParsedConfig
 			err = json.Unmarshal([]byte(req.ContractInfo.ContractConfigJson), &domainConfig)
 			if err != nil {

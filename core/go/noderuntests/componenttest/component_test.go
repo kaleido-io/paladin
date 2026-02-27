@@ -27,8 +27,10 @@ import (
 	"time"
 
 	"github.com/LFDT-Paladin/paladin/config/pkg/confutil"
+	"github.com/LFDT-Paladin/paladin/config/pkg/pldconf"
 	testutils "github.com/LFDT-Paladin/paladin/core/noderuntests/pkg"
 	"github.com/LFDT-Paladin/paladin/core/noderuntests/pkg/domains"
+	"github.com/google/uuid"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
@@ -63,6 +65,14 @@ func newInstanceForComponentTestingWithDomainRegistry(t *testing.T) testutils.Co
 
 func startNode(t *testing.T, party testutils.Party, domainConfig interface{}) {
 	party.Start(t, domainConfig, CONFIG_PATHS[party.GetNodeName()], false)
+}
+
+func newSingleNodePartyForComponentTestingWithSequencerConfig(t *testing.T, nodeName string, sequencerConfig *pldconf.SequencerConfig) testutils.Party {
+	domainRegistryAddress := deployDomainRegistry(t, nodeName)
+	party := testutils.NewPartyForTestingWithNodeName(t, nodeName, nodeName, domainRegistryAddress)
+	party.OverrideSequencerConfig(sequencerConfig)
+	startNode(t, party, nil)
+	return party
 }
 
 func TestRunSimpleStorageEthTransaction(t *testing.T) {
@@ -466,7 +476,8 @@ func TestPrivateTransactionsDeployAndExecute(t *testing.T) {
                     "name": "FakeToken1",
                     "symbol": "FT1",
 					"endorsementMode": "` + domains.SelfEndorsement + `",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
                 }`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -521,7 +532,8 @@ func TestPrivateTransactionsMintThenTransfer(t *testing.T) {
                     "name": "FakeToken1",
                     "symbol": "FT1",
 					"endorsementMode": "` + domains.SelfEndorsement + `",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
                 }`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -577,7 +589,8 @@ func TestPrivateTransactionRevertedAssembleFailed(t *testing.T) {
 					"name": "FakeToken1",
 					"symbol": "FT1",
 					"endorsementMode": "` + domains.SelfEndorsement + `",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
 				}`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -657,7 +670,8 @@ func TestDeployOnOneNodeInvokeOnAnother(t *testing.T) {
 			"name": "FakeToken1",
 			"symbol": "FT1",
 			"endorsementMode": "` + domains.SelfEndorsement + `",
-			"hookAddress": ""
+			"hookAddress": "",
+			"amountVisible": false
 		}`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -872,7 +886,8 @@ func TestNotaryDelegated(t *testing.T) {
 					"name": "FakeToken1",
 					"symbol": "FT1",
 					"endorsementMode": "NotaryEndorsement",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
 				}`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -966,7 +981,8 @@ func TestNotaryDelegatedPrepare(t *testing.T) {
 					"symbol": "FT1",
 					"endorsementMode": "NotaryEndorsement",
 					"deleteSubmitToSender": true,
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
 				}`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -1056,7 +1072,8 @@ func TestSingleNodeSelfEndorseConcurrentSpends(t *testing.T) {
                     "name": "FakeToken1",
                     "symbol": "FT1",
 					"endorsementMode": "` + domains.SelfEndorsement + `",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
                 }`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -1151,7 +1168,8 @@ func TestSingleNodeSelfEndorseSeriesOfTransfers(t *testing.T) {
                     "name": "FakeToken1",
                     "symbol": "FT1",
 					"endorsementMode": "` + domains.SelfEndorsement + `",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
                 }`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())
@@ -1186,6 +1204,7 @@ func TestSingleNodeSelfEndorseSeriesOfTransfers(t *testing.T) {
                 "to": "wallets.org1.aaaaaa",
                 "amount": "99"
             }`)).
+		DependsOn([]uuid.UUID{*tx1.ID()}).
 		Send()
 	require.NoError(t, tx2.Error())
 
@@ -1202,6 +1221,7 @@ func TestSingleNodeSelfEndorseSeriesOfTransfers(t *testing.T) {
                 "to": "wallets.org1.bbbbbb",
                 "amount": "98"
             }`)).
+		DependsOn([]uuid.UUID{*tx2.ID()}).
 		Send()
 	require.NoError(t, tx3.Error())
 
@@ -1250,7 +1270,8 @@ func TestNotaryEndorseConcurrentSpends(t *testing.T) {
 					"name": "FakeToken1",
 					"symbol": "FT1",
 					"endorsementMode": "NotaryEndorsement",
-					"hookAddress": ""
+					"hookAddress": "",
+					"amountVisible": false
 				}`)).
 		Send().Wait(transactionLatencyThreshold(t))
 	require.NoError(t, deployTx.Error())

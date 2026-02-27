@@ -34,8 +34,8 @@ import (
 )
 
 type TransportWriter interface {
-	StartLoopbackWriter(ctx context.Context)
-	StopLoopbackWriter()
+	StartLoopbackWriter()
+	WaitForDone(ctx context.Context)
 	SendDelegationRequest(ctx context.Context, coordinatorNode string, transactions []*components.PrivateTransaction, blockHeight uint64) error
 	SendDelegationRequestAcknowledgment(ctx context.Context, delegatingNodeName string, delegationId string, delegateNodeName string, transactionID string) error
 	SendEndorsementRequest(ctx context.Context, txID uuid.UUID, idempotencyKey uuid.UUID, party string, attRequest *prototk.AttestationRequest, transactionSpecification *prototk.TransactionSpecification, verifiers []*prototk.ResolvedVerifier, signatures []*prototk.AttestationResult, inputStates []*prototk.EndorsableState, readStates []*prototk.EndorsableState, outputStates []*prototk.EndorsableState, infoStates []*prototk.EndorsableState) error
@@ -50,38 +50,40 @@ type TransportWriter interface {
 	SendPreDispatchRequest(ctx context.Context, originatorNode string, idempotencyKey uuid.UUID, transactionSpecification *prototk.TransactionSpecification, hash *pldtypes.Bytes32) error
 	SendPreDispatchResponse(ctx context.Context, transactionOriginator string, idempotencyKey uuid.UUID, transactionSpecification *prototk.TransactionSpecification) error
 	SendDispatched(ctx context.Context, transactionOriginator string, idempotencyKey uuid.UUID, transactionSpecification *prototk.TransactionSpecification) error
+	SendTransactionUnknown(ctx context.Context, coordinatorNode string, txID uuid.UUID) error
 }
 
-func NewTransportWriter(contractAddress *pldtypes.EthAddress, nodeID string, transportManager components.TransportManager, loopbackHandler func(ctx context.Context, message *components.ReceivedMessage)) TransportWriter {
+func NewTransportWriter(ctx context.Context, contractAddress *pldtypes.EthAddress, nodeID string, transportManager components.TransportManager, loopbackHandler func(ctx context.Context, message *components.ReceivedMessage)) TransportWriter {
 	loopbackTransport := NewLoopbackTransportWriter(loopbackHandler)
 	return &transportWriter{
+		ctx:                   ctx,
 		nodeID:                nodeID,
 		transportManager:      transportManager,
 		loopbackTransport:     loopbackTransport,
 		contractAddress:       contractAddress,
-		stopLoopbackSender:    make(chan struct{}),
 		loopbackSenderStopped: make(chan struct{}),
 	}
 }
 
 type transportWriter struct {
+	ctx                   context.Context
 	nodeID                string
 	transportManager      components.TransportManager
 	loopbackTransport     LoopbackTransportManager
 	contractAddress       *pldtypes.EthAddress
-	stopLoopbackSender    chan struct{}
 	loopbackSenderStopped chan struct{}
 }
 
-func (tw *transportWriter) StartLoopbackWriter(ctx context.Context) {
+func (tw *transportWriter) StartLoopbackWriter() {
 	// We use a separate goroutine to send loopback messages to free up the event loops.
-	go tw.loopbackSender(ctx)
+	go tw.loopbackSender()
 }
 
-func (tw *transportWriter) StopLoopbackWriter() {
-	// We use a separate goroutine to send loopback messages to free up the event loops.
-	tw.stopLoopbackSender <- struct{}{}
-	<-tw.loopbackSenderStopped
+func (tw *transportWriter) WaitForDone(ctx context.Context) {
+	select {
+	case <-tw.loopbackSenderStopped:
+	case <-ctx.Done():
+	}
 }
 
 func (tw *transportWriter) SendDelegationRequest(
@@ -623,6 +625,40 @@ func (tw *transportWriter) SendDispatched(ctx context.Context, transactionOrigin
 	return err
 }
 
+// SendTransactionUnknown is called by an originator when it receives a message for a transaction
+// it doesn't recognize. The most likely cause is that the transaction reached a terminal state
+// (e.g. reverted during assembly) but the response to the coordinator was lost, and the
+// transaction has since been removed from memory on the originator after cleanup.
+func (tw *transportWriter) SendTransactionUnknown(ctx context.Context, coordinatorNode string, txID uuid.UUID) error {
+	log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_MSGTX)).Warnf("transport writer sending transaction unknown message for tx %s to coordinator %s", txID, coordinatorNode)
+
+	if tw.contractAddress == nil {
+		err := i18n.NewError(ctx, msgs.MsgSequencerInternalError, "attempt to send transaction unknown without specifying contract address")
+		return err
+	}
+
+	txUnknown := &engineProto.TransactionUnknown{
+		Id:              uuid.New().String(),
+		TransactionId:   txID.String(),
+		ContractAddress: tw.contractAddress.HexString(),
+	}
+	txUnknownBytes, err := proto.Marshal(txUnknown)
+	if err != nil {
+		log.L(ctx).Errorf("error marshalling transaction unknown message: %s", err)
+		return err
+	}
+
+	if err = tw.send(ctx, &components.FireAndForgetMessageSend{
+		MessageType: MessageType_TransactionUnknown,
+		Payload:     txUnknownBytes,
+		Component:   prototk.PaladinMsg_TRANSACTION_ENGINE,
+		Node:        coordinatorNode,
+	}); err != nil {
+		log.L(ctx).Errorf("error sending transaction unknown message: %s", err)
+	}
+	return err
+}
+
 func (tw *transportWriter) send(ctx context.Context, payload *components.FireAndForgetMessageSend) error {
 	if payload.Node == "" {
 		err := i18n.NewError(ctx, msgs.MsgSequencerInternalError, "attempt to send message without specifying destination node name")
@@ -633,8 +669,13 @@ func (tw *transportWriter) send(ctx context.Context, payload *components.FireAnd
 	if payload.Node == "" || payload.Node == tw.transportManager.LocalNodeName() {
 		// "Localhost" loopback
 		log.L(ctx).Debugf("sending %s to loopback interface", payload.MessageType)
-
-		tw.loopbackTransport.LoopbackQueue() <- payload
+		select {
+		case tw.loopbackTransport.LoopbackQueue() <- payload:
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-tw.ctx.Done():
+			return tw.ctx.Err()
+		}
 
 		return nil
 	}
@@ -645,23 +686,23 @@ func (tw *transportWriter) send(ctx context.Context, payload *components.FireAnd
 
 // Run the loopback transport in a goroutine to avoid blocking the event loop. This is important for the
 // channel-based event queue to ensure the queue consumer is not blocked when we happen to be sending
-// to ourselves. We have a queue of 1 to ensure FIFO order within a node for local fire and forget messages.
-func (tw *transportWriter) loopbackSender(ctx context.Context) {
+// to ourselves.
+func (tw *transportWriter) loopbackSender() {
 	defer close(tw.loopbackSenderStopped)
 	for {
 		select {
 		case queuedPayload, ok := <-tw.loopbackTransport.LoopbackQueue():
 			if !ok {
-				log.L(ctx).Infof("shutting down loopback sender for contract %s", tw.contractAddress.String())
+				log.L(tw.ctx).Infof("shutting down loopback sender for contract %s", tw.contractAddress.String())
 				return
 			}
 
-			err := tw.loopbackTransport.Send(ctx, queuedPayload)
+			err := tw.loopbackTransport.Send(tw.ctx, queuedPayload)
 			if err != nil {
-				log.L(ctx).Errorf("error sending %s to loopback interface for contract %s: %s", queuedPayload.MessageType, tw.contractAddress.String(), err)
+				log.L(tw.ctx).Errorf("error sending %s to loopback interface for contract %s: %s", queuedPayload.MessageType, tw.contractAddress.String(), err)
 			}
-		case <-tw.stopLoopbackSender:
-			log.L(ctx).Infof("shutting down loopback sender for contract %s", tw.contractAddress.String())
+		case <-tw.ctx.Done():
+			log.L(tw.ctx).Infof("shutting down loopback sender for contract %s", tw.contractAddress.String())
 			return
 		}
 	}

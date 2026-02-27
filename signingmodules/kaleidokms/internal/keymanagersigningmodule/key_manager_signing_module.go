@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-resty/resty/v2"
-
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldresty"
@@ -46,7 +44,7 @@ type keyManagerSigningModule struct {
 
 	conf       *Config
 	name       string
-	httpClient *resty.Client
+	httpClient *pldresty.PLDClient
 
 	keystoreName string
 	folderPath   string
@@ -252,6 +250,9 @@ func (rsm *keyManagerSigningModule) ListKeys(ctx context.Context, req *prototk.L
 }
 
 func (rsm *keyManagerSigningModule) Close(ctx context.Context, req *prototk.CloseRequest) (*prototk.CloseResponse, error) {
+	if rsm.httpClient != nil {
+		rsm.httpClient.Close()
+	}
 	return &prototk.CloseResponse{}, nil
 }
 

@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-resty/resty/v2"
-
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldresty"
@@ -44,10 +42,9 @@ type keyManagerSigningModule struct {
 	bgCtx     context.Context
 	callbacks plugintk.SigningModuleCallbacks
 
-	conf              *Config
-	name              string
-	httpClient        *resty.Client
-	httpClientCloseFn func()
+	conf       *Config
+	name       string
+	httpClient *pldresty.PLDClient
 
 	keystoreName string
 	folderPath   string
@@ -88,13 +85,12 @@ func (rsm *keyManagerSigningModule) ConfigureSigningModule(ctx context.Context, 
 	}
 
 	if rsm.conf.HTTPConfig != nil {
-		httpClient, httpClientCloseFn, err := pldresty.New(ctx, rsm.conf.HTTPConfig)
+		httpClient, err := pldresty.New(ctx, rsm.conf.HTTPConfig)
 		if err != nil {
 			return nil, err
 		}
 
 		rsm.httpClient = httpClient
-		rsm.httpClientCloseFn = httpClientCloseFn
 	}
 
 	return &prototk.ConfigureSigningModuleResponse{}, nil
@@ -254,8 +250,8 @@ func (rsm *keyManagerSigningModule) ListKeys(ctx context.Context, req *prototk.L
 }
 
 func (rsm *keyManagerSigningModule) Close(ctx context.Context, req *prototk.CloseRequest) (*prototk.CloseResponse, error) {
-	if rsm.httpClientCloseFn != nil {
-		rsm.httpClientCloseFn()
+	if rsm.httpClient != nil {
+		rsm.httpClient.Close()
 	}
 	return &prototk.CloseResponse{}, nil
 }

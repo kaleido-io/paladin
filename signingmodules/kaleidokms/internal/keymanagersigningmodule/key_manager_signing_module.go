@@ -44,9 +44,10 @@ type keyManagerSigningModule struct {
 	bgCtx     context.Context
 	callbacks plugintk.SigningModuleCallbacks
 
-	conf       *Config
-	name       string
-	httpClient *resty.Client
+	conf              *Config
+	name              string
+	httpClient        *resty.Client
+	httpClientCloseFn func()
 
 	keystoreName string
 	folderPath   string
@@ -87,12 +88,13 @@ func (rsm *keyManagerSigningModule) ConfigureSigningModule(ctx context.Context, 
 	}
 
 	if rsm.conf.HTTPConfig != nil {
-		httpClient, err := pldresty.New(ctx, rsm.conf.HTTPConfig)
+		httpClient, httpClientCloseFn, err := pldresty.New(ctx, rsm.conf.HTTPConfig)
 		if err != nil {
 			return nil, err
 		}
 
 		rsm.httpClient = httpClient
+		rsm.httpClientCloseFn = httpClientCloseFn
 	}
 
 	return &prototk.ConfigureSigningModuleResponse{}, nil
@@ -252,6 +254,9 @@ func (rsm *keyManagerSigningModule) ListKeys(ctx context.Context, req *prototk.L
 }
 
 func (rsm *keyManagerSigningModule) Close(ctx context.Context, req *prototk.CloseRequest) (*prototk.CloseResponse, error) {
+	if rsm.httpClientCloseFn != nil {
+		rsm.httpClientCloseFn()
+	}
 	return &prototk.CloseResponse{}, nil
 }
 

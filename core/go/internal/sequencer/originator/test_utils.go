@@ -76,11 +76,11 @@ type OriginatorBuilderForTesting struct {
 	transactionBuilders []*transaction.TransactionBuilderForTesting
 	metrics             metrics.DistributedSequencerMetrics
 	sequencerConfig     *pldconf.SequencerConfig
+	clock               common.Clock
 }
 
 type OriginatorDependencyMocks struct {
 	SentMessageRecorder *SentMessageRecorder
-	Clock               *common.FakeClockForTesting
 	EngineIntegration   *common.FakeEngineIntegrationForTesting
 }
 
@@ -89,6 +89,7 @@ func NewOriginatorBuilderForTesting(state State) *OriginatorBuilderForTesting {
 		state:           state,
 		metrics:         metrics.InitMetrics(context.Background(), prometheus.NewRegistry()),
 		sequencerConfig: &pldconf.SequencerDefaults,
+		clock:           common.RealClock(),
 	}
 }
 
@@ -109,6 +110,11 @@ func (b *OriginatorBuilderForTesting) CommitteeMembers(committeeMembers ...strin
 
 func (b *OriginatorBuilderForTesting) TransactionBuilders(builders ...*transaction.TransactionBuilderForTesting) *OriginatorBuilderForTesting {
 	b.transactionBuilders = builders
+	return b
+}
+
+func (b *OriginatorBuilderForTesting) Clock(clock common.Clock) *OriginatorBuilderForTesting {
+	b.clock = clock
 	return b
 }
 
@@ -143,7 +149,6 @@ func (b *OriginatorBuilderForTesting) Build(ctx context.Context) (*originator, *
 	}
 	mocks := &OriginatorDependencyMocks{
 		SentMessageRecorder: NewSentMessageRecorder(),
-		Clock:               &common.FakeClockForTesting{},
 		EngineIntegration:   &common.FakeEngineIntegrationForTesting{},
 	}
 
@@ -155,7 +160,7 @@ func (b *OriginatorBuilderForTesting) Build(ctx context.Context) (*originator, *
 		buildCtx,
 		*b.nodeName,
 		mocks.SentMessageRecorder,
-		mocks.Clock,
+		b.clock,
 		mocks.EngineIntegration,
 		b.contractAddress,
 		&pldconf.SequencerDefaults,
@@ -169,10 +174,6 @@ func (b *OriginatorBuilderForTesting) Build(ctx context.Context) (*originator, *
 		txID := tx.GetID()
 		originator.transactionsByID[txID] = tx
 		originator.transactionsOrdered = append(originator.transactionsOrdered, tx)
-		switch tx.GetCurrentState() {
-		case transaction.State_Submitted:
-			originator.submittedTransactionsByHash[*tx.GetLatestSubmissionHash()] = &txID
-		}
 	}
 
 	if err != nil {

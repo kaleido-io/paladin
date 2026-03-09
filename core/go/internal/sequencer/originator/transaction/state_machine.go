@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/statemachine"
 )
@@ -157,7 +158,7 @@ var stateDefinitionsMap = StateDefinitions{
 		},
 	},
 	State_Assembling: {
-		OnTransitionTo: action_AssembleAndSign,
+		OnTransitionTo: []ActionRule{{Action: action_AssembleAndSign}},
 		Events: map[EventType]EventHandler{
 			Event_ConfirmedSuccess: {
 				Transitions: []Transition{{
@@ -168,8 +169,8 @@ var stateDefinitionsMap = StateDefinitions{
 				Actions: []ActionRule{{Action: action_AssembleAndSignSuccess}},
 				Transitions: []Transition{
 					{
-						To:     State_Endorsement_Gathering,
-						Action: action_SendAssembleSuccessResponse,
+						To:      State_Endorsement_Gathering,
+						Actions: []ActionRule{{Action: action_SendAssembleSuccessResponse}},
 					},
 				},
 			},
@@ -177,8 +178,8 @@ var stateDefinitionsMap = StateDefinitions{
 				Actions: []ActionRule{{Action: action_AssembleRevert}},
 				Transitions: []Transition{
 					{
-						To:     State_Reverted,
-						Action: action_SendAssembleRevertResponse,
+						To:      State_Reverted,
+						Actions: []ActionRule{{Action: action_SendAssembleRevertResponse}},
 					},
 				},
 			},
@@ -186,8 +187,8 @@ var stateDefinitionsMap = StateDefinitions{
 				Actions: []ActionRule{{Action: action_AssemblePark}},
 				Transitions: []Transition{
 					{
-						To:     State_Parked,
-						Action: action_SendAssembleParkResponse,
+						To:      State_Parked,
+						Actions: []ActionRule{{Action: action_SendAssembleParkResponse}},
 					},
 				},
 			},
@@ -208,7 +209,7 @@ var stateDefinitionsMap = StateDefinitions{
 				Actions: []ActionRule{
 					{Action: action_AssembleRequestReceived},
 					{
-						If:     statemachine.Not(guard_AssembleRequestMatchesPreviousResponse),
+						If:     statemachine.GuardNot(guard_AssembleRequestMatchesPreviousResponse),
 						Action: action_AssembleAndSign,
 					},
 					{
@@ -238,7 +239,7 @@ var stateDefinitionsMap = StateDefinitions{
 					}},
 				Transitions: []Transition{{
 					//This is different from the previous request. The coordinator must have decided that it was necessary to re-assemble with different available states so we go back to assembling state for a do-over
-					If: statemachine.Not(guard_AssembleRequestMatchesPreviousResponse),
+					If: statemachine.GuardNot(guard_AssembleRequestMatchesPreviousResponse),
 					To: State_Assembling,
 				}},
 			},
@@ -255,8 +256,8 @@ var stateDefinitionsMap = StateDefinitions{
 				Actions:   []ActionRule{{Action: action_PreDispatchRequestReceived}},
 				Transitions: []Transition{
 					{
-						To:     State_Prepared,
-						Action: action_SendPreDispatchResponse,
+						To:      State_Prepared,
+						Actions: []ActionRule{{Action: action_SendPreDispatchResponse}},
 					},
 				},
 			},
@@ -293,7 +294,7 @@ var stateDefinitionsMap = StateDefinitions{
 					}},
 				Transitions: []Transition{{
 					//This is different from the previous request. The coordinator must have decided that it was necessary to re-assemble with different available states so we go back to assembling state for a do-over
-					If: statemachine.Not(guard_AssembleRequestMatchesPreviousResponse),
+					If: statemachine.GuardNot(guard_AssembleRequestMatchesPreviousResponse),
 					To: State_Assembling,
 				}},
 			},
@@ -489,7 +490,7 @@ var stateDefinitionsMap = StateDefinitions{
 		},
 	},
 	State_Confirmed: {
-		OnTransitionTo: action_QueueFinalizeEvent,
+		OnTransitionTo: []ActionRule{{Action: action_QueueFinalizeEvent}},
 		Events: map[EventType]EventHandler{
 			Event_Finalize: {
 				Transitions: []Transition{{
@@ -499,7 +500,7 @@ var stateDefinitionsMap = StateDefinitions{
 		},
 	},
 	State_Reverted: {
-		OnTransitionTo: action_QueueFinalizeEvent,
+		OnTransitionTo: []ActionRule{{Action: action_QueueFinalizeEvent}},
 		Events: map[EventType]EventHandler{
 			Event_Finalize: {
 				Transitions: []Transition{{
@@ -541,7 +542,10 @@ func (t *OriginatorTransaction) initializeStateMachine(initialState State) {
 }
 
 func (t *OriginatorTransaction) HandleEvent(ctx context.Context, event common.Event) error {
-	return t.stateMachine.ProcessEvent(ctx, t, event)
+	// Adding the log field here means every function called by the transaction state machine will have the txID field
+	// in addition to the fields of the parent context
+	txCtx := log.WithLogField(ctx, "txID", t.pt.ID.String())
+	return t.stateMachine.ProcessEvent(txCtx, t, event)
 }
 
 func action_CoordinatorChanged(ctx context.Context, t *OriginatorTransaction, event common.Event) error {

@@ -26,15 +26,10 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/msgs"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/coordinator"
-	coordTransaction "github.com/LFDT-Paladin/paladin/core/internal/sequencer/coordinator/transaction"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/originator"
-	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/syncpoints"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/transport"
 	"github.com/LFDT-Paladin/paladin/core/pkg/persistence"
-	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
-	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
-	"github.com/google/uuid"
 )
 
 // Components needing to interact with the sequencer can make certain calls into
@@ -123,7 +118,7 @@ func (sMgr *sequencerManager) loadSequencer(ctx context.Context, dbTX persistenc
 		//double check in case another goroutine has created the sequencer while we were waiting for the write lock
 		if sMgr.sequencers[contractAddr.String()] == nil {
 
-			log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("creating sequencer for contract address %s", contractAddr.String())
+			log.L(ctx).Debugf("creating sequencer for contract address %s", contractAddr.String())
 
 			// Are we handing this off to the sequencer now?
 			// Locally we store mappings of contract address to originator/coordinator pair
@@ -157,7 +152,8 @@ func (sMgr *sequencerManager) loadSequencer(ctx context.Context, dbTX persistenc
 			// Create a 2nd domain context for assembling remote transactions
 			delegateDomainContext := sMgr.components.StateManager().NewDomainContext(sMgr.ctx, domainAPI.Domain(), contractAddr)
 
-			seqCtx, cancelCtx := context.WithCancel(sMgr.ctx)
+			seqCtx, cancelCtx := context.WithCancel(log.WithComponent(sMgr.ctx, "sequencer"))
+			seqCtx = log.WithLogField(seqCtx, "contract", contractAddr.String())
 
 			// Create a transport writer for the sequencer to communicate with sequencers on other peers
 			transportWriter := transport.NewTransportWriter(seqCtx, &contractAddr, sMgr.nodeName, sMgr.components.TransportManager(), sMgr.HandlePaladinMsg)
@@ -187,7 +183,10 @@ func (sMgr *sequencerManager) loadSequencer(ctx context.Context, dbTX persistenc
 			coordinator, err := coordinator.NewCoordinator(seqCtx,
 				&contractAddr,
 				domainAPI,
-				sMgr.components.TxManager(),
+				dCtx,
+				sMgr.components,
+				nil,
+				nil,
 				transportWriter,
 				common.RealClock(),
 				sMgr.engineIntegration,
@@ -196,10 +195,6 @@ func (sMgr *sequencerManager) loadSequencer(ctx context.Context, dbTX persistenc
 				sMgr.config,
 				sMgr.nodeName,
 				sMgr.metrics,
-				func(ctx context.Context, t *coordTransaction.CoordinatorTransaction) {
-					// A transaction is ready to dispatch. Prepare & dispatch it.
-					sMgr.dispatch(ctx, t, dCtx, transportWriter)
-				},
 				func(contractAddress *pldtypes.EthAddress, coordinatorNode string) {
 					// A new coordinator became active or was confirmed as active. It might be us or it might be another node.
 					// Update metrics and check if we need to stop one to stay within the configured max active coordinators
@@ -232,7 +227,7 @@ func (sMgr *sequencerManager) loadSequencer(ctx context.Context, dbTX persistenc
 				sMgr.sequencers[contractAddr.String()].lastTXTime = time.Now()
 			}
 
-			log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("sqncr      | %s | started", contractAddr.String()[0:8])
+			log.L(ctx).Debugf("sqncr      | %s | started", contractAddr.String()[0:8])
 		}
 	} else {
 		seq := sMgr.sequencers[contractAddr.String()]
@@ -283,178 +278,9 @@ func (sMgr *sequencerManager) getOriginatorNodesFromTx(ctx context.Context, tx *
 	return nodes, nil
 }
 
-// Once we get here the sequencer has decided we have not gone too far ahead of the currently confirmed transactions, and are OK to
-// dispatch a new transaction. There might be several transactions still in flight to the base ledger and maxDispatchAhead can be used
-// to control how "optimistic" we are about submitting newly assembled and endorsed transactions.
-func (sMgr *sequencerManager) dispatch(ctx context.Context, t *coordTransaction.CoordinatorTransaction, dCtx components.DomainContext, transportWriter transport.TransportWriter) {
-	domainAPI, err := sMgr.components.DomainManager().GetSmartContractByAddress(ctx, sMgr.components.Persistence().NOTX(), t.GetContractAddress())
-	if err != nil {
-		log.L(ctx).Errorf("error getting domain API for contract %s: %s", t.GetContractAddress().String(), err)
-		return
-	}
-
-	// Prepare the public or private transaction
-	readTX := sMgr.components.Persistence().NOTX() // no DB transaction required here
-	err = domainAPI.PrepareTransaction(dCtx, readTX, t.GetPrivateTransaction())
-	if err != nil {
-		log.L(ctx).Errorf("Error preparing transaction %s: %s", t.GetID().String(), err)
-		return
-	}
-
-	dispatchBatch := &syncpoints.DispatchBatch{
-		PublicDispatches: make([]*syncpoints.PublicDispatch, 0),
-	}
-
-	preparedTxnDistributions := make([]*components.PreparedTransactionWithRefs, 0)
-	preparedTransaction := t.GetPrivateTransaction()
-	publicTransactionsToSend := make([]*components.PrivateTransaction, 0)
-	sequence := &syncpoints.PublicDispatch{}
-	stateDistributions := make([]*components.StateDistribution, 0)
-	localStateDistributions := make([]*components.StateDistributionWithData, 0)
-
-	hasPublicTransaction := t.HasPreparedPublicTransaction()
-	hasPrivateTransaction := t.HasPreparedPrivateTransaction()
-	switch {
-	case preparedTransaction.Intent == prototk.TransactionSpecification_SEND_TRANSACTION && hasPublicTransaction && !hasPrivateTransaction:
-		log.L(ctx).Debugf("Result of transaction %s is a public transaction (gas=%d)", t.GetID(), *preparedTransaction.PreparedPublicTransaction.Gas)
-		publicTransactionsToSend = append(publicTransactionsToSend, preparedTransaction)
-		sequence.PrivateTransactionDispatches = append(sequence.PrivateTransactionDispatches, &syncpoints.DispatchPersisted{
-			PrivateTransactionID: t.GetID().String(),
-		})
-	case preparedTransaction.Intent == prototk.TransactionSpecification_SEND_TRANSACTION && hasPrivateTransaction && !hasPublicTransaction:
-		log.L(ctx).Debugf("Result of transaction %s is a chained private transaction", preparedTransaction.ID)
-		addr := t.GetContractAddress()
-		validatedPrivateTx, err := sMgr.components.TxManager().PrepareChainedPrivateTransaction(ctx, sMgr.components.Persistence().NOTX(), t.GetOriginalSender(), t.GetID(), t.GetDomain(), &addr, preparedTransaction.PreparedPrivateTransaction, pldapi.SubmitModeAuto)
-		if err != nil {
-			log.L(ctx).Errorf("error preparing transaction %s: %s", preparedTransaction.ID, err)
-			// TODO: this is just an error situation for one transaction - this function is a batch function
-			return
-		}
-		dispatchBatch.PrivateDispatches = append(dispatchBatch.PrivateDispatches, validatedPrivateTx)
-	case preparedTransaction.Intent == prototk.TransactionSpecification_PREPARE_TRANSACTION && (hasPublicTransaction || hasPrivateTransaction):
-		log.L(ctx).Debugf("Result of transaction %s is a prepared transaction public=%t private=%t", preparedTransaction.ID, hasPublicTransaction, hasPrivateTransaction)
-		preparedTransactionWithRefs := mapPreparedTransaction(preparedTransaction)
-		dispatchBatch.PreparedTransactions = append(dispatchBatch.PreparedTransactions, preparedTransactionWithRefs)
-
-		// The prepared transaction needs to end up on the node that is able to submit it.
-		preparedTxnDistributions = append(preparedTxnDistributions, preparedTransactionWithRefs)
-	default:
-		err = i18n.NewError(ctx, msgs.MsgSequencerInvalidPrepareOutcome, preparedTransaction.ID, preparedTransaction.Intent, hasPublicTransaction, hasPrivateTransaction)
-		log.L(ctx).Errorf("error preparing transaction %s: %s", preparedTransaction.ID, err)
-		return
-	}
-
-	stateDistributionBuilder := common.NewStateDistributionBuilder(sMgr.components, t.GetPrivateTransaction())
-	sds, err := stateDistributionBuilder.Build(ctx)
-	if err != nil {
-		log.L(ctx).Errorf("error getting state distributions: %s", err)
-	}
-
-	for _, sd := range sds.Remote {
-		log.L(ctx).Debugf("Adding remote state distribution %+v", sd.StateDistribution)
-		stateDistributions = append(stateDistributions, &sd.StateDistribution)
-	}
-	localStateDistributions = append(localStateDistributions, sds.Local...)
-
-	// Now we have the payloads, we can prepare the submission
-	publicTransactionEngine := sMgr.components.PublicTxManager()
-
-	// we may or may not have any transactions to send depending on the submit mode
-	if len(publicTransactionsToSend) == 0 {
-		log.L(ctx).Debugf("No public transactions to send for TX %s", t.GetID().String())
-	} else {
-		contractAddr := t.GetContractAddress()
-		signers := make([]string, len(publicTransactionsToSend))
-		for i, pt := range publicTransactionsToSend {
-			unqualifiedSigner, err := pldtypes.PrivateIdentityLocator(pt.Signer).Identity(ctx)
-			if err != nil {
-				err = i18n.WrapError(ctx, err, msgs.MsgSequencerInternalError, err)
-				log.L(ctx).Error(err)
-				return
-			}
-
-			signers[i] = unqualifiedSigner
-		}
-		keyMgr := sMgr.components.KeyManager()
-		resolvedAddrs, err := keyMgr.ResolveEthAddressBatchNewDatabaseTX(ctx, signers)
-		if err != nil {
-			log.L(ctx).Errorf("failed to resolve signers for public transactions: %s", err)
-			return
-		}
-
-		publicTXs := make([]*components.PublicTxSubmission, len(publicTransactionsToSend))
-		for i, pt := range publicTransactionsToSend {
-			log.L(ctx).Debugf("DispatchTransactions: creating PublicTxSubmission from %s", pt.Signer)
-			publicTXs[i] = &components.PublicTxSubmission{
-				Bindings: []*components.PaladinTXReference{{TransactionID: pt.ID, TransactionType: pldapi.TransactionTypePrivate.Enum(), TransactionSender: pt.PreAssembly.TransactionSpecification.From, TransactionContractAddress: t.GetContractAddress().String()}},
-				PublicTxInput: pldapi.PublicTxInput{
-					From:            resolvedAddrs[i],
-					To:              &contractAddr,
-					PublicTxOptions: pt.PreparedPublicTransaction.PublicTxOptions,
-				},
-			}
-
-			// TODO - We currently issue state machine CollectEvents from the publix TX manager, but we could arguably do it here.
-
-			data, err := pt.PreparedPublicTransaction.ABI[0].EncodeCallDataJSONCtx(ctx, pt.PreparedPublicTransaction.Data)
-			if err != nil {
-				log.L(ctx).Errorf("failed to encode call data for public transaction %s: %s", pt.ID, err)
-				return
-			}
-			publicTXs[i].Data = pldtypes.HexBytes(data)
-
-			log.L(ctx).Tracef("Validating public transaction %s", pt.ID.String())
-			err = publicTransactionEngine.ValidateTransaction(ctx, sMgr.components.Persistence().NOTX(), publicTXs[i])
-			if err != nil {
-				log.L(ctx).Errorf("failed to encode call data for public transaction %s: %s", pt.ID, err)
-				return
-			}
-		}
-		sequence.PublicTxs = publicTXs
-		dispatchBatch.PublicDispatches = append(dispatchBatch.PublicDispatches, sequence)
-	}
-
-	// Determine if there are any local nullifiers that need to be built and put into the domain context
-	// before we persist the dispatch batch
-	localNullifiers, err := sMgr.BuildNullifiers(ctx, localStateDistributions)
-	if err == nil && len(localNullifiers) > 0 {
-		err = dCtx.UpsertNullifiers(localNullifiers...)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("error building nullifiers: %s", err)
-		return
-	}
-
-	log.L(ctx).Debugf("Persisting & deploying batch. %d public transactions, %d private transactions, %d prepared transactions", len(dispatchBatch.PublicDispatches), len(dispatchBatch.PrivateDispatches), len(dispatchBatch.PreparedTransactions))
-	err = sMgr.syncPoints.PersistDispatchBatch(dCtx, t.GetContractAddress(), dispatchBatch, stateDistributions, preparedTxnDistributions)
-	if err != nil {
-		log.L(ctx).Errorf("error persisting batch: %s", err)
-		return
-	}
-
-	err = transportWriter.SendDispatched(ctx, t.Originator(), uuid.New(), t.GetTransactionSpecification())
-	if err != nil {
-		log.L(ctx).Errorf("failed to send dispatched event for transaction %s: %s", t.GetID(), err)
-		return
-	}
-
-	// We also need to trigger ourselves for any private TX we chained
-	for _, dispatch := range dispatchBatch.PrivateDispatches {
-		// Create a new DB transaction and handle the new transaction
-		err = sMgr.components.Persistence().Transaction(ctx, func(ctx context.Context, dbTx persistence.DBTX) error {
-			return sMgr.HandleNewTx(ctx, dbTx, dispatch.NewTransaction)
-		})
-		if err != nil {
-			log.L(ctx).Errorf("error handling new transaction: %v", err)
-			return
-		}
-	}
-	log.L(ctx).Debugf("Chained %d private transactions", len(dispatchBatch.PrivateDispatches))
-}
-
 // Must be called within the sequencer's write lock
 func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
-	log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("max concurrent sequencers reached, finding lowest priority sequencer to stop")
+	log.L(ctx).Debugf("max concurrent sequencers reached, finding lowest priority sequencer to stop")
 	if len(sMgr.sequencers) != 0 {
 		// If any sequencers are already closing we can wait for them to close instead of stopping a different one
 		for _, sequencer := range sMgr.sequencers {
@@ -465,7 +291,7 @@ func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
 				// we don't wait for the closing ones to complete. The aim is to allow the node to remain stable while
 				// still being responsive to new contract activity so a closing sequencer is allowed to page out in its
 				// own time.
-				log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("coordinator %s is closing, waiting for it to close", sequencer.contractAddress)
+				log.L(ctx).Debugf("coordinator %s is closing, waiting for it to close", sequencer.contractAddress)
 				return
 			case coordinator.State_Idle, coordinator.State_Observing:
 				originatorState := sequencer.originator.GetCurrentState()
@@ -473,7 +299,7 @@ func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
 					originatorState == originator.State_Observing {
 					// This sequencer is already idle/observing on both coordinator and originator,
 					// so we can page it out immediately. Caller holds the sequencers write lock.
-					log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("stopping coordinator %s", sequencer.contractAddress)
+					log.L(ctx).Debugf("stopping coordinator %s", sequencer.contractAddress)
 					sequencer.shutdown(ctx)
 					delete(sMgr.sequencers, sequencer.contractAddress)
 					return
@@ -491,14 +317,14 @@ func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
 		})
 
 		// Stop the lowest priority sequencer by emitting an event and waiting for it to move to closed
-		log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("stopping coordinator %s", sequencers[0].contractAddress)
+		log.L(ctx).Debugf("stopping coordinator %s", sequencers[0].contractAddress)
 		sequencers[0].shutdown(ctx)
 		delete(sMgr.sequencers, sequencers[0].contractAddress)
 	}
 }
 
 // func (sMgr *sequencerManager) updateActiveCoordinators(ctx context.Context) {
-// 	log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("checking if max concurrent coordinators limit reached")
+// 	log.L(ctx).Debugf("checking if max concurrent coordinators limit reached")
 
 // 	readlock := true
 // 	sMgr.sequencersLock.RLock()
@@ -520,7 +346,7 @@ func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
 // 	sMgr.metrics.SetActiveCoordinators(activeCoordinators)
 
 // 	if activeCoordinators >= sMgr.targetActiveCoordinatorsLimit {
-// 		log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("%d coordinators currently active, max concurrent coordinators reached, asking the lowest priority coordinator to hand over to another node", activeCoordinators)
+// 		log.L(ctx).Debugf("%d coordinators currently active, max concurrent coordinators reached, asking the lowest priority coordinator to hand over to another node", activeCoordinators)
 // 		// Order existing sequencers by LRU time
 // 		sequencers := make([]*sequencer, 0)
 // 		for _, sequencer := range sMgr.sequencers {
@@ -537,10 +363,10 @@ func (sMgr *sequencerManager) stopLowestPrioritySequencer(ctx context.Context) {
 // 		defer sMgr.sequencersLock.Unlock()
 
 // 		// Stop the lowest priority coordinator by emitting an event asking it to handover to another coordinator
-// 		log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("stopping coordinator %s", sequencers[0].contractAddress)
+// 		log.L(ctx).Debugf("stopping coordinator %s", sequencers[0].contractAddress)
 // 		sequencers[0].shutdown(ctx)
 // 		delete(sMgr.sequencers, sequencers[0].contractAddress)
 // 	} else {
-// 		log.L(log.WithLogField(ctx, common.SEQUENCER_LOG_CATEGORY_FIELD, common.CATEGORY_LIFECYCLE)).Debugf("%d coordinators within max coordinator limit %d", activeCoordinators, sMgr.targetActiveCoordinatorsLimit)
+// 		log.L(ctx).Debugf("%d coordinators within max coordinator limit %d", activeCoordinators, sMgr.targetActiveCoordinatorsLimit)
 // 	}
 // }

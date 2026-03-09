@@ -65,6 +65,19 @@ func (*SelectedEvent) TypeString() string {
 	return "Event_Selected"
 }
 
+// AssembleCancelledEvent
+type AssembleCancelledEvent struct {
+	BaseCoordinatorEvent
+}
+
+func (*AssembleCancelledEvent) Type() EventType {
+	return Event_Assemble_Cancelled
+}
+
+func (*AssembleCancelledEvent) TypeString() string {
+	return "Event_Assemble_Cancelled"
+}
+
 // AssembleRequestSentEvent
 type AssembleRequestSentEvent struct {
 	BaseCoordinatorEvent
@@ -153,19 +166,6 @@ func (*DispatchRequestApprovedEvent) Type() EventType {
 
 func (*DispatchRequestApprovedEvent) TypeString() string {
 	return "Event_DispatchRequestApproved"
-}
-
-// DispatchRequestRejectedEvent
-type DispatchRequestRejectedEvent struct {
-	BaseCoordinatorEvent
-}
-
-func (*DispatchRequestRejectedEvent) Type() EventType {
-	return Event_DispatchRequestRejected
-}
-
-func (*DispatchRequestRejectedEvent) TypeString() string {
-	return "Event_DispatchRequestRejected"
 }
 
 // CollectedEvent

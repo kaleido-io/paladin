@@ -56,21 +56,20 @@ type originator struct {
 	ctx context.Context
 
 	/* State machine - using generic statemachine.StateMachineEventLoop */
-	stateMachineEventLoop       *statemachine.StateMachineEventLoop[State, *originator]
-	activeCoordinatorNode       string
-	timeOfMostRecentHeartbeat   common.Time
-	transactionsByID            map[uuid.UUID]*transaction.OriginatorTransaction
-	submittedTransactionsByHash map[pldtypes.Bytes32]*uuid.UUID
-	transactionsOrdered         []*transaction.OriginatorTransaction
-	currentBlockHeight          uint64
-	latestCoordinatorSnapshot   *common.CoordinatorSnapshot
+	stateMachineEventLoop     *statemachine.StateMachineEventLoop[State, *originator]
+	activeCoordinatorNode     string
+	timeOfMostRecentHeartbeat *time.Time
+	transactionsByID          map[uuid.UUID]*transaction.OriginatorTransaction
+	transactionsOrdered       []*transaction.OriginatorTransaction
+	currentBlockHeight        uint64
+	latestCoordinatorSnapshot *common.CoordinatorSnapshot
 
 	/* Config */
-	nodeName             string
-	blockRangeSize       uint64
-	contractAddress      *pldtypes.EthAddress
-	heartbeatThresholdMs common.Duration
-	delegateTimeout      common.Duration
+	nodeName           string
+	blockRangeSize     uint64
+	contractAddress    *pldtypes.EthAddress
+	heartbeatThreshold time.Duration
+	delegateTimeout    time.Duration
 
 	/* Dependencies */
 	transportWriter   transport.TransportWriter
@@ -94,27 +93,27 @@ func NewOriginator(
 	heartbeatThresholdIntervals int,
 	metrics metrics.DistributedSequencerMetrics,
 ) (*originator, error) {
+	origCtx := log.WithLogField(ctx, "role", "originator")
 	o := &originator{
-		ctx:                         ctx,
-		nodeName:                    nodeName,
-		transactionsByID:            make(map[uuid.UUID]*transaction.OriginatorTransaction),
-		submittedTransactionsByHash: make(map[pldtypes.Bytes32]*uuid.UUID),
-		transportWriter:             transportWriter,
-		blockRangeSize:              confutil.Uint64Min(configuration.BlockRange, pldconf.SequencerMinimum.BlockRange, *pldconf.SequencerDefaults.BlockRange),
-		contractAddress:             contractAddress,
-		clock:                       clock,
-		engineIntegration:           engineIntegration,
-		heartbeatThresholdMs:        clock.Duration(heartbeatPeriodMs * heartbeatThresholdIntervals),
-		delegateTimeout:             confutil.DurationMin(configuration.DelegateTimeout, pldconf.SequencerMinimum.DelegateTimeout, *pldconf.SequencerDefaults.DelegateTimeout),
-		metrics:                     metrics,
-		delegateLoopStopped:         make(chan struct{}),
+		ctx:                 origCtx,
+		nodeName:            nodeName,
+		transactionsByID:    make(map[uuid.UUID]*transaction.OriginatorTransaction),
+		transportWriter:     transportWriter,
+		blockRangeSize:      confutil.Uint64Min(configuration.BlockRange, pldconf.SequencerMinimum.BlockRange, *pldconf.SequencerDefaults.BlockRange),
+		contractAddress:     contractAddress,
+		clock:               clock,
+		engineIntegration:   engineIntegration,
+		heartbeatThreshold:  time.Duration(heartbeatPeriodMs*heartbeatThresholdIntervals) * time.Millisecond,
+		delegateTimeout:     confutil.DurationMin(configuration.DelegateTimeout, pldconf.SequencerMinimum.DelegateTimeout, *pldconf.SequencerDefaults.DelegateTimeout),
+		metrics:             metrics,
+		delegateLoopStopped: make(chan struct{}),
 	}
 	originatorEventQueueSize := confutil.IntMin(configuration.OriginatorEventQueueSize, pldconf.SequencerMinimum.OriginatorEventQueueSize, *pldconf.SequencerDefaults.OriginatorEventQueueSize)
 	originatorPriorityEventQueueSize := confutil.IntMin(configuration.OriginatorPriorityEventQueueSize, pldconf.SequencerMinimum.OriginatorPriorityEventQueueSize, *pldconf.SequencerDefaults.OriginatorPriorityEventQueueSize)
 	o.initializeStateMachineEventLoop(State_Idle, originatorEventQueueSize, originatorPriorityEventQueueSize)
 
-	go o.stateMachineEventLoop.Start(ctx)
-	go o.delegateLoop(ctx)
+	go o.stateMachineEventLoop.Start(origCtx)
+	go o.delegateLoop(origCtx)
 
 	return o, nil
 }
@@ -151,7 +150,7 @@ func (o *originator) delegateLoop(ctx context.Context) {
 	log.L(ctx).Debugf("delegate loop started for contract %s", o.contractAddress.String())
 
 	// Check for transactions still waiting to be delegated
-	ticker := time.NewTicker(o.delegateTimeout.(time.Duration))
+	ticker := time.NewTicker(o.delegateTimeout)
 	defer func() {
 		log.L(ctx).Debugf("delegate loop stopping for contract %s", o.contractAddress.String())
 		ticker.Stop()

@@ -96,6 +96,7 @@ var transactionReceiptFilters = filters.FieldMap{
 
 // FinalizeTransactions is called by the block indexing routine, but also can be called
 // by the private transaction manager if transactions fail without making it to the blockchain
+// or fail on the blockchain in a way that cannot be retried.
 func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.DBTX, info []*components.ReceiptInput) error {
 	ctx = log.WithComponent(ctx, "txmanager")
 	log.L(ctx).Debugf("FinalizeTransactions: %v receipt infos", len(info))
@@ -125,6 +126,9 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 		}
 		// Process each type, checking for coding errors in the calling component
 		var failureMsg string
+		if len(ri.RevertData) == 0 {
+			ri.RevertData = nil // when we receive over the wire this becomes an empty byte string
+		}
 		switch ri.ReceiptType {
 		case components.RT_Success:
 			if ri.FailureMessage != "" || ri.RevertData != nil {
@@ -132,9 +136,6 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 			}
 			receipt.Success = true
 		case components.RT_FailedWithMessage:
-			if len(ri.RevertData) == 0 {
-				ri.RevertData = nil // when we receive over the wire this becomes an empty byte string
-			}
 			if ri.FailureMessage == "" || ri.RevertData != nil {
 				return i18n.NewError(ctx, msgs.MsgTxMgrInvalidReceiptNotification, pldtypes.JSONString(ri))
 			}
@@ -203,7 +204,36 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 			for _, cr := range chainingRecords {
 				for _, receipt := range info {
 					if receipt.TransactionID == cr.ChainedTransaction {
-						log.L(ctx).Infof("Propagating chained transaction receipt from %s to %s", receipt.TransactionID, cr.Transaction)
+						log.L(ctx).Infof("Chained mapping resolved: chained=%s -> original=%s receiptType=%d contract=%s", receipt.TransactionID, cr.Transaction, receipt.ReceiptType, cr.ContractAddress)
+
+						// Notify the original transaction's coordinator of the chained outcome (success, on-chain revert, or off-chain revert).
+						// The chained transaction was originated on this node, so if there is a coordinator loaded with this transaction in State_Dispatched
+						// it will be on this node.
+						contractAddr, parseErr := pldtypes.ParseEthAddress(cr.ContractAddress)
+						if parseErr != nil {
+							log.L(ctx).Errorf("Failed to parse contract address %s for chained TX propagation: %s", cr.ContractAddress, parseErr)
+						} else {
+							origTxID := cr.Transaction
+							outcomeType := receipt.ReceiptType
+							// take a copy of the on chain data and the revert bytes so we have original data when the post commit is called
+							onChainCopy := receipt.OnChain
+							var revertBytesCopy pldtypes.HexBytes
+							if len(receipt.RevertData) > 0 {
+								revertBytesCopy = make(pldtypes.HexBytes, len(receipt.RevertData))
+								copy(revertBytesCopy, receipt.RevertData)
+							}
+							dbTX.AddPostCommit(func(ctx context.Context) {
+								tm.sequencerMgr.HandleChainedTransactionOutcome(ctx, *contractAddr, origTxID, outcomeType, revertBytesCopy, onChainCopy)
+							})
+						}
+
+						// For on-chain reverts with revert data, the coordinator evaluates retryability
+						// and handles finalization, so skip immediate receipt propagation.
+						if receipt.ReceiptType != components.RT_Success && len(receipt.RevertData) > 0 {
+							continue
+						}
+
+						// For success and off-chain reverts, propagate the receipt to A's originator.
 						upstreamReceipt := &components.ReceiptInputWithOriginator{
 							Originator:            cr.Sender,
 							DomainContractAddress: cr.ContractAddress,
@@ -267,6 +297,11 @@ func (tm *txManager) ensureSuccessOverridesFailure(ctx context.Context, dbTX per
 				if !existing.Success /* do not override success */ && receipt.Success /* do not replace the first failure */ {
 					log.L(ctx).Warnf("Duplicate receipt for transaction %s replaces existing failure receipt. Previous error: %s", receipt.TransactionID, stringOrEmpty(existing.FailureMessage))
 					replacementIDsToDelete = append(replacementIDsToDelete, existing.TransactionID)
+					// Copy and clear sequence so replacement rows always allocate a fresh DB identity value.
+					// This works around GORM behaviour, where if we entered this function after inserting
+					// transactions A,B,C where B failed on a conflict so we only inserted A and C, the sequence
+					// for C gets written to B, which results in an unrecoverable insert error on B the retry for B.
+					receipt.Sequence = 0
 					replacementInserts = append(replacementInserts, receipt)
 				} else {
 					log.L(ctx).Warnf("Duplicate receipt for transaction %s discarded (success=%t) Error: %s", receipt.TransactionID, receipt.Success, stringOrEmpty(receipt.FailureMessage))

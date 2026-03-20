@@ -176,8 +176,14 @@ func (ctx *receiptBatchContext) buildFullReceipt(receipt *pldapi.TransactionRece
 			}
 			if domain != nil {
 				ctx.listener.tm.addDomainReceipt(ctx.listener.ctx, domain, fullReceipt)
+			} else {
+				log.L(ctx.listener.ctx).Errorf("failed to get domain for TXID %s domain %s", receipt.ID, receipt.Domain)
 			}
+		} else {
+			log.L(ctx.listener.ctx).Debugf("no domain receipt requested for TXID: %s", receipt.ID)
 		}
+	} else {
+		log.L(ctx.listener.ctx).Debugf("no receipt domain set for TXID %s", receipt.ID)
 	}
 	return fullReceipt, nil
 }
@@ -722,6 +728,9 @@ func (l *receiptListener) processPersistedReceipt(b *receiptDeliveryBatch, pr *t
 	if err != nil {
 		return err
 	}
+
+	// Log the full receipt
+	log.L(l.ctx).Debugf("Built receipt states: %+v", fr.States)
 
 	if fr.TransactionReceiptDataOnchainEvent != nil && fr.Domain != "" {
 		d, err := batchCtx.getDomain(fr.Domain)

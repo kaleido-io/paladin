@@ -512,7 +512,11 @@ func (tm *txManager) addDomainReceipt(ctx context.Context, d components.Domain, 
 	var err error
 	receipt.DomainReceipt, err = d.BuildDomainReceipt(ctx, tm.p.NOTX(), receipt.ID, receipt.States)
 	if err != nil {
+		log.L(ctx).Errorf("failed to build domain receipt for TXID %s domain %s. Returning domainReceiptError %s", receipt.ID, receipt.Domain, err.Error())
 		receipt.DomainReceiptError = err.Error()
+	}
+	if receipt.DomainReceipt == nil {
+		log.L(ctx).Errorf("nil domain receipt built for TXID %s domain %s", receipt.ID, receipt.Domain)
 	}
 }
 

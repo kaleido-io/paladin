@@ -170,6 +170,9 @@ func (ctx *receiptBatchContext) buildFullReceipt(receipt *pldapi.TransactionRece
 			return nil, err
 		}
 		if domainReceipt {
+			if fullReceipt.States.None {
+				return nil, i18n.NewError(ctx.listener.ctx, msgs.MsgDomainDomainReceiptNotAvailable, receipt.ID)
+			}
 			domain, err := ctx.getDomain(receipt.Domain)
 			if err != nil {
 				return nil, err
@@ -726,6 +729,14 @@ func (l *receiptListener) processPersistedReceipt(b *receiptDeliveryBatch, pr *t
 		TransactionReceiptData: *mapPersistedReceipt(pr),
 	}, l.spec.Options.DomainReceipts)
 	if err != nil {
+		if l.spec.Options.IncompleteStateReceiptBehavior.V() == pldapi.IncompleteStateReceiptBehaviorCompleteOnly {
+			b.IncompleteReceipts = append(b.IncompleteReceipts, &persistedReceiptIncomplete{
+				Listener:   l.spec.Name,
+				Sequence:   pr.Sequence,
+				DomainName: fr.Domain,
+			})
+			return nil
+		}
 		return err
 	}
 

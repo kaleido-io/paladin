@@ -733,7 +733,7 @@ func (l *receiptListener) processPersistedReceipt(b *receiptDeliveryBatch, pr *t
 			b.IncompleteReceipts = append(b.IncompleteReceipts, &persistedReceiptIncomplete{
 				Listener:   l.spec.Name,
 				Sequence:   pr.Sequence,
-				DomainName: fr.Domain,
+				DomainName: pr.Domain,
 			})
 			return nil
 		}

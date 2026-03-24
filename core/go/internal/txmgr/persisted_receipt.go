@@ -198,9 +198,8 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 			Where(`"chained_transaction" IN ?`, transactionIDs).
 			Find(&chainingRecords).
 			Error
-		// Recurse into the sequencer manager, who will call us back, or send via the transport mgr
+		// Recurse into the sequencer manager to notify the original coordinator of chained outcomes.
 		if err == nil {
-			receiptsToWrite := make([]*components.ReceiptInputWithOriginator, 0, len(chainingRecords))
 			for _, cr := range chainingRecords {
 				for _, receipt := range info {
 					if receipt.TransactionID == cr.ChainedTransaction {
@@ -215,6 +214,7 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 						} else {
 							origTxID := cr.Transaction
 							outcomeType := receipt.ReceiptType
+							failureMessage := receipt.FailureMessage
 							// take a copy of the on chain data and the revert bytes so we have original data when the post commit is called
 							onChainCopy := receipt.OnChain
 							var revertBytesCopy pldtypes.HexBytes
@@ -223,30 +223,11 @@ func (tm *txManager) FinalizeTransactions(ctx context.Context, dbTX persistence.
 								copy(revertBytesCopy, receipt.RevertData)
 							}
 							dbTX.AddPostCommit(func(ctx context.Context) {
-								tm.sequencerMgr.HandleChainedTransactionOutcome(ctx, *contractAddr, origTxID, outcomeType, revertBytesCopy, onChainCopy)
+								tm.sequencerMgr.HandleChainedTransactionOutcome(ctx, *contractAddr, origTxID, outcomeType, failureMessage, revertBytesCopy, onChainCopy)
 							})
 						}
-
-						// For on-chain reverts with revert data, the coordinator evaluates retryability
-						// and handles finalization, so skip immediate receipt propagation.
-						if receipt.ReceiptType != components.RT_Success && len(receipt.RevertData) > 0 {
-							continue
-						}
-
-						// For success and off-chain reverts, propagate the receipt to A's originator.
-						upstreamReceipt := &components.ReceiptInputWithOriginator{
-							Originator:            cr.Sender,
-							DomainContractAddress: cr.ContractAddress,
-							ReceiptInput:          *receipt, // note copy by value
-						}
-						upstreamReceipt.TransactionID = cr.Transaction
-						upstreamReceipt.Domain = cr.Domain
-						receiptsToWrite = append(receiptsToWrite, upstreamReceipt)
 					}
 				}
-			}
-			if len(receiptsToWrite) > 0 {
-				err = tm.sequencerMgr.WriteOrDistributeChainedTransactionReceipts(ctx, dbTX, receiptsToWrite)
 			}
 		}
 		if err != nil {
@@ -297,6 +278,11 @@ func (tm *txManager) ensureSuccessOverridesFailure(ctx context.Context, dbTX per
 				if !existing.Success /* do not override success */ && receipt.Success /* do not replace the first failure */ {
 					log.L(ctx).Warnf("Duplicate receipt for transaction %s replaces existing failure receipt. Previous error: %s", receipt.TransactionID, stringOrEmpty(existing.FailureMessage))
 					replacementIDsToDelete = append(replacementIDsToDelete, existing.TransactionID)
+					// Copy and clear sequence so replacement rows always allocate a fresh DB identity value.
+					// This works around GORM behaviour, where if we entered this function after inserting
+					// transactions A,B,C where B failed on a conflict so we only inserted A and C, the sequence
+					// for C gets written to B, which results in an unrecoverable insert error on B the retry for B.
+					receipt.Sequence = 0
 					replacementInserts = append(replacementInserts, receipt)
 				} else {
 					log.L(ctx).Warnf("Duplicate receipt for transaction %s discarded (success=%t) Error: %s", receipt.TransactionID, receipt.Success, stringOrEmpty(receipt.FailureMessage))

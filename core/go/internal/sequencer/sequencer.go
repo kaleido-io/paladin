@@ -730,7 +730,7 @@ func (sMgr *sequencerManager) queueConfirmedRevertedEventToCoordinator(ctx conte
 	return nil
 }
 
-func (sMgr *sequencerManager) HandleChainedTransactionOutcome(ctx context.Context, contractAddress pldtypes.EthAddress, txID uuid.UUID, receiptType components.ReceiptType, revertData pldtypes.HexBytes, onChain pldtypes.OnChainLocation) {
+func (sMgr *sequencerManager) HandleChainedTransactionOutcome(ctx context.Context, contractAddress pldtypes.EthAddress, txID uuid.UUID, receiptType components.ReceiptType, failureMessage string, revertData pldtypes.HexBytes, onChain pldtypes.OnChainLocation) {
 	log.L(ctx).Infof("HandleChainedTransactionOutcome txID=%s contract=%s receiptType=%d", txID, contractAddress, receiptType)
 
 	sequencer, err := sMgr.GetSequencer(ctx, contractAddress)
@@ -775,6 +775,7 @@ func (sMgr *sequencerManager) HandleChainedTransactionOutcome(ctx context.Contex
 				},
 				TransactionID: txID,
 			},
+			FailureMessage: failureMessage,
 		})
 	default:
 		log.L(ctx).Errorf("HandleChainedTransactionOutcome: unexpected receipt type %d for txID=%s", receiptType, txID)
@@ -898,11 +899,6 @@ func (sMgr *sequencerManager) CallPrivateSmartContract(ctx context.Context, call
 
 	// Do the actual call
 	return psc.ExecCall(dCtx, sMgr.components.Persistence().NOTX(), call, verifiers)
-}
-
-// If we have a receipt for a chained transaction it is definitely finalised, regardless of result and we can persist and distribute it.
-func (sMgr *sequencerManager) WriteOrDistributeChainedTransactionReceipts(ctx context.Context, dbTX persistence.DBTX, receipts []*components.ReceiptInputWithOriginator) error {
-	return sMgr.syncPoints.WriteOrDistributeReceipts(ctx, dbTX, receipts)
 }
 
 func (sMgr *sequencerManager) BuildStateDistributions(ctx context.Context, tx *components.PrivateTransaction) (*components.StateDistributionSet, error) {

@@ -307,8 +307,7 @@ func (dc *domainContract) WritePotentialStates(dCtx components.DomainContext, re
 		// Release the proto NewState slices now that their data has been converted into FullState
 		// entries. The StateDataJson strings in the proto objects duplicate the RawJSON bytes already
 		// held by OutputStates/InfoStates, so retaining both roughly doubles per-transaction memory.
-		postAssembly.OutputStatesPotential = nil
-		postAssembly.InfoStatesPotential = nil
+		postAssembly.ReleasePotentialStates()
 	}
 
 	log.L(dCtx.Ctx()).Debugf("WritePotentialStates: %d post assembly output states", len(postAssembly.OutputStates))

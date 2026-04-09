@@ -31,6 +31,17 @@ func action_NotifyDispatched(ctx context.Context, t *coordinatorTransaction, _ c
 	return t.transportWriter.SendDispatched(ctx, t.originator, uuid.New(), txSpec)
 }
 
+// action_ReleaseAssemblyPayload releases all heavy payload data from the transaction
+// after dispatch. No post-dispatch action reads PostAssembly state data, endorsements,
+// signatures, prepared transactions, or PreAssembly. If the transaction later reverts
+// and re-pools, initializeForNewAssembly performs a full reset before re-assembly.
+func action_ReleaseAssemblyPayload(ctx context.Context, t *coordinatorTransaction, _ common.Event) error {
+	log.L(ctx).Debugf("releasing assembly payload for dispatched transaction %s", t.pt.ID.String())
+	t.pt.ReleasePostAssemblyData()
+	t.pt.PreAssembly = nil
+	return nil
+}
+
 func action_NotifyCollected(_ context.Context, t *coordinatorTransaction, event common.Event) error {
 	e := event.(*CollectedEvent)
 	t.signerAddress = &e.SignerAddress

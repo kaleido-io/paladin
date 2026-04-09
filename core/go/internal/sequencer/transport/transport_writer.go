@@ -16,10 +16,8 @@
 package transport
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"sync"
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
@@ -34,31 +32,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
-
-var jsonBufPool = sync.Pool{
-	New: func() any { return new(bytes.Buffer) },
-}
-
-// marshalJSON is a drop-in replacement for json.Marshal that reuses buffers via sync.Pool
-// to reduce allocation pressure on the Go GC in high-throughput paths (heartbeats, delegation, assembly).
-func marshalJSON(v any) ([]byte, error) {
-	buf := jsonBufPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		jsonBufPool.Put(buf)
-		return nil, err
-	}
-	b := buf.Bytes()
-	if len(b) > 0 && b[len(b)-1] == '\n' {
-		b = b[:len(b)-1]
-	}
-	result := make([]byte, len(b))
-	copy(result, b)
-	jsonBufPool.Put(buf)
-	return result, nil
-}
 
 type TransportWriter interface {
 	StartLoopbackWriter()
@@ -121,7 +94,7 @@ func (tw *transportWriter) SendDelegationRequest(
 	blockHeight uint64,
 ) error {
 	for _, transaction := range transactions {
-		transactionBytes, err := marshalJSON(transaction)
+		transactionBytes, err := json.Marshal(transaction)
 
 		if err != nil {
 			log.L(ctx).Errorf("error marshalling transaction message: %s", err)
@@ -335,7 +308,7 @@ func (tw *transportWriter) SendAssembleRequest(ctx context.Context, assemblingNo
 
 	log.L(ctx).Tracef("transport writer attempting to send assemble request to assembling node %s", assemblingNode)
 
-	preAssemblyBytes, err := marshalJSON(preAssembly)
+	preAssemblyBytes, err := json.Marshal(preAssembly)
 	if err != nil {
 		log.L(ctx).Error("error marshalling preassembly", err)
 		return err
@@ -400,12 +373,12 @@ func (tw *transportWriter) SendAssembleResponse(ctx context.Context, txID uuid.U
 
 	log.L(ctx).Tracef("transport writer attempting to send assemble response to node %s", recipient)
 
-	postAssemblyBytes, err := marshalJSON(postAssembly)
+	postAssemblyBytes, err := json.Marshal(postAssembly)
 	if err != nil {
 		return err
 	}
 
-	preAssemblyBytes, err := marshalJSON(preAssembly)
+	preAssemblyBytes, err := json.Marshal(preAssembly)
 	if err != nil {
 		return err
 	}
@@ -447,7 +420,7 @@ func (tw *transportWriter) SendHandoverRequest(ctx context.Context, activeCoordi
 	handoverRequest := &HandoverRequest{
 		ContractAddress: contractAddress,
 	}
-	handoverRequestBytes, err := marshalJSON(handoverRequest)
+	handoverRequestBytes, err := json.Marshal(handoverRequest)
 	if err != nil {
 		log.L(ctx).Errorf("error marshalling handover request message: %s", err)
 	}
@@ -568,7 +541,7 @@ func (tw *transportWriter) SendHeartbeat(ctx context.Context, targetNode string,
 
 	log.L(ctx).Tracef("transport writer attempting to send haertbeat to node %s", targetNode)
 
-	coordinatorSnapshotBytes, err := marshalJSON(coordinatorSnapshot)
+	coordinatorSnapshotBytes, err := json.Marshal(coordinatorSnapshot)
 	if err != nil {
 		log.L(ctx).Error("error marshalling heartbeat", err)
 	}

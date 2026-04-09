@@ -743,13 +743,16 @@ func TestFullTransactionRealDBOK(t *testing.T) {
 	ptx.PreAssembly.Verifiers = make([]*prototk.ResolvedVerifier, 0)
 	ptx.PostAssembly.Signatures = make([]*prototk.AttestationResult, 0)
 
+	// Capture the schema ID before WritePotentialStates releases potential state slices
+	outputSchemaId := ptx.PostAssembly.OutputStatesPotential[0].SchemaId
+
 	// Write the output states
 	err = psc.WritePotentialStates(dCtx, td.c.dbTX, ptx)
 	require.NoError(t, err)
 
 	stateRes, err := domain.FindAvailableStates(td.ctx, &prototk.FindAvailableStatesRequest{
 		StateQueryContext: td.c.id,
-		SchemaId:          ptx.PostAssembly.OutputStatesPotential[0].SchemaId,
+		SchemaId:          outputSchemaId,
 		QueryJson: `{
 			"or": [
 				{
@@ -767,7 +770,7 @@ func TestFullTransactionRealDBOK(t *testing.T) {
 
 	stillAvailable, err := domain.FindAvailableStates(td.ctx, &prototk.FindAvailableStatesRequest{
 		StateQueryContext: td.c.id,
-		SchemaId:          ptx.PostAssembly.OutputStatesPotential[0].SchemaId,
+		SchemaId:          outputSchemaId,
 		QueryJson:         `{}`,
 	})
 	require.NoError(t, err)
@@ -881,7 +884,7 @@ func TestFullTransactionRealDBOK(t *testing.T) {
 	// Confirm the remaining unspent states
 	stillAvailable, err = domain.FindAvailableStates(td.ctx, &prototk.FindAvailableStatesRequest{
 		StateQueryContext: td.c.id,
-		SchemaId:          ptx.PostAssembly.OutputStatesPotential[0].SchemaId,
+		SchemaId:          outputSchemaId,
 		QueryJson:         `{}`,
 	})
 	require.NoError(t, err)

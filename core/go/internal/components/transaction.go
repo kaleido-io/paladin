@@ -75,15 +75,6 @@ type TransactionPostAssembly struct {
 	DomainData            *string                                    `json:"domain_data"`
 	RevertReason          *string                                    `json:"revert_reason"`
 }
-
-// ReleasePotentialStates nil's the proto NewState slices once their data has been
-// converted into FullState entries, avoiding duplicate retention of StateDataJson
-// strings alongside the RawJSON bytes in OutputStates/InfoStates.
-func (pa *TransactionPostAssembly) ReleasePotentialStates() {
-	pa.OutputStatesPotential = nil
-	pa.InfoStatesPotential = nil
-}
-
 // PrivateTransaction is the critical exchange object between the engine and the domain manager,
 // as it hops between the states in the state machine (on multiple paladin nodes) to reach
 // a state that it can successfully (and anonymously) submitted it to the blockchain.

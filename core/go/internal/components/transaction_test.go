@@ -69,22 +69,3 @@ func TestReleasePostAssemblyData_NilFields(t *testing.T) {
 	assert.Nil(t, pt.PostAssembly)
 	assert.Nil(t, pt.PreparedPublicTransaction)
 }
-
-func TestReleasePotentialStates(t *testing.T) {
-	pa := &TransactionPostAssembly{
-		OutputStatesPotential: []*prototk.NewState{{SchemaId: "s1", StateDataJson: `{"x":1}`}},
-		InfoStatesPotential:   []*prototk.NewState{{SchemaId: "s2", StateDataJson: `{"y":2}`}},
-		OutputStates:          []*FullState{{Data: pldtypes.RawJSON(`{"x":1}`)}},
-		InfoStates:            []*FullState{{Data: pldtypes.RawJSON(`{"y":2}`)}},
-		InputStates:           []*FullState{{Data: pldtypes.RawJSON(`{"z":3}`)}},
-	}
-
-	pa.ReleasePotentialStates()
-
-	assert.Nil(t, pa.OutputStatesPotential)
-	assert.Nil(t, pa.InfoStatesPotential)
-
-	assert.NotNil(t, pa.OutputStates, "OutputStates should be preserved")
-	assert.NotNil(t, pa.InfoStates, "InfoStates should be preserved")
-	assert.NotNil(t, pa.InputStates, "InputStates should be preserved")
-}

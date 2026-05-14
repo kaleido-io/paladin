@@ -45,3 +45,8 @@ type DomainSmartContractWithDeployTransaction struct {
 	DomainSmartContract
 	DeployTransaction *Transaction `docstruct:"SmartContractWithDeploy" json:"deployTransaction,omitempty"`
 }
+
+type DomainInvokeRPC struct {
+	Method string           `json:"method"`
+	Params pldtypes.RawJSON `json:"params"`
+}

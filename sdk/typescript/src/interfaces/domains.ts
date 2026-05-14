@@ -25,3 +25,8 @@ export interface IDomainSmartContractWithDeployTransaction
   extends IDomainSmartContract {
   deployTransaction?: ITransaction;
 }
+
+export interface DomainInvokeRPC {
+  method: string;
+  params: unknown[];
+}

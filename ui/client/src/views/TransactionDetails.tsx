@@ -16,7 +16,7 @@
 
 import { Alert, Box, Button, Fade, Grid2, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPaladinTransaction, fetchTransaction } from "../queries/transactions";
+import { fetchPaladinTransaction, fetchEnrichedTransaction, fetchTransactionReceipt } from "../queries/transactions";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { isValidTransactionHash, isValidUUID } from "../utils";
@@ -25,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { TransactionOverview } from "../components/TransactionOverview";
 import { EventsOverview } from "../components/EventsOverview";
 import { PaladinTransactionSection } from "../components/PaladinTransactionSection";
+import { ReceiptlessPaladinTransaction } from "../components/ReceiptlessPaladinTransaction";
 
 export const TransactionDetails: React.FC = () => {
 
@@ -49,27 +50,35 @@ export const TransactionDetails: React.FC = () => {
 
   const { data: enrichedTransaction, error: blockchainTransactionError } = useQuery({
     queryKey: [`blockchain-transaction-${hash}`],
-    queryFn: () => fetchTransaction(hash!),
+    queryFn: () => fetchEnrichedTransaction(hash!),
     enabled: hash !== undefined
+  });
+
+  const { data: receipt, error: receiptError } = useQuery({
+    queryKey: [`paladin-receipt-${id}`],
+    queryFn: () => fetchTransactionReceipt(id!),
+    enabled: id !== undefined
   });
 
   const { data: paladinTransaction, error: paladinTransactionError } = useQuery({
     queryKey: [`paladin-transaction-${id}`],
     queryFn: () => fetchPaladinTransaction(id!),
-    enabled: id !== undefined
+    enabled: id !== undefined && receipt === null
   });
 
   useEffect(() => {
-    if (hash === undefined && paladinTransaction !== undefined) {
-      setHash(paladinTransaction?.receipt?.transactionHash);
+    if (hash === undefined) {
+      if (receipt !== undefined && receipt !== null) {
+        setHash(receipt.transactionHash);
+      }
     }
-  }, [hash, paladinTransaction]);
+  }, [hash, receipt]);
 
   if (hash === undefined && id === undefined) {
     return <></>;
   }
 
-  if (blockchainTransactionError || paladinTransactionError) {
+  if (blockchainTransactionError || paladinTransactionError || receiptError) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{blockchainTransactionError?.message ?? paladinTransactionError?.message}</Alert>
   }
 
@@ -103,21 +112,15 @@ export const TransactionDetails: React.FC = () => {
               </Box>
             </Grid2>
             <Grid2 size={{ xs: 12, sm: 12, md: 8, lg: 9 }}>
-              {enrichedTransaction.paladinTransactions.length > 0 ?
+              {enrichedTransaction.receipts.length > 0 &&
                 <Box>
                   <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('paladinTransaction')}</Typography>
-                  <PaladinTransactionSection paladinTransactions={enrichedTransaction.paladinTransactions} />
-                </Box>
-                :
-                <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('noPaladinTransaction')}</Typography>
-              }
+                  <PaladinTransactionSection receipts={enrichedTransaction.receipts} />
+                </Box>}
             </Grid2>
           </Grid2>}
-        {enrichedTransaction === undefined && paladinTransaction !== undefined &&
-          <Box>
-            <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('paladinTransaction')}</Typography>
-            <PaladinTransactionSection paladinTransactions={[paladinTransaction]} />
-          </Box>
+        {paladinTransaction !== undefined &&
+          <ReceiptlessPaladinTransaction paladinTransaction={paladinTransaction} />
         }
       </Box>
     </Fade>

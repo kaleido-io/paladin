@@ -23,13 +23,16 @@ import (
 	"github.com/LFDT-Paladin/paladin/domains/noto/internal/msgs"
 	"github.com/LFDT-Paladin/paladin/domains/noto/pkg/types"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/algorithms"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/domain"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/signpayloads"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/verifiers"
 	"github.com/google/uuid"
 )
 
 type prepareMintUnlockHandler struct {
-	lockCommon
+	unlockCommon
 }
 
 func (h *prepareMintUnlockHandler) ValidateParams(ctx context.Context, config *types.NotoParsedConfig, params string) (interface{}, error) {
@@ -84,19 +87,43 @@ func (h *prepareMintUnlockHandler) Init(ctx context.Context, tx *types.ParsedTra
 
 func (h *prepareMintUnlockHandler) Assemble(ctx context.Context, tx *types.ParsedTransaction, req *prototk.AssembleTransactionRequest) (*prototk.AssembleTransactionResponse, error) {
 	params := tx.Params.(*types.PrepareMintUnlockParams)
+	notary := tx.DomainConfig.NotaryLookup
 	spendTxId := pldtypes.Bytes32UUIDFirst16(uuid.New())
 
-	ids, err := resolveIdentities(ctx, h.noto, tx, req, "", "")
+	notaryID, err := h.noto.findEthAddressVerifier(ctx, "notary", notary, req.ResolvedVerifiers)
 	if err != nil {
 		return nil, err
 	}
-	notaryID, senderID := ids.notary, ids.sender
+	senderID, err := h.noto.findEthAddressVerifier(ctx, "sender", tx.Transaction.From, req.ResolvedVerifiers)
+	if err != nil {
+		return nil, err
+	}
 
 	// Load the existing lock
 	existingLock, revert, err := h.noto.loadLockInfoV1(ctx, req.StateQueryContext, params.LockID)
-	if res, err := assembleRevertOrError(revert, err); res != nil || err != nil {
-		return res, err
+	if err != nil {
+		if revert {
+			message := err.Error()
+			return &prototk.AssembleTransactionResponse{
+				AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
+				RevertReason:   &message,
+			}, nil
+		}
+		return nil, err
 	}
+
+	// Build and encode the unlock data (separate to the data for this TX)
+	encodedUnlockData, infoStates, infoDistribution, err := h.buildUnlockData(ctx, notaryID, senderID, nil, tx, params.Recipients, req.ResolvedVerifiers, req.StateQueryContext, params.UnlockData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the data info for this prepare transaction
+	prepareDataInfo, err := h.noto.prepareDataInfo(ctx, params.Data, tx.DomainConfig.Variant, infoDistribution.identities(), tx.Transaction, req.ResolvedVerifiers)
+	if err != nil {
+		return nil, err
+	}
+	infoStates = append(infoStates, prepareDataInfo...)
 
 	// Prepare the outputs to mint
 	outputs := &preparedOutputs{}
@@ -113,31 +140,21 @@ func (h *prepareMintUnlockHandler) Assemble(ctx context.Context, tx *types.Parse
 		outputs.coins = append(outputs.coins, recipientOutputs.coins...)
 		outputs.states = append(outputs.states, recipientOutputs.states...)
 	}
+	infoStates = append(infoStates, outputs.states...)
 
-	unlockInfo, err := h.buildUnlockInfo(ctx, tx, req.ResolvedVerifiers, req.StateQueryContext, &unlockInfoInput{
-		resolvedIdentities: ids,
-		recipients:         params.Recipients,
-		unlockData:         params.UnlockData,
-		spendOutputs:       outputs,
-	})
-	infoStates := unlockInfo.infoStates
-
-	// build the data info for this prepare transaction
-	prepareDataInfo, err := h.noto.prepareDataInfo(ctx, params.Data, tx.DomainConfig.Variant, unlockInfo.infoDistribution.identities(), tx.Transaction, req.ResolvedVerifiers)
+	err = h.noto.allocateStateIDs(ctx, req.StateQueryContext, outputs.states)
 	if err != nil {
 		return nil, err
 	}
-
-	infoStates = append(infoStates, prepareDataInfo...)
 
 	// Build the prepared lock
 	newLockInfo := *existingLock.lockInfo
 	newLockInfo.Replaces = existingLock.id
 	newLockInfo.Salt = pldtypes.RandBytes32()
 	newLockInfo.SpendOutputs = newStateAllocatedIDs(outputs.states)
-	newLockInfo.SpendData = unlockInfo.spendData
+	newLockInfo.SpendData = encodedUnlockData
 	newLockInfo.CancelOutputs = []pldtypes.Bytes32{} // no cancel outputs
-	newLockInfo.CancelData = unlockInfo.cancelData
+	newLockInfo.CancelData = encodedUnlockData
 	newLockInfo.SpendTxId = spendTxId
 	lock, err := h.noto.prepareLockInfo_V1(&newLockInfo, identityList{notaryID, senderID})
 	if err != nil {
@@ -153,14 +170,13 @@ func (h *prepareMintUnlockHandler) Assemble(ctx context.Context, tx *types.Parse
 	// Build the manifest
 	manifestState, err := h.noto.newManifestBuilder().
 		addOutputs(outputs).
-		addInfoStates(unlockInfo.infoDistribution, infoStates...).
+		addInfoStates(infoDistribution, infoStates...).
 		addLockInfo(lock).
 		buildManifest(ctx, req.StateQueryContext)
 	if err != nil {
 		return nil, err
 	}
 	infoStates = append([]*prototk.NewState{manifestState} /* manifest first */, infoStates...)
-	infoStates = append(infoStates, outputs.states...)
 
 	assembledTransaction := &prototk.AssembledTransaction{
 		ReadStates:   nil,
@@ -172,7 +188,26 @@ func (h *prepareMintUnlockHandler) Assemble(ctx context.Context, tx *types.Parse
 	return &prototk.AssembleTransactionResponse{
 		AssemblyResult:       prototk.AssembleTransactionResponse_OK,
 		AssembledTransaction: assembledTransaction,
-		AttestationPlan:      buildEndorsePlan(tx.DomainConfig.NotaryLookup, req.Transaction.From, encodedUnlock),
+		AttestationPlan: []*prototk.AttestationRequest{
+			// Sender confirms the initial request with a signature
+			{
+				Name:            "sender",
+				AttestationType: prototk.AttestationType_SIGN,
+				Algorithm:       algorithms.ECDSA_SECP256K1,
+				VerifierType:    verifiers.ETH_ADDRESS,
+				Payload:         encodedUnlock,
+				PayloadType:     signpayloads.OPAQUE_TO_RSV,
+				Parties:         []string{req.Transaction.From},
+			},
+			// Notary will endorse the assembled transaction (by submitting to the ledger)
+			{
+				Name:            "notary",
+				AttestationType: prototk.AttestationType_ENDORSE,
+				Algorithm:       algorithms.ECDSA_SECP256K1,
+				VerifierType:    verifiers.ETH_ADDRESS,
+				Parties:         []string{notary},
+			},
+		},
 	}, nil
 }
 

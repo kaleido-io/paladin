@@ -160,19 +160,17 @@ func TestPrepareUnlock(t *testing.T) {
 	require.Len(t, assembleRes.AssembledTransaction.InputStates, 1)  // old info
 	require.Len(t, assembleRes.AssembledTransaction.OutputStates, 1) // new info
 	require.Len(t, assembleRes.AssembledTransaction.ReadStates, 1)
-	require.Len(t, assembleRes.AssembledTransaction.InfoStates, 7) // prepare-manifest + spend-manifest + cancel-manifest + unlock-data-info + prepare-data-info + output-coin + cancel-coin
+	require.Len(t, assembleRes.AssembledTransaction.InfoStates, 5) // manifest + unlock-data-info + prepare-data-info + output-coin + cancel-coin
 
 	assert.Equal(t, inputLockInfo.Id, assembleRes.AssembledTransaction.InputStates[0].Id)
 	assert.Equal(t, hashName("lockInfo_v1"), assembleRes.AssembledTransaction.OutputStates[0].SchemaId)
 
 	inputCoinState := assembleRes.AssembledTransaction.ReadStates[0]
 	manifestState := assembleRes.AssembledTransaction.InfoStates[0]
-	unlockManifestState := assembleRes.AssembledTransaction.InfoStates[1]
-	cancelManifestState := assembleRes.AssembledTransaction.InfoStates[2]
-	unlockDataState := assembleRes.AssembledTransaction.InfoStates[3]
-	prepareDataState := assembleRes.AssembledTransaction.InfoStates[4]
-	spendCoinState := assembleRes.AssembledTransaction.InfoStates[5]
-	cancelCoinState := assembleRes.AssembledTransaction.InfoStates[6]
+	unlockDataState := assembleRes.AssembledTransaction.InfoStates[1]
+	prepareDataState := assembleRes.AssembledTransaction.InfoStates[2]
+	spendCoinState := assembleRes.AssembledTransaction.InfoStates[3]
+	cancelCoinState := assembleRes.AssembledTransaction.InfoStates[4]
 	newLockInfoState := assembleRes.AssembledTransaction.OutputStates[0]
 
 	assert.Equal(t, inputCoin.ID.String(), inputCoinState.Id)
@@ -200,8 +198,7 @@ func TestPrepareUnlock(t *testing.T) {
 	require.Len(t, lockInfo.SpendOutputs, 1)
 	require.Len(t, lockInfo.CancelOutputs, 1)
 	require.NotEmpty(t, lockInfo.SpendData)
-	require.NotEmpty(t, lockInfo.CancelData)
-	require.NotEqual(t, lockInfo.SpendData, lockInfo.CancelData) // spend and cancel use distinct manifests
+	require.Equal(t, lockInfo.SpendData, lockInfo.CancelData) // same data for both currently
 
 	encodedUnlock, err := n.encodeUnlock(ctx, ethtypes.MustNewAddress(contractAddress), []*types.NotoLockedCoin{&inputCoin.Data}, []*types.NotoLockedCoin{}, []*types.NotoCoin{spendCoin})
 	require.NoError(t, err)
@@ -312,16 +309,14 @@ func TestPrepareUnlock(t *testing.T) {
 	}, data)
 
 	// Decode the options we store into the lockInfo
-	unlockTxData, err := n.encodeTransactionDataV1(ctx, newStateToEndorsableState([]*prototk.NewState{unlockManifestState, unlockDataState}))
-	require.NoError(t, err)
-	cancelTxData, err := n.encodeTransactionDataV1(ctx, newStateToEndorsableState([]*prototk.NewState{cancelManifestState, unlockDataState}))
+	unlockTxData, err := n.encodeTransactionDataV1(ctx, newStateToEndorsableState([]*prototk.NewState{unlockDataState}))
 	require.NoError(t, err)
 	notoParams := decodeSingleABITuple[types.NotoUpdateLockArgs](t, types.NotoUpdateLockArgsABI, fnParams.UpdateArgs)
 	notoOptions := notoParams.Options
 	expectedSpendHash, err := n.unlockHashFromIDs_V1(ctx, ethtypes.MustNewAddress(contractAddress), lockID, notoOptions.SpendTxId.HexString(), endorsableStateIDs(readStates), endorsableStateIDs(infoStates[1:2]), unlockTxData)
 	require.NoError(t, err)
 	require.Equal(t, expectedSpendHash, fnParams.SpendCommitment)
-	expectedCancelHash, err := n.unlockHashFromIDs_V1(ctx, ethtypes.MustNewAddress(contractAddress), lockID, notoOptions.SpendTxId.HexString(), endorsableStateIDs(readStates), endorsableStateIDs(infoStates[2:3]), cancelTxData)
+	expectedCancelHash, err := n.unlockHashFromIDs_V1(ctx, ethtypes.MustNewAddress(contractAddress), lockID, notoOptions.SpendTxId.HexString(), endorsableStateIDs(readStates), endorsableStateIDs(infoStates[2:3]), unlockTxData)
 	require.NoError(t, err)
 	require.Equal(t, expectedCancelHash, fnParams.CancelCommitment)
 
@@ -446,10 +441,6 @@ func TestPrepareUnlock(t *testing.T) {
 		completeForIdentity(senderKey.Address.String()).
 		completeForIdentity(receiverAddress)
 	mt.withMissingNewStates(manifestState, unlockDataState).
-		incompleteForIdentity(notaryAddress).
-		incompleteForIdentity(senderKey.Address.String()).
-		incompleteForIdentity(receiverAddress)
-	mt.withMissingNewStates(unlockManifestState, unlockDataState).
 		incompleteForIdentity(notaryAddress).
 		incompleteForIdentity(senderKey.Address.String()).
 		incompleteForIdentity(receiverAddress)

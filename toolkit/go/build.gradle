@@ -100,8 +100,8 @@ task goGet(type:Exec, dependsOn: protoc) {
     outputs.files('go.sum')
 
     executable 'go'
-    args 'get'
-    args './pkg/...'
+    args 'mod'
+    args 'download'
 }
 
 task lint(type: Exec, dependsOn:[protoc, ":installGolangCILint"]) {

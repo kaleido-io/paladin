@@ -167,7 +167,8 @@ task goGet(type:Exec, dependsOn:[protoc, copyContracts, makeMocks, ":toolkit:go:
     outputs.files('go.sum')
 
     executable 'go'
-    args 'get'
+    args 'mod'
+    args 'download'
 }
 
 task clean(type: Delete, dependsOn: ':testinfra:stopTestInfra') {

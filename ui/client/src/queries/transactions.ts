@@ -32,15 +32,6 @@ import { translateFilters } from '../utils';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
 
-const getBlockNumberQuery = (blockNumber: number) => {
-  return [
-    {
-      field: 'blockNumber',
-      value: blockNumber,
-    }
-  ]
-};
-
 const getTransactionPagingQuery = (pageParam: ITransactionPagingReference) => {
   return [
     {

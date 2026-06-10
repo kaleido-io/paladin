@@ -35,7 +35,7 @@ import { Keys } from "./views/Keys";
 import { Registries } from "./views/Registries";
 import { Transactions } from "./views/Transactions";
 import { TransactionDetails } from "./views/TransactionDetails";
-import { IPaladinTransactionPagingReference, ITransactionPagingReference } from "./interfaces";
+import { IFilter, IPaladinTransactionPagingReference, ITransactionPagingReference } from "./interfaces";
 import { Submissions } from "./views/Submissions";
 import { DomainContract } from "./views/DomainContract";
 import { PrivacyGroups } from "./views/PrivacyGroups";
@@ -56,8 +56,8 @@ function App() {
   const [txRefEntries, setTxRefEntries] = useState<ITransactionPagingReference[]>([]);
   const [txPage, txSetPage] = useState(0);
   const [txRowsPerPage, setTxRowsPerPage] = useState(10);
-  const [txFromBlock, setTxFromBlock] = useState<number>();
   const [txShowTxsWithReceipt, txSetShowTxsWithReceipt] = useState(false);
+  const [txFilters, setTxFilters] = useState<IFilter[]>([]);
   const [submissionsSection, setSubmissionsSection] = useState<'pending' | 'failed'>('pending');
   const [domainSortAscending, setDomainSortAscending] = useState(false);
   const [domainsPage, txSetDomainsPage] = useState(0);
@@ -162,10 +162,10 @@ function App() {
                       setPage={txSetPage}
                       rowsPerPage={txRowsPerPage}
                       setRowsPerPage={setTxRowsPerPage}
-                      fromBlock={txFromBlock}
-                      setFromBlock={setTxFromBlock}
                       showTxsWithReceipt={txShowTxsWithReceipt}
                       setShowTxsWithReceipt={txSetShowTxsWithReceipt}
+                      filters={txFilters}
+                      setFilters={setTxFilters}
                     />} />
                     <Route path={AppRoutes.Submissions} element={<Submissions
                       section={submissionsSection}

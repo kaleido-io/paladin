@@ -101,8 +101,7 @@ export const AddFilterDialog: React.FC<Props> = ({
       if (selectedFilterField.type === 'number' && isNaN(Number(value))) {
         setValue('');
       }
-      if (selectedOperator !== undefined
-        && ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'].includes(selectedOperator)) {
+      if (selectedOperator !== undefined && ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'].includes(selectedOperator)) {
         setIsCaseSensitive(true);
       }
       setValues(availableValues);

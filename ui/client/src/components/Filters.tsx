@@ -19,6 +19,8 @@ import { Dispatch, SetStateAction, useState } from "react";
 import { AddFilterDialog } from "../dialogs/AddFilter";
 import { useTranslation } from "react-i18next";
 import { IFilter, IFilterField } from "../interfaces";
+import AddIcon from '@mui/icons-material/Add';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 
 type Props = {
   filterFields: IFilterField[]
@@ -66,7 +68,12 @@ export const Filters: React.FC<Props> = ({
         alignItems: 'center',
         justifyContent: 'right',
         gap: '10px',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        // border: 'solid 1px',
+        // borderColor: theme => theme.palette.background.paper,
+        backgroundColor: theme => theme.palette.background.paper,
+        padding: '6px',
+        borderRadius: '20px'
       }}>
 
         {filters.map(filter =>
@@ -85,8 +92,9 @@ export const Filters: React.FC<Props> = ({
           <Button
             size="small"
             variant="outlined"
-            sx={{ borderRadius: '20px', minWidth: '100px'  }}
+            sx={{ borderRadius: '20px', minWidth: '120px'  }}
             onClick={() => setFilters([])}
+            startIcon={<ClearAllIcon />}
           >
             {t('clearFilters')}
           </Button>
@@ -96,8 +104,9 @@ export const Filters: React.FC<Props> = ({
           size="small"
           variant="outlined"
           color="secondary"
-          sx={{ borderRadius: '20px', minWidth: '100px' }}
+          sx={{ borderRadius: '20px', minWidth: '120px' }}
           onClick={() => setAddFilterDialogOpen(true)}
+          startIcon={<AddIcon />}
         >
           {t('addFilter')}
         </Button>

@@ -26,6 +26,7 @@ import { TransactionLookupDialog } from "../dialogs/TransactionLookup";
 import { ApplicationContext } from "../contexts/ApplicationContext";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Filters } from "../components/Filters";
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 
 type Props = {
   refEntries: ITransactionPagingReference[]
@@ -115,34 +116,36 @@ export const Transactions: React.FC<Props> = ({
             marginRight: "auto",
           }}
         >
-          <Box sx={{ marginBottom: '20px' }}>
-            <Grid2 container alignItems="center" spacing={2}>
-              <Grid2 sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }} size={{ md: 4 }} />
-              <Grid2 size={{ xs: 12, md: 4 }}>
-                <Typography align="center" variant="h5">
-                  {t("transactions")}
-                </Typography>
-              </Grid2>
-              <Grid2 size={{ xs: 12, md: 4 }} container justifyContent="right">
-                <Grid2>
-                  <Button
-                    sx={{ borderRadius: '20px', minWidth: '180px' }}
-                    size="large"
-                    variant="outlined"
-                    startIcon={<SearchIcon />}
-                    onClick={() => setLookupTransactionDialogOpen(true)}
-                  >
-                    {t('lookup')}
-                  </Button>
-                </Grid2>
-              </Grid2>
-            </Grid2>
-          </Box>
-          <Box sx={{ marginTop: '15px', marginBottom: '15px', textAlign: 'center' }}>
-            <ToggleButtonGroup exclusive onChange={(_event, value) => setShowTxsWithReceipt(value === 'withReceipt')} value={showTxsWithReceipt ? 'withReceipt' : 'all'}>
-              <ToggleButton color="primary" value="all" sx={{ width: '130px', height: '45px' }}>{t('all')}</ToggleButton>
-              <ToggleButton color="primary" value="withReceipt" sx={{ width: '130px', height: '45px' }}>{t('withReceipt')}</ToggleButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <Typography variant="h5">
+              {t("transactions")}
+            </Typography>
+            <ToggleButtonGroup size="small" sx={{ height: '30px' }} exclusive onChange={(_event, value) => setShowTxsWithReceipt(value === 'withReceipt')} value={showTxsWithReceipt ? 'withReceipt' : 'all'}>
+              <ToggleButton color="primary" value="withReceipt" sx={{ width: '120px' }}>{t('paladinOnly')}</ToggleButton>
+              <ToggleButton color="primary" value="all" sx={{ width: '120px' }}>{t('all')}</ToggleButton>
             </ToggleButtonGroup>
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
+              <Button
+                sx={{ borderRadius: '20px', minWidth: '120px' }}
+                size="small"
+                variant="outlined"
+                startIcon={<SearchIcon />}
+                onClick={() => setLookupTransactionDialogOpen(true)}
+              >
+                {t('lookup')}
+              </Button>
+              <Button
+                sx={{ borderRadius: '20px', minWidth: '120px' }}
+                size="small"
+                color="secondary"
+                variant="outlined"
+                startIcon={<FilterAltIcon />}
+                onClick={() => setLookupTransactionDialogOpen(true)}
+              >
+                {t('filters')}
+              </Button>
+            </Box>
+
           </Box>
           <Box sx={{ marginBottom: '20px' }}>
             <Filters
@@ -177,7 +180,7 @@ export const Transactions: React.FC<Props> = ({
                   name: 'to',
                   type: 'string'
                 },
-                                {
+                {
                   label: t('status'),
                   name: 'status',
                   type: 'string',

@@ -56,7 +56,7 @@ function App() {
   const [txRefEntries, setTxRefEntries] = useState<ITransactionPagingReference[]>([]);
   const [txPage, txSetPage] = useState(0);
   const [txRowsPerPage, setTxRowsPerPage] = useState(10);
-  const [txShowTxsWithReceipt, txSetShowTxsWithReceipt] = useState(false);
+  const [txShowTxsWithReceipt, txSetShowTxsWithReceipt] = useState(true);
   const [txFilters, setTxFilters] = useState<IFilter[]>([]);
   const [submissionsSection, setSubmissionsSection] = useState<'pending' | 'failed'>('pending');
   const [domainSortAscending, setDomainSortAscending] = useState(false);

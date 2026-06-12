@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Fade, Grid2, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Collapse, Fade, Grid2, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
@@ -27,9 +27,10 @@ import { customNavigate } from "../utils";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Hash } from "../components/Hash";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { IFilter, ISchemaComponent, IState } from "../interfaces";
+import { IFilter, IFilterField, ISchemaComponent, IState } from "../interfaces";
 import { Filters } from "../components/Filters";
 import { StateActions } from "../components/StateActions";
+import { FiltersButton } from "../components/FiltersButton";
 
 type Props = {
   sortAscending: boolean
@@ -67,6 +68,7 @@ export const States: React.FC<Props> = ({
 
   const [count, setCount] = useState(-1);
   const [sortBy, setSortBy] = useState('.created');
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -145,7 +147,13 @@ export const States: React.FC<Props> = ({
     }
   };
 
-  const filterFields: any = [
+  const filterFields: IFilterField[] = [
+    {
+      label: 'created',
+      name: '.created',
+      type: 'timestamp',
+      isNanoSeconds: true
+    },
     {
       label: t('id'),
       name: '.id',
@@ -176,7 +184,7 @@ export const States: React.FC<Props> = ({
           }}
         >
           <Box sx={{ marginBottom: '20px' }}>
-            <Typography align="center" variant="h5">
+            <Typography variant="h5">
               {t("states")}
             </Typography>
           </Box>
@@ -188,7 +196,6 @@ export const States: React.FC<Props> = ({
             <Box
               sx={{
                 backgroundColor: (theme) => theme.palette.background.paper,
-                marginBottom: '20px',
                 borderRadius: '4px',
                 padding: '20px',
               }}
@@ -242,13 +249,27 @@ export const States: React.FC<Props> = ({
               </Grid2>
             </Box>
             {states !== undefined &&
-              <Filters
-                filterFields={filterFields}
-                filters={filters}
-                setFilters={setFilters}
-              />
+              <>
+                <Box sx={{ textAlign: 'right' }}>
+                  <FiltersButton
+                    filtersVisible={filtersVisible}
+                    setFiltersVisible={setFiltersVisible}
+                  />
+                </Box>
+                <Collapse in={filtersVisible} unmountOnExit>
+                  <Box>
+                    <Filters
+                      filterFields={filterFields}
+                      filters={filters}
+                      setFilters={setFilters}
+                    />
+                  </Box>
+                </Collapse>
+              </>
             }
+
             {states !== undefined && states.length > 0 &&
+            <Box>
               <TableContainer
                 component={Paper}
               >
@@ -389,7 +410,8 @@ export const States: React.FC<Props> = ({
                   rowsPerPage={rowsPerPage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
-              </TableContainer>}
+              </TableContainer>
+              </Box>}
             {states !== undefined && states.length === 0 &&
               <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
                 <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

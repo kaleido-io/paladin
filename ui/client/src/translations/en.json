@@ -161,6 +161,7 @@
 	"manyN": "Many ({{n}})",
 	"members": "Members",
 	"message": "Message",
+	"messageId": "Message ID",
 	"messages": "Messages",
 	"messageValue": "Message {{value}}",
 	"messageNotFound": "Message not found",

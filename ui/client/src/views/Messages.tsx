@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -29,6 +29,8 @@ import { Filters } from "../components/Filters";
 import { IFilter } from "../interfaces";
 import { constants } from "../components/config";
 import { FiltersButton } from "../components/FiltersButton";
+import { MessageLookupDialog } from "../dialogs/MessageLookup";
+import SearchIcon from '@mui/icons-material/Search';
 
 type Props = {
   sortAscending: boolean
@@ -60,6 +62,7 @@ export const Messages: React.FC<Props> = ({
   setSortBy
 }) => {
 
+  const [lookupMessageDialogOpen, setLookupMessageDialogOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const navigate = useNavigate();
@@ -137,7 +140,15 @@ export const Messages: React.FC<Props> = ({
               {t("messages")}
             </Typography>
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
-
+              <Button
+                sx={{ borderRadius: '20px', minWidth: '120px' }}
+                size="small"
+                variant="outlined"
+                startIcon={<SearchIcon />}
+                onClick={() => setLookupMessageDialogOpen(true)}
+              >
+                {t('lookup')}
+              </Button>
               <FiltersButton
                 filtersVisible={filtersVisible}
                 setFiltersVisible={setFiltersVisible}
@@ -214,15 +225,6 @@ export const Messages: React.FC<Props> = ({
                           {t('created')}
                         </TableSortLabel>
                       </TableCell>
-                      {/* <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('acknowledged')}
-                      </TableCell> */}
                       <TableCell
                         width={1}
                         sx={{
@@ -335,7 +337,10 @@ export const Messages: React.FC<Props> = ({
           </Box>
         </Box>
       </Fade>
-
+      <MessageLookupDialog
+        dialogOpen={lookupMessageDialogOpen}
+        setDialogOpen={setLookupMessageDialogOpen}
+      />
     </>
   );
 

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, Fade, Grid2, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchIndexedTransactions } from "../queries/transactions";
 import { EnrichedTransaction } from "../components/EnrichedTransaction";
@@ -26,7 +26,7 @@ import { TransactionLookupDialog } from "../dialogs/TransactionLookup";
 import { ApplicationContext } from "../contexts/ApplicationContext";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Filters } from "../components/Filters";
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import { FiltersButton } from "../components/FiltersButton";
 
 type Props = {
   refEntries: ITransactionPagingReference[]
@@ -56,6 +56,7 @@ export const Transactions: React.FC<Props> = ({
 
   const { lastBlockWithTransactions } = useContext(ApplicationContext);
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
@@ -134,63 +135,59 @@ export const Transactions: React.FC<Props> = ({
               >
                 {t('lookup')}
               </Button>
-              <Button
-                sx={{ borderRadius: '20px', minWidth: '120px' }}
-                size="small"
-                color="secondary"
-                variant="outlined"
-                startIcon={<FilterAltIcon />}
-                onClick={() => setLookupTransactionDialogOpen(true)}
-              >
-                {t('filters')}
-              </Button>
+              <FiltersButton
+                filters={filters}
+                filtersVisible={filtersVisible}
+                setFiltersVisible={setFiltersVisible}
+              />
             </Box>
-
           </Box>
-          <Box sx={{ marginBottom: '20px' }}>
-            <Filters
-              filterFields={[
-                {
-                  label: t('transactionHash'),
-                  name: 'hash',
-                  type: 'string'
-                },
-                {
-                  label: t('block'),
-                  name: 'blockNumber',
-                  type: 'number'
-                },
-                {
-                  label: t('transactionIndex'),
-                  name: 'transactionIndex',
-                  type: 'number'
-                },
-                {
-                  label: t('nonce'),
-                  name: 'nonce',
-                  type: 'number'
-                },
-                {
-                  label: t('from'),
-                  name: 'from',
-                  type: 'string'
-                },
-                {
-                  label: t('to'),
-                  name: 'to',
-                  type: 'string'
-                },
-                {
-                  label: t('status'),
-                  name: 'status',
-                  type: 'string',
-                  enum: ['success', 'failed']
-                }
-              ]}
-              filters={filters}
-              setFilters={setFilters}
-            />
-          </Box>
+          <Collapse in={filtersVisible}>
+            <Box sx={{ marginBottom: '20px' }}>
+              <Filters
+                filterFields={[
+                  {
+                    label: t('transactionHash'),
+                    name: 'hash',
+                    type: 'string'
+                  },
+                  {
+                    label: t('block'),
+                    name: 'blockNumber',
+                    type: 'number'
+                  },
+                  {
+                    label: t('transactionIndex'),
+                    name: 'transactionIndex',
+                    type: 'number'
+                  },
+                  {
+                    label: t('nonce'),
+                    name: 'nonce',
+                    type: 'number'
+                  },
+                  {
+                    label: t('from'),
+                    name: 'from',
+                    type: 'string'
+                  },
+                  {
+                    label: t('to'),
+                    name: 'to',
+                    type: 'string'
+                  },
+                  {
+                    label: t('status'),
+                    name: 'status',
+                    type: 'string',
+                    enum: ['success', 'failed']
+                  }
+                ]}
+                filters={filters}
+                setFilters={setFilters}
+              />
+            </Box>
+          </Collapse>
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',

@@ -69,8 +69,6 @@ export const Filters: React.FC<Props> = ({
         justifyContent: 'right',
         gap: '10px',
         flexWrap: 'wrap',
-        // border: 'solid 1px',
-        // borderColor: theme => theme.palette.background.paper,
         backgroundColor: theme => theme.palette.background.paper,
         padding: '6px',
         borderRadius: '20px'

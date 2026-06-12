@@ -117,10 +117,10 @@ export const FilterDialog: React.FC<Props> = ({
         case 'timestamp':
           setOperators([
             <MenuItem key="on" value="on">{t('on')}</MenuItem>,
-            <MenuItem key="onOrBefore" value="onOrBefore">{t('onOrBefore')}</MenuItem>,
             <MenuItem key="onOrAfter" value="onOrAfter">{t('onOrAfter')}</MenuItem>,
-            <MenuItem key="before" value="before">{t('before')}</MenuItem>,
-            <MenuItem key="after" value="after">{t('after')}</MenuItem>
+            <MenuItem key="onOrBefore" value="onOrBefore">{t('onOrBefore')}</MenuItem>,
+            <MenuItem key="after" value="after">{t('after')}</MenuItem>,
+            <MenuItem key="before" value="before">{t('before')}</MenuItem>
           ]);
           setValues([]);
           break;

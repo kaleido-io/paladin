@@ -67,6 +67,7 @@ function App() {
   const [submissionsPage, setSubmissionsPage] = useState(0);
   const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
   const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<string>();
+  const [privacyGroupsFilters, setPrivacyGroupsFilters] = useState<IFilter[]>([]);
   const [privacyGroupsPage, setPrivacyGroupsPage] = useState(0);
   const [privacyGroupsRowsPerPage, setPrivacyGroupsRowsPerPage] = useState(10);
   const [privacyGroupsRefTimestamps, sePrivacyGroupsRefTimestamps] = useState<string[]>([]);
@@ -205,6 +206,8 @@ function App() {
                       setPage={setPrivacyGroupsPage}
                       rowsPerPage={privacyGroupsRowsPerPage}
                       setRowsPerPage={setPrivacyGroupsRowsPerPage}
+                      filters={privacyGroupsFilters}
+                      setFilters={setPrivacyGroupsFilters}
                     />} />
                     <Route path={AppRoutes.PrivacyGroup} element={<PrivacyGroup />} />
                     <Route path={AppRoutes.States} element={<States

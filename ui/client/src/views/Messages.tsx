@@ -41,6 +41,8 @@ type Props = {
   setRowsPerPage: Dispatch<SetStateAction<number>>
   filters: IFilter[]
   setFilters: Dispatch<SetStateAction<IFilter[]>>
+  sortBy: string
+  setSortBy: Dispatch<SetStateAction<string>>
 };
 
 export const Messages: React.FC<Props> = ({
@@ -53,7 +55,9 @@ export const Messages: React.FC<Props> = ({
   rowsPerPage,
   setRowsPerPage,
   filters,
-  setFilters
+  setFilters,
+  sortBy,
+  setSortBy
 }) => {
 
   const [filtersVisible, setFiltersVisible] = useState(false);
@@ -62,8 +66,8 @@ export const Messages: React.FC<Props> = ({
   const { t } = useTranslation();
 
   const { data: messages, error } = useQuery({
-    queryKey: ['messages', page, rowsPerPage, sortAscending, filters],
-    queryFn: () => queryMessages(rowsPerPage, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
+    queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters],
+    queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
   });
 
   useEffect(() => {
@@ -151,8 +155,8 @@ export const Messages: React.FC<Props> = ({
                     isNanoSeconds: true
                   },
                   {
-                    label: t('created'),
-                    name: 'created',
+                    label: t('acknowledged'),
+                    name: 'ack.time',
                     type: 'timestamp',
                     isNanoSeconds: true
                   },
@@ -195,10 +199,14 @@ export const Messages: React.FC<Props> = ({
                           backgroundColor: (theme) => theme.palette.background.paper,
                         }}>
                         <TableSortLabel
-                          active={true}
+                          active={sortBy === 'created'}
                           direction={sortAscending ? 'asc' : 'desc'}
                           onClick={() => {
-                            setSortAscending(!sortAscending);
+                            if (sortBy === 'created') {
+                              setSortAscending(!sortAscending);
+                            } else {
+                              setSortBy('created');
+                            }
                             setRefTimestamps([]);
                             setPage(0);
                           }}
@@ -206,7 +214,7 @@ export const Messages: React.FC<Props> = ({
                           {t('created')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell
+                      {/* <TableCell
                         width={1}
                         sx={{
                           backgroundColor: (theme) => theme.palette.background.paper,
@@ -214,6 +222,27 @@ export const Messages: React.FC<Props> = ({
                         }}
                       >
                         {t('acknowledged')}
+                      </TableCell> */}
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                        }}>
+                        <TableSortLabel
+                          active={sortBy === 'acknowledged'}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            if (sortBy === 'ack.time') {
+                              setSortAscending(!sortAscending);
+                            } else {
+                              setSortBy('ack.time')
+                            }
+                            setRefTimestamps([]);
+                            setPage(0);
+                          }}
+                        >
+                          {t('acknowledged')}
+                        </TableSortLabel>
                       </TableCell>
                       <TableCell
                         width={1}

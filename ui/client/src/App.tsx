@@ -84,6 +84,7 @@ function App() {
   const [messagesRefTimestamps, setMessagesRefTimestamps] = useState<string[]>([]);
   const [messagesSortAscending, setMessagesSortAscending] = useState(false);
   const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
+  const [messagesSortBy, setMessagesSortBy] = useState('created');
 
   const [systemTheme, setSystemTheme] = useState(
     window.matchMedia &&
@@ -234,6 +235,8 @@ function App() {
                       setRefTimestamps={setMessagesRefTimestamps}
                       filters={messagesFilters}
                       setFilters={setMessagesFilters}
+                      sortBy={messagesSortBy}
+                      setSortBy={setMessagesSortBy}
                     />} />
                     <Route path={AppRoutes.Message} element={<Message />} />
                     <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />

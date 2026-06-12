@@ -14,48 +14,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Badge, Button } from "@mui/material"
+import { Button } from "@mui/material"
 import { Dispatch, SetStateAction } from "react"
-import { IFilter } from "../interfaces"
 import { useTranslation } from "react-i18next"
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 type Props = {
-  filters: IFilter[]
   filtersVisible: boolean
   setFiltersVisible: Dispatch<SetStateAction<boolean>>
 }
 
 export const FiltersButton: React.FC<Props> = ({
-  filters,
   filtersVisible,
   setFiltersVisible
 }) => {
 
   const { t } = useTranslation();
-
   return (
     <Button
       sx={{ borderRadius: '20px', minWidth: '120px' }}
       size="small"
       color="secondary"
       variant="outlined"
-
       startIcon={<FilterAltIcon />}
-      endIcon={filters.length === 0 && (filtersVisible ? <ExpandLessIcon /> : <ExpandMoreIcon />
-      )}
+      endIcon={filtersVisible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
       onClick={() => setFiltersVisible(!filtersVisible)}
-
     >
       {t('filters')}
-      {filters.length > 0 &&
-        <Badge
-          badgeContent={filters.length}
-          color="secondary"
-          sx={{ marginLeft: '20px' }}
-        />}
     </Button>
   );
 

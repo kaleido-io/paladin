@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import { queryMessages } from "../queries/transport";
 import { Filters } from "../components/Filters";
 import { IFilter } from "../interfaces";
 import { constants } from "../components/config";
+import { FiltersButton } from "../components/FiltersButton";
 
 type Props = {
   sortAscending: boolean
@@ -38,6 +39,8 @@ type Props = {
   setPage: Dispatch<SetStateAction<number>>
   rowsPerPage: number
   setRowsPerPage: Dispatch<SetStateAction<number>>
+  filters: IFilter[]
+  setFilters: Dispatch<SetStateAction<IFilter[]>>
 };
 
 export const Messages: React.FC<Props> = ({
@@ -48,20 +51,12 @@ export const Messages: React.FC<Props> = ({
   page,
   setPage,
   rowsPerPage,
-  setRowsPerPage
+  setRowsPerPage,
+  filters,
+  setFilters
 }) => {
 
-  const getFiltersFromStorage = () => {
-    const value = window.localStorage.getItem(constants.MESSAGES_FILTERS);
-    if (value !== null) {
-      try {
-        return JSON.parse(value);
-      } catch (_err) { }
-    }
-    return [];
-  };
-
-  const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -133,34 +128,55 @@ export const Messages: React.FC<Props> = ({
             marginRight: "auto",
           }}
         >
-          <Box sx={{ marginBottom: '20px' }}>
-            <Typography align="center" variant="h5">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <Typography variant="h5">
               {t("messages")}
             </Typography>
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
+
+              <FiltersButton
+                filtersVisible={filtersVisible}
+                setFiltersVisible={setFiltersVisible}
+              />
+            </Box>
           </Box>
-          <Box sx={{ marginBottom: '20px' }}>
-            <Filters
-              filterFields={[
-                {
-                  label: t('id'),
-                  name: 'id',
-                  type: 'string'
-                },
-                {
-                  label: t('node'),
-                  name: 'node',
-                  type: 'string'
-                },
-                {
-                  label: t('type'),
-                  name: 'messageType',
-                  type: 'string'
-                }
-              ]}
-              filters={filters}
-              setFilters={setFilters}
-            />
-          </Box>
+          <Collapse in={filtersVisible}>
+            <Box sx={{ marginBottom: '20px' }}>
+              <Filters
+                filterFields={[
+                  {
+                    label: t('created'),
+                    name: 'created',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('created'),
+                    name: 'created',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('id'),
+                    name: 'id',
+                    type: 'string'
+                  },
+                  {
+                    label: t('node'),
+                    name: 'node',
+                    type: 'string'
+                  },
+                  {
+                    label: t('type'),
+                    name: 'messageType',
+                    type: 'string'
+                  }
+                ]}
+                filters={filters}
+                setFilters={setFilters}
+              />
+            </Box>
+          </Collapse>
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -243,10 +259,10 @@ export const Messages: React.FC<Props> = ({
                           <Timestamp timestamp={message.created} />
                         </TableCell>
                         <TableCell>
-                          {message.ack?.time?
-                          <Timestamp timestamp={message.ack.time} />
-                          :
-                          <>--</>}
+                          {message.ack?.time ?
+                            <Timestamp timestamp={message.ack.time} />
+                            :
+                            <>--</>}
                         </TableCell>
                         <TableCell>
                           <Hash Icon={<Tag size="18px" />} title={t('id')} hash={message.id} />

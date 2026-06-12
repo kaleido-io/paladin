@@ -83,6 +83,7 @@ function App() {
   const [messagesRowsPerPage, setMessagesRowsPerPage] = useState(10);
   const [messagesRefTimestamps, setMessagesRefTimestamps] = useState<string[]>([]);
   const [messagesSortAscending, setMessagesSortAscending] = useState(false);
+  const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
 
   const [systemTheme, setSystemTheme] = useState(
     window.matchMedia &&
@@ -231,6 +232,8 @@ function App() {
                       setRowsPerPage={setMessagesRowsPerPage}
                       refTimestamps={messagesRefTimestamps}
                       setRefTimestamps={setMessagesRefTimestamps}
+                      filters={messagesFilters}
+                      setFilters={setMessagesFilters}
                     />} />
                     <Route path={AppRoutes.Message} element={<Message />} />
                     <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />

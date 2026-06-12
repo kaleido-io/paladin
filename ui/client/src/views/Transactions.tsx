@@ -136,7 +136,6 @@ export const Transactions: React.FC<Props> = ({
                 {t('lookup')}
               </Button>
               <FiltersButton
-                filters={filters}
                 filtersVisible={filtersVisible}
                 setFiltersVisible={setFiltersVisible}
               />
@@ -149,7 +148,8 @@ export const Transactions: React.FC<Props> = ({
                   {
                     label: t('transactionHash'),
                     name: 'hash',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   },
                   {
                     label: t('block'),
@@ -169,18 +169,26 @@ export const Transactions: React.FC<Props> = ({
                   {
                     label: t('from'),
                     name: 'from',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   },
                   {
                     label: t('to'),
                     name: 'to',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   },
                   {
                     label: t('status'),
-                    name: 'status',
-                    type: 'string',
+                    name: 'result',
+                    type: 'enum',
                     enum: ['success', 'failed']
+                  },
+                  {
+                    label: t('time'),
+                    name: 'blockTimestamp',
+                    type: 'timestamp',
+                    isSeconds: true
                   }
                 ]}
                 filters={filters}

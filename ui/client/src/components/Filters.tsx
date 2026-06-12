@@ -16,11 +16,11 @@
 
 import { Box, Button, Chip } from "@mui/material";
 import { Dispatch, SetStateAction, useState } from "react";
-import { AddFilterDialog } from "../dialogs/AddFilter";
 import { useTranslation } from "react-i18next";
 import { IFilter, IFilterField } from "../interfaces";
 import AddIcon from '@mui/icons-material/Add';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import { FilterDialog } from "../dialogs/Filter";
 
 type Props = {
   filterFields: IFilterField[]
@@ -35,6 +35,7 @@ export const Filters: React.FC<Props> = ({
 }) => {
 
   const [addFilterDialogOpen, setAddFilterDialogOpen] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<IFilter>();
   const { t } = useTranslation();
 
   const getOperatorLabel = (operator: string) => {
@@ -51,14 +52,27 @@ export const Filters: React.FC<Props> = ({
       case 'doesNotContain': return '= !@';
       case 'doesNotStartWith': return '= !^';
       case 'doesNotEndWith': return '= !$';
+      case 'on': return '= ';
+      case 'after': return '> ';
+      case 'onOrAfter': return '>= ';
+      case 'before': return '< ';
+      case 'onOrBefore': return '<= ';
     }
-
   };
 
   const getFilterId = (filter: IFilter) => `${filter.field.name}-${filter.operator}-${filter.value}${filter.caseSensitive}`;
 
+  const generateFilterLabelValue = (filter: IFilter) => {
+    if (filter.field.type === 'enum') {
+      return t(filter.value as string);
+    } else if(filter.field.type === 'timestamp') {
+      return new Date(filter.value as number).toLocaleString();
+    }
+    return filter.value;
+  }
+
   const generateFilterLabel = (filter: IFilter) => {
-    return `${filter.field.label} ${getOperatorLabel(filter.operator)}${filter.value}`
+    return `${filter.field.label} ${getOperatorLabel(filter.operator)}${generateFilterLabelValue(filter)}`
   };
 
   return (
@@ -78,7 +92,7 @@ export const Filters: React.FC<Props> = ({
           <Chip
             key={getFilterId(filter)}
             label={generateFilterLabel(filter)}
-            
+            onClick={() => {setSelectedFilter(filter); setAddFilterDialogOpen(true)}}
             onDelete={() => {
               const id = getFilterId(filter);
               setFilters(filters.filter(currentFilter => getFilterId(currentFilter) !== id));
@@ -90,7 +104,7 @@ export const Filters: React.FC<Props> = ({
           <Button
             size="small"
             variant="outlined"
-            sx={{ borderRadius: '20px', minWidth: '120px'  }}
+            sx={{ borderRadius: '20px', minWidth: '120px' }}
             onClick={() => setFilters([])}
             startIcon={<ClearAllIcon />}
           >
@@ -103,7 +117,7 @@ export const Filters: React.FC<Props> = ({
           variant="outlined"
           color="secondary"
           sx={{ borderRadius: '20px', minWidth: '120px' }}
-          onClick={() => setAddFilterDialogOpen(true)}
+          onClick={() => { setSelectedFilter(undefined); setAddFilterDialogOpen(true) }}
           startIcon={<AddIcon />}
         >
           {t('addFilter')}
@@ -111,9 +125,18 @@ export const Filters: React.FC<Props> = ({
 
       </Box>
 
-      <AddFilterDialog
+      {/* <AddFilterDialog
         filterFields={filterFields}
         addFilter={filter => setFilters([...filters, filter])}
+        dialogOpen={addFilterDialogOpen}
+        setDialogOpen={setAddFilterDialogOpen}
+      /> */}
+
+      <FilterDialog
+        existingFilter={selectedFilter}
+        filterFields={filterFields}
+        addFilter={filter => setFilters([...filters, filter])}
+        updateFilters={() => setFilters([...filters])}
         dialogOpen={addFilterDialogOpen}
         setDialogOpen={setAddFilterDialogOpen}
       />

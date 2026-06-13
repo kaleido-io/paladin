@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Collapse, Fade, Grid2, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, Grid2, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
@@ -31,6 +31,8 @@ import { IFilter, IFilterField, ISchemaComponent, IState } from "../interfaces";
 import { Filters } from "../components/Filters";
 import { StateActions } from "../components/StateActions";
 import { FiltersButton } from "../components/FiltersButton";
+import { StateLookupDialog } from "../dialogs/StateLookup";
+import SearchIcon from '@mui/icons-material/Search';
 
 type Props = {
   sortAscending: boolean
@@ -66,6 +68,7 @@ export const States: React.FC<Props> = ({
   setFilters
 }) => {
 
+  const [stateLookupDialogOpen, setStateLookupDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const [sortBy, setSortBy] = useState('.created');
   const [filtersVisible, setFiltersVisible] = useState(false);
@@ -149,7 +152,7 @@ export const States: React.FC<Props> = ({
 
   const filterFields: IFilterField[] = [
     {
-      label: 'created',
+      label: t('created'),
       name: '.created',
       type: 'timestamp',
       isNanoSeconds: true
@@ -188,87 +191,92 @@ export const States: React.FC<Props> = ({
               {t("states")}
             </Typography>
           </Box>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            <Box
-              sx={{
-                backgroundColor: (theme) => theme.palette.background.paper,
-                borderRadius: '4px',
-                padding: '20px',
-              }}
-            >
-              <Grid2 container spacing={2}>
-                <Grid2 size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('domain')}
-                    select
-                    value={selectedDomain ?? ''}
-                    onChange={event => {
-                      setSelectedSchemaId(undefined);
-                      setSelectedDomain(event.target.value);
-                    }}
-                  >
-                    {domains.map(domain =>
-                      <MenuItem key={domain} value={domain}>
-                        {t(domain)}
-                      </MenuItem>
-                    )}
-                  </TextField>
-                </Grid2>
-                <Grid2 size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('schema')}
-                    select={schemas !== undefined}
-                    disabled={schemas === undefined}
-                    value={selectedSchemaId ?? ''}
-                    onChange={event => {
-                      setPage(0);
-                      setCount(-1);
-                      setSelectedSchemaId(event.target.value);
-                      setFilters([]);
-                    }}
-                  >
-                    {schemas?.map(schema =>
-                      <MenuItem key={schema.id} value={schema.id}>
-                        <Box sx={{
-                          display: 'flex',
-                          gap: '10px'
-                        }}>
-                          <Typography>{schema.definition.name.length > 0 ? schema.definition.name : '--'}</Typography>
-                          <Typography color="primary">{schema.labels.join(', ')}</Typography>
-                        </Box>
-                      </MenuItem>
-                    )}
-                  </TextField>
-                </Grid2>
+          <Box
+            sx={{
+              backgroundColor: (theme) => theme.palette.background.paper,
+              borderRadius: '4px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}
+          >
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label={t('domain')}
+                  select
+                  value={selectedDomain ?? ''}
+                  onChange={event => {
+                    setSelectedSchemaId(undefined);
+                    setSelectedDomain(event.target.value);
+                  }}
+                >
+                  {domains.map(domain =>
+                    <MenuItem key={domain} value={domain}>
+                      {t(domain)}
+                    </MenuItem>
+                  )}
+                </TextField>
               </Grid2>
-            </Box>
-            {states !== undefined &&
-              <>
-                <Box sx={{ textAlign: 'right' }}>
-                  <FiltersButton
-                    filtersVisible={filtersVisible}
-                    setFiltersVisible={setFiltersVisible}
+              <Grid2 size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label={t('schema')}
+                  select={schemas !== undefined}
+                  disabled={schemas === undefined}
+                  value={selectedSchemaId ?? ''}
+                  onChange={event => {
+                    setPage(0);
+                    setCount(-1);
+                    setSelectedSchemaId(event.target.value);
+                    setFilters([]);
+                  }}
+                >
+                  {schemas?.map(schema =>
+                    <MenuItem key={schema.id} value={schema.id}>
+                      <Box sx={{
+                        display: 'flex',
+                        gap: '10px'
+                      }}>
+                        <Typography>{schema.definition.name.length > 0 ? schema.definition.name : '--'}</Typography>
+                        <Typography color="primary">{schema.labels.join(', ')}</Typography>
+                      </Box>
+                    </MenuItem>
+                  )}
+                </TextField>
+              </Grid2>
+            </Grid2>
+          </Box>
+          {states !== undefined &&
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'right', gap: '10px', marginBottom: '20px' }}>
+                <Button
+                  sx={{ borderRadius: '20px', minWidth: '120px' }}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<SearchIcon />}
+                  onClick={() => setStateLookupDialogOpen(true)}
+                >
+                  {t('lookup')}
+                </Button>
+                <FiltersButton
+                  filtersVisible={filtersVisible}
+                  setFiltersVisible={setFiltersVisible}
+                />
+              </Box>
+              <Collapse in={filtersVisible}>
+                <Box sx={{ marginBottom: '20px' }}>
+                  <Filters
+                    filterFields={filterFields}
+                    filters={filters}
+                    setFilters={setFilters}
                   />
                 </Box>
-                <Collapse in={filtersVisible} unmountOnExit>
-                  <Box>
-                    <Filters
-                      filterFields={filterFields}
-                      filters={filters}
-                      setFilters={setFilters}
-                    />
-                  </Box>
-                </Collapse>
-              </>
-            }
+              </Collapse>
+            </>
+          }
 
-            {states !== undefined && states.length > 0 &&
+          {states !== undefined && states.length > 0 &&
             <Box>
               <TableContainer
                 component={Paper}
@@ -411,16 +419,22 @@ export const States: React.FC<Props> = ({
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
               </TableContainer>
-              </Box>}
-            {states !== undefined && states.length === 0 &&
-              <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
-                <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
-                <Typography>{t('statesEmptyState')}</Typography>
-              </Box>
-            }
-          </Box>
+            </Box>}
+          {states !== undefined && states.length === 0 &&
+            <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+              <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+              <Typography>{t('statesEmptyState')}</Typography>
+            </Box>
+          }
         </Box>
       </Fade>
+      {selectedDomain !== undefined && selectedSchemaId !== undefined &&
+        <StateLookupDialog
+          domain={selectedDomain}
+          schemaId={selectedSchemaId}
+          dialogOpen={stateLookupDialogOpen}
+          setDialogOpen={setStateLookupDialogOpen}
+        />}
     </>
   );
 

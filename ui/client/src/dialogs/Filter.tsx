@@ -141,7 +141,7 @@ export const FilterDialog: React.FC<Props> = ({
     let newValue: string | number | boolean;
     switch (selectedFilterField?.type) {
       case 'boolean':
-        newValue = Boolean(value);
+        newValue = value === 'true';
         break;
       case 'timestamp':
         newValue = dateValue!.toDate().getTime();
@@ -255,7 +255,7 @@ export const FilterDialog: React.FC<Props> = ({
                     disabled={selectedFilterField === undefined}
                     value={value}
                     onChange={event => setValue(event.target.value)}
-                    select={selectedFilterField?.type === 'enum'}
+                    select={selectedFilterField?.type === 'enum' || selectedFilterField?.type === 'boolean'}
                   >
                     {values}
                   </TextField>}

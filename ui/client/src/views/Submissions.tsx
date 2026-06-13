@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, Collapse, Fade, Grid2, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { PaladinTransaction } from "../components/PaladinTransaction";

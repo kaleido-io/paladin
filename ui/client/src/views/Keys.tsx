@@ -284,20 +284,20 @@ export const Keys: React.FC = () => {
 
 
             <ToggleButtonGroup exclusive
-            size="small"
-             sx={{ height: '30px' }} 
+              size="small"
+              sx={{ height: '30px' }}
               onChange={(_event, value) => {
                 if (value !== null) {
                   setMode(value);
                 }
               }}
               value={mode}>
-                <ToggleButton color="primary" value="list" sx={{ width: '120px'}}>
-                  {t('listView')}
-                </ToggleButton>
-                <ToggleButton color="primary" value="explorer" sx={{ width: '120px'}}>
-                  {t('explorerView')}
-                </ToggleButton>
+              <ToggleButton color="primary" value="list" sx={{ width: '120px' }}>
+                {t('listView')}
+              </ToggleButton>
+              <ToggleButton color="primary" value="explorer" sx={{ width: '120px' }}>
+                {t('explorerView')}
+              </ToggleButton>
             </ToggleButtonGroup>
             {mode === 'explorer' &&
               <Breadcrumbs
@@ -342,6 +342,11 @@ export const Keys: React.FC = () => {
                     label: t('index'),
                     name: 'index',
                     type: 'number'
+                  },
+                  {
+                    label: t('address'),
+                    name: 'verifier',
+                    type: 'string'
                   },
                   {
                     label: t('wallet'),

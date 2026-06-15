@@ -14,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext, useState } from "react";
-import { ApplicationContext } from "../contexts/ApplicationContext";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import { Alert, Box, Button, Fade, Typography } from "@mui/material";
@@ -27,7 +26,6 @@ import { useTranslation } from "react-i18next";
 
 export const Nodes: React.FC = () => {
 
-  const { lastBlockWithTransactions, autoRefreshEnabled } = useContext(ApplicationContext);
   const [MyNodeDialogOpen, setMyNodeDialogOpen] = useState(false);
   const { t } = useTranslation();
 
@@ -37,7 +35,7 @@ export const Nodes: React.FC = () => {
   });
 
   const { data: transportPeers, error: errorFetchingTransportPeers, isFetching: isFetchingTransportPeers } = useQuery({
-    queryKey: ["transportPeers", autoRefreshEnabled, lastBlockWithTransactions],
+    queryKey: ['transportPeers'],
     queryFn: () => fetchTransportPeers()
   });
 

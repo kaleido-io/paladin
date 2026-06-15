@@ -28,7 +28,7 @@ import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
 
 export const Transactions: React.FC = () => {
-  const { lastBlockWithTransactions, transactions } = useApplicationContext();
+  const { transactions } = useApplicationContext();
   const {
     refEntries,
     setRefEntries,
@@ -48,7 +48,7 @@ export const Transactions: React.FC = () => {
   const { t } = useTranslation();
 
   const { data: enrichedTransactions, error } = useQuery({
-    queryKey: ['transactions', refEntries, rowsPerPage, showTxsWithReceipt, filters, page, lastBlockWithTransactions],
+    queryKey: ['transactions', refEntries, rowsPerPage, showTxsWithReceipt, filters, page],
     queryFn: () => fetchIndexedTransactions(rowsPerPage, showTxsWithReceipt, filters, refEntries[refEntries.length - 1])
   });
 

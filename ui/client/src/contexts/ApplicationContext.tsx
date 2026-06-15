@@ -14,19 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from "@tanstack/react-query";
 import {
   createContext,
   Dispatch,
   SetStateAction,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
-import { ErrorDialog } from "../dialogs/Error";
-import { fetchLatestBlockWithTxs } from "../queries/blocks";
-import { constants } from "../components/config";
 import {
   IFilter,
   IPaladinTransactionPagingReference,
@@ -169,11 +164,6 @@ interface IApplicationContext {
   colorMode: {
     toggleColorMode: () => void;
   };
-  lastBlockWithTransactions: number;
-  autoRefreshEnabled: boolean;
-  setAutoRefreshEnabled: Dispatch<SetStateAction<boolean>>;
-  refreshRequired: boolean;
-  refresh: () => void;
   navigationVisible: boolean;
   setNavigationVisible: Dispatch<SetStateAction<boolean>>;
   transactions: TransactionsViewState;
@@ -198,10 +188,6 @@ interface Props {
 }
 
 export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [lastBlockWithTransactions, setLastBlockWithTransactions] =
-    useState(-1);
-  const [refreshRequired, setRefreshRequired] = useState(false);
   const [navigationVisible, setNavigationVisible] = useState(false);
 
   // Transactions view state
@@ -273,44 +259,6 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [keysSortAscending, setKeysSortAscending] = useState(true);
   const [keysSortByPathFirst, setKeysSortByPathFirst] = useState(true);
   const [keysFiltersVisible, setKeysFiltersVisible] = useState(false);
-
-  const { data: actualLastBlockWithTransactions, error } = useQuery({
-    queryKey: ["lastBlockWithTransactions"],
-    queryFn: () =>
-      fetchLatestBlockWithTxs().then((res) => {
-        if (res.length > 0) {
-          return res[0].blockNumber;
-        }
-        return 0;
-      }),
-    refetchInterval: constants.UPDATE_FREQUENCY_MILLISECONDS,
-    retry: false,
-    enabled: false, // TODO: remove
-  });
-
-  useEffect(() => {
-    if (
-      actualLastBlockWithTransactions !== undefined &&
-      actualLastBlockWithTransactions > lastBlockWithTransactions
-    ) {
-      if (autoRefreshEnabled || lastBlockWithTransactions === -1) {
-        setLastBlockWithTransactions(actualLastBlockWithTransactions);
-      } else {
-        setRefreshRequired(true);
-      }
-    }
-  }, [
-    actualLastBlockWithTransactions,
-    lastBlockWithTransactions,
-    autoRefreshEnabled,
-  ]);
-
-  const refresh = () => {
-    if (actualLastBlockWithTransactions !== undefined) {
-      setLastBlockWithTransactions(actualLastBlockWithTransactions);
-    }
-    setRefreshRequired(false);
-  };
 
   const transactions = useMemo(
     (): TransactionsViewState => ({
@@ -533,12 +481,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   return (
     <ApplicationContext.Provider
       value={{
-        lastBlockWithTransactions,
         colorMode,
-        autoRefreshEnabled,
-        setAutoRefreshEnabled,
-        refreshRequired,
-        refresh,
         navigationVisible,
         setNavigationVisible,
         transactions,
@@ -552,7 +495,6 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
       }}
     >
       {children}
-      <ErrorDialog dialogOpen={!!error} message={error?.message ?? ""} />
     </ApplicationContext.Provider>
   );
 };

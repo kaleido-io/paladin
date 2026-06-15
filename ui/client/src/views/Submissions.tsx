@@ -32,7 +32,7 @@ import { customNavigate } from "../utils";
 import { useNavigate } from "react-router-dom";
 
 export const Submissions: React.FC = () => {
-  const { lastBlockWithTransactions, submissions } = useApplicationContext();
+  const { submissions } = useApplicationContext();
   const {
     section,
     setSection,
@@ -56,7 +56,7 @@ export const Submissions: React.FC = () => {
   const { t } = useTranslation();
 
   const { data: transactions, error } = useQuery({
-    queryKey: ['submissions', section, lastBlockWithTransactions, filters, sortAscending, refEntries, rowsPerPage, page],
+    queryKey: ['submissions', section, filters, sortAscending, refEntries, rowsPerPage, page],
     queryFn: () => fetchSubmissions(section, filters, sortAscending, refEntries[refEntries.length - 1])
   });
 

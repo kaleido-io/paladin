@@ -27,7 +27,6 @@ import { Hash } from "../components/Hash";
 import { queryMessages } from "../queries/transport";
 import { Filters } from "../components/Filters";
 import { IFilter } from "../interfaces";
-import { constants } from "../components/config";
 import { FiltersButton } from "../components/FiltersButton";
 import { MessageLookupDialog } from "../dialogs/MessageLookup";
 import SearchIcon from '@mui/icons-material/Search';
@@ -80,10 +79,6 @@ export const Messages: React.FC<Props> = ({
       }
     }
   }, [messages, rowsPerPage, page]);
-
-  useEffect(() => {
-    window.localStorage.setItem(constants.MESSAGES_FILTERS, JSON.stringify(filters));
-  }, [filters]);
 
   if (messages === undefined) {
     return <></>

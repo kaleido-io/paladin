@@ -22,7 +22,6 @@ import { fetchSubmissions } from "../queries/transactions";
 import { IFilter, IPaladinTransactionPagingReference } from "../interfaces";
 import { useTranslation } from "react-i18next";
 import { Filters } from "../components/Filters";
-import { constants } from "../components/config";
 import SearchIcon from '@mui/icons-material/Search';
 import { TransactionLookupDialog } from "../dialogs/TransactionLookup";
 import { FiltersButton } from "../components/FiltersButton";
@@ -44,6 +43,8 @@ type Props = {
   setRefEntries: Dispatch<SetStateAction<IPaladinTransactionPagingReference[]>>
   sortAscending: boolean
   setSortAscending: Dispatch<SetStateAction<boolean>>
+  filters: IFilter[]
+  setFilters: Dispatch<SetStateAction<IFilter[]>>
 };
 
 export const Submissions: React.FC<Props> = ({
@@ -56,24 +57,15 @@ export const Submissions: React.FC<Props> = ({
   refEntries,
   setRefEntries,
   sortAscending,
-  setSortAscending
+  setSortAscending,
+  filters,
+  setFilters
 }) => {
-
-  const getFiltersFromStorage = () => {
-    const value = window.localStorage.getItem(constants.SUBMISSIONS_FILTERS_KEY);
-    if (value !== null) {
-      try {
-        return JSON.parse(value);
-      } catch (_err) { }
-    }
-    return [];
-  };
 
   const navigate = useNavigate();
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
   const { lastBlockWithTransactions } = useContext(ApplicationContext);
-  const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
@@ -81,10 +73,6 @@ export const Submissions: React.FC<Props> = ({
     queryKey: ['submissions', section, lastBlockWithTransactions, filters, sortAscending, refEntries, rowsPerPage, page],
     queryFn: () => fetchSubmissions(section, filters, sortAscending, refEntries[refEntries.length - 1])
   });
-
-  useEffect(() => {
-    window.localStorage.setItem(constants.SUBMISSIONS_FILTERS_KEY, JSON.stringify(filters));
-  }, [filters]);
 
   useEffect(() => {
     if (transactions !== undefined && count === -1) {

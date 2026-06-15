@@ -16,7 +16,7 @@
 
 import { Alert, Box, Breadcrumbs, Button, Collapse, Fade, IconButton, Link, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { fetchKeys } from "../queries/keys";
 import { Hash } from "../components/Hash";
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -33,55 +33,83 @@ import { useTranslation } from "react-i18next";
 import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
 
-export const Keys: React.FC = () => {
+type Props = {
+  page: number
+  setPage: Dispatch<SetStateAction<number>>
+  rowsPerPage: number
+  setRowsPerPage: Dispatch<SetStateAction<number>>
+  mode: 'explorer' | 'list'
+  setMode: Dispatch<SetStateAction<'explorer' | 'list'>>
+  filters: IFilter[]
+  setFilters: Dispatch<SetStateAction<IFilter[]>>
+  sortAscending: boolean
+  setSortAscending: Dispatch<SetStateAction<boolean>>
+  sortByPathFirst: boolean
+  setSortByPathFirst: Dispatch<SetStateAction<boolean>>
+};
 
-  const getDefaultRowsPerPage = () => {
-    const valueFromStorage = window.localStorage.getItem(constants.KEYS_ROWS_PER_PAGE);
-    if (valueFromStorage !== null) {
-      return Number(valueFromStorage);
-    }
-    return 10;
-  };
+export const Keys: React.FC<Props> = ({
+  page,
+  setPage,
+  rowsPerPage,
+  setRowsPerPage,
+  mode,
+  setMode,
+  filters,
+  setFilters,
+  sortAscending,
+  setSortAscending,
+  sortByPathFirst,
+  setSortByPathFirst
+}) => {
 
-  const getDefaultMode = () => {
-    const valueFromStorage = window.localStorage.getItem(constants.KEYS_MODE);
-    if (valueFromStorage === 'explorer' || valueFromStorage === 'list') {
-      return valueFromStorage;
-    }
-    return 'explorer';
-  };
+  // const getDefaultRowsPerPage = () => {
+  //   const valueFromStorage = window.localStorage.getItem(constants.KEYS_ROWS_PER_PAGE);
+  //   if (valueFromStorage !== null) {
+  //     return Number(valueFromStorage);
+  //   }
+  //   return 10;
+  // };
 
-  const getDefaultSortBy = () => {
-    return window.localStorage.getItem(constants.KEYS_SORT_BY_STORAGE_KEY) ?? 'index';
-  };
+  // const getDefaultMode = () => {
+  //   const valueFromStorage = window.localStorage.getItem(constants.KEYS_MODE);
+  //   if (valueFromStorage === 'explorer' || valueFromStorage === 'list') {
+  //     return valueFromStorage;
+  //   }
+  //   return 'explorer';
+  // };
 
-  const getDefaultSortOrder = () => {
-    return window.localStorage.getItem(constants.KEYS_SORT_ORDER_STORAGE_KEY) as 'asc' | 'desc' ?? 'asc';
-  };
+  // const getDefaultSortBy = () => {
+  //   return window.localStorage.getItem(constants.KEYS_SORT_BY_STORAGE_KEY) ?? 'index';
+  // };
 
-  const getFiltersFromStorage = () => {
-    const value = window.localStorage.getItem(constants.KEYS_FILTERS_KEY);
-    if (value !== null) {
-      try {
-        return JSON.parse(value);
-      } catch (_err) { }
-    }
-    return [];
-  };
+  // const getDefaultSortOrder = () => {
+  //   return window.localStorage.getItem(constants.KEYS_SORT_ORDER_STORAGE_KEY) as 'asc' | 'desc' ?? 'asc';
+  // };
+
+  // const getFiltersFromStorage = () => {
+  //   const value = window.localStorage.getItem(constants.KEYS_FILTERS_KEY);
+  //   if (value !== null) {
+  //     try {
+  //       return JSON.parse(value);
+  //     } catch (_err) { }
+  //   }
+  //   return [];
+  // };
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [refEntries, setRefEntries] = useState<IKeyEntry[]>([]);
-  const [page, setPage] = useState(0);
+  // const [page, setPage] = useState(0);
   const [count, setCount] = useState(-1);
-  const [rowsPerPage, setRowsPerPage] = useState(getDefaultRowsPerPage());
+  // const [rowsPerPage, setRowsPerPage] = useState(getDefaultRowsPerPage());
   const [parent, setParent] = useState(searchParams.get('path') ?? '');
   const [reverseLookupDialogOpen, setReverseLookupDialogOpen] = useState(false);
-  const [sortByPathFirst, setSortByPathFirst] = useState(getDefaultSortBy() === 'path');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(getDefaultSortOrder);
+  // const [sortByPathFirst, setSortByPathFirst] = useState(getDefaultSortBy() === 'path');
+  // const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(getDefaultSortOrder);
   const [selectedVerifiers, setSelectedVerifiers] = useState<IVerifier[]>();
   const [verifiersDialogOpen, setVerifiersDialogOpen] = useState(false);
-  const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
-  const [mode, setMode] = useState<'explorer' | 'list'>(getDefaultMode());
+  // const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
+  // const [mode, setMode] = useState<'explorer' | 'list'>(getDefaultMode());
   const [filtersVisible, setFiltersVisible] = useState(false);
   const { t } = useTranslation();
 
@@ -90,8 +118,8 @@ export const Keys: React.FC = () => {
   }, [searchParams]);
 
   const { data: keys, error } = useQuery({
-    queryKey: ["keys", parent, sortByPathFirst, sortOrder, refEntries, rowsPerPage, filters, mode],
-    queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortOrder, filters, refEntries[refEntries.length - 1])
+    queryKey: ["keys", parent, sortByPathFirst, sortAscending, refEntries, rowsPerPage, filters, mode],
+    queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortAscending ? 'asc' : 'desc', filters, refEntries[refEntries.length - 1])
   });
 
   useEffect(() => {
@@ -141,22 +169,22 @@ export const Keys: React.FC = () => {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{error.message}</Alert>
   }
 
-  const handleSortChange = (column: string) => {
-    if ((column === 'path' && sortByPathFirst) || (column === 'index' && !sortByPathFirst)) {
-      const order = sortOrder === 'asc' ? 'desc' : 'asc';
-      setSortOrder(order);
-      window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, order);
-    } else {
-      window.localStorage.setItem(constants.KEYS_SORT_BY_STORAGE_KEY, column);
-      if (sortOrder !== 'asc') {
-        window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, 'asc');
-        setSortOrder('asc');
-      }
-      setSortByPathFirst(column === 'path');
-    }
-    setPage(0);
-    setRefEntries([]);
-  };
+  // const handleSortChange = (column: string) => {
+  //   if ((column === 'path' && sortByPathFirst) || (column === 'index' && !sortByPathFirst)) {
+  //     const order = sortOrder === 'asc' ? 'desc' : 'asc';
+  //     setSortOrder(order);
+  //     window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, order);
+  //   } else {
+  //     window.localStorage.setItem(constants.KEYS_SORT_BY_STORAGE_KEY, column);
+  //     if (sortOrder !== 'asc') {
+  //       window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, 'asc');
+  //       setSortOrder('asc');
+  //     }
+  //     setSortByPathFirst(column === 'path');
+  //   }
+  //   setPage(0);
+  //   setRefEntries([]);
+  // };
 
   let breadcrumbContent: JSX.Element[] = [];
   if (parent !== '') {
@@ -280,9 +308,6 @@ export const Keys: React.FC = () => {
             <Typography variant="h5">
               {t("localKeys")}
             </Typography>
-
-
-
             <ToggleButtonGroup exclusive
               size="small"
               sx={{ height: '30px' }}
@@ -310,9 +335,6 @@ export const Keys: React.FC = () => {
                 </Link>
                 {breadcrumbContent}
               </Breadcrumbs>}
-
-
-
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
               <Button
                 sx={{ borderRadius: '20px', minWidth: '120px' }}
@@ -384,8 +406,16 @@ export const Keys: React.FC = () => {
                   <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper }}>
                     <TableSortLabel
                       active={sortByPathFirst}
-                      direction={sortOrder}
-                      onClick={() => handleSortChange('path')}
+                      direction={sortAscending ? 'asc' : 'desc'}
+                      onClick={() => {
+                        if (sortByPathFirst) {
+                          setSortAscending(!sortAscending)
+                        } else {
+                          setSortByPathFirst(true);
+                        }
+                        setPage(0);
+                        setRefEntries([]);
+                      }}
                     >
                       {t(mode === 'explorer' ? 'pathSegment' : 'path')}
                     </TableSortLabel>
@@ -394,8 +424,16 @@ export const Keys: React.FC = () => {
                   <TableCell width={1} sx={{ backgroundColor: theme => theme.palette.background.paper }}>
                     <TableSortLabel
                       active={!sortByPathFirst}
-                      direction={sortOrder}
-                      onClick={() => handleSortChange('index')}
+                      direction={sortAscending ? 'asc' : 'desc'}
+                      onClick={() => {
+                        if (!sortByPathFirst) {
+                          setSortAscending(!sortAscending)
+                        } else {
+                          setSortByPathFirst(false);
+                        }
+                        setPage(0);
+                        setRefEntries([]);
+                      }}
                     >
                       {t('index')}
                     </TableSortLabel>

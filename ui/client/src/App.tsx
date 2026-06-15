@@ -69,6 +69,7 @@ function App() {
   const [submissionsPage, setSubmissionsPage] = useState(0);
   const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
   const [submissionsSortAscending, setSubmissionsSortAscending] = useState(false);
+  const [submissionsFilters, setSubmissionsFilters] = useState<IFilter[]>([]);
   const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<string>();
   const [privacyGroupsFilters, setPrivacyGroupsFilters] = useState<IFilter[]>([]);
   const [privacyGroupsPage, setPrivacyGroupsPage] = useState(0);
@@ -94,6 +95,12 @@ function App() {
   const [registrySortAscending, setRegistrySortAscending] = useState(true);
   const [registryPage, setRegistryPage] = useState(0);
   const [registryRowsPerPage, setRegistryRowsPerPage] = useState(10);
+  const [keysPage, setKeysPage] = useState(0);
+  const [keysRowsPerPage, setKeysRowsPerPage] = useState(10);
+  const [keysMode, setKeysMode] = useState<'explorer' | 'list'>('list');
+  const [keysFilters, setKeysFilters] = useState<IFilter[]>([]);
+  const [keysSortAscending, setKeysSortAscending] = useState(true);
+  const [keysSortByPathFirst, setKeysSortByPathFirst] = useState(true);
 
   const [systemTheme, setSystemTheme] = useState(
     window.matchMedia &&
@@ -190,9 +197,24 @@ function App() {
                       setRefEntries={setSubmissionsSetRefEntries}
                       sortAscending={submissionsSortAscending}
                       setSortAscending={setSubmissionsSortAscending}
+                      filters={submissionsFilters}
+                      setFilters={setSubmissionsFilters}
                     />} />
                     <Route path={AppRoutes.Transaction} element={<TransactionDetails />} />
-                    <Route path={AppRoutes.Keys} element={<Keys />} />
+                    <Route path={AppRoutes.Keys} element={<Keys
+                    page={keysPage}
+                    setPage={setKeysPage}
+                    rowsPerPage={keysRowsPerPage}
+                    setRowsPerPage={setKeysRowsPerPage}
+                    filters={keysFilters}
+                    setFilters={setKeysFilters}
+                    mode={keysMode}
+                    setMode={setKeysMode}
+                    sortAscending={keysSortAscending}
+                    setSortAscending={setKeysSortAscending}
+                    sortByPathFirst={keysSortByPathFirst}
+                    setSortByPathFirst={setKeysSortByPathFirst}
+                    />} />
                     <Route path={AppRoutes.Registry} element={<Registries
                       filters={registryFilters}
                       setFilters={setRegistryFilters}

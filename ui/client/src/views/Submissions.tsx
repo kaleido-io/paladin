@@ -16,10 +16,9 @@
 
 import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
-import { ApplicationContext } from "../contexts/ApplicationContext";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchSubmissions } from "../queries/transactions";
-import { IFilter, IPaladinTransactionPagingReference } from "../interfaces";
 import { useTranslation } from "react-i18next";
 import { Filters } from "../components/Filters";
 import SearchIcon from '@mui/icons-material/Search';
@@ -32,40 +31,26 @@ import { Tag } from "lucide-react";
 import { customNavigate } from "../utils";
 import { useNavigate } from "react-router-dom";
 
-type Props = {
-  section: 'pending' | 'failed'
-  setSection: Dispatch<SetStateAction<'pending' | 'failed'>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  refEntries: IPaladinTransactionPagingReference[]
-  setRefEntries: Dispatch<SetStateAction<IPaladinTransactionPagingReference[]>>
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-};
-
-export const Submissions: React.FC<Props> = ({
-  section,
-  setSection,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  refEntries,
-  setRefEntries,
-  sortAscending,
-  setSortAscending,
-  filters,
-  setFilters
-}) => {
+export const Submissions: React.FC = () => {
+  const { lastBlockWithTransactions, submissions } = useApplicationContext();
+  const {
+    section,
+    setSection,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    refEntries,
+    setRefEntries,
+    sortAscending,
+    setSortAscending,
+    filters,
+    setFilters,
+  } = submissions;
 
   const navigate = useNavigate();
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
-  const { lastBlockWithTransactions } = useContext(ApplicationContext);
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 

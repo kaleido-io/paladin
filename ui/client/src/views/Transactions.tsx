@@ -18,43 +18,29 @@ import { Alert, Box, Button, Collapse, Fade, TablePagination, ToggleButton, Togg
 import { useQuery } from "@tanstack/react-query";
 import { fetchIndexedTransactions } from "../queries/transactions";
 import { EnrichedTransaction } from "../components/EnrichedTransaction";
-import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
-import { IFilter, ITransactionPagingReference } from "../interfaces";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchIcon from '@mui/icons-material/Search';
 import { TransactionLookupDialog } from "../dialogs/TransactionLookup";
-import { ApplicationContext } from "../contexts/ApplicationContext";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
 
-type Props = {
-  refEntries: ITransactionPagingReference[]
-  setRefEntries: Dispatch<SetStateAction<ITransactionPagingReference[]>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  showTxsWithReceipt: boolean
-  setShowTxsWithReceipt: Dispatch<SetStateAction<boolean>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-};
-
-export const Transactions: React.FC<Props> = ({
-  refEntries,
-  setRefEntries,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  showTxsWithReceipt,
-  setShowTxsWithReceipt,
-  filters,
-  setFilters
-}) => {
-
-  const { lastBlockWithTransactions } = useContext(ApplicationContext);
+export const Transactions: React.FC = () => {
+  const { lastBlockWithTransactions, transactions } = useApplicationContext();
+  const {
+    refEntries,
+    setRefEntries,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    showTxsWithReceipt,
+    setShowTxsWithReceipt,
+    filters,
+    setFilters,
+  } = transactions;
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);

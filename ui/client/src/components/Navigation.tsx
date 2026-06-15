@@ -16,9 +16,9 @@
 
 import { Box, ButtonBase, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ApplicationContext } from "../contexts/ApplicationContext";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { CONSTANTS, customNavigate } from "../utils";
 import { AppRoutes } from "../routes";
 import logoDark from '../../public/paladin-title-dark.svg';
@@ -26,17 +26,8 @@ import logoLight from '../../public/paladin-title-light.svg';
 import { SettingsMenu } from "../menus/Settings";
 import SettingsIcon from '@mui/icons-material/Settings';
 
-interface Props {
-  navigationVisible: boolean;
-  setNavigationVisible: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-export const Navigation: React.FC<Props> = ({
-  navigationVisible,
-  setNavigationVisible
-}) => {
-
-  const { } = useContext(ApplicationContext);
+export const Navigation: React.FC = () => {
+  const { navigationVisible, setNavigationVisible } = useApplicationContext();
   const navigate = useNavigate();
   const pathname = useLocation().pathname.toLowerCase();
   const { t } = useTranslation();

@@ -18,7 +18,8 @@ import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { Timestamp } from "../components/Timestamp";
 import { Tag } from "lucide-react";
 import { customNavigate } from "../utils";
@@ -26,40 +27,26 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Hash } from "../components/Hash";
 import { queryMessages } from "../queries/transport";
 import { Filters } from "../components/Filters";
-import { IFilter } from "../interfaces";
 import { FiltersButton } from "../components/FiltersButton";
 import { MessageLookupDialog } from "../dialogs/MessageLookup";
 import SearchIcon from '@mui/icons-material/Search';
 
-type Props = {
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  refTimestamps: string[]
-  setRefTimestamps: Dispatch<SetStateAction<string[]>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-  sortBy: string
-  setSortBy: Dispatch<SetStateAction<string>>
-};
-
-export const Messages: React.FC<Props> = ({
-  sortAscending,
-  setSortAscending,
-  refTimestamps,
-  setRefTimestamps,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  filters,
-  setFilters,
-  sortBy,
-  setSortBy
-}) => {
+export const Messages: React.FC = () => {
+  const { messages: messagesViewState } = useApplicationContext();
+  const {
+    sortAscending,
+    setSortAscending,
+    refTimestamps,
+    setRefTimestamps,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    filters,
+    setFilters,
+    sortBy,
+    setSortBy,
+  } = messagesViewState;
 
   const [lookupMessageDialogOpen, setLookupMessageDialogOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);

@@ -16,12 +16,13 @@
 
 import { Alert, Box, Breadcrumbs, Button, Collapse, Fade, IconButton, Link, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchKeys } from "../queries/keys";
 import { Hash } from "../components/Hash";
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { IFilter, IKeyEntry, IVerifier } from "../interfaces";
+import { IKeyEntry, IVerifier } from "../interfaces";
 import { useSearchParams } from "react-router-dom";
 import { Captions, Signature } from "lucide-react";
 import { constants } from "../components/config";
@@ -33,35 +34,22 @@ import { useTranslation } from "react-i18next";
 import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
 
-type Props = {
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  mode: 'explorer' | 'list'
-  setMode: Dispatch<SetStateAction<'explorer' | 'list'>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  sortByPathFirst: boolean
-  setSortByPathFirst: Dispatch<SetStateAction<boolean>>
-};
-
-export const Keys: React.FC<Props> = ({
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  mode,
-  setMode,
-  filters,
-  setFilters,
-  sortAscending,
-  setSortAscending,
-  sortByPathFirst,
-  setSortByPathFirst
-}) => {
+export const Keys: React.FC = () => {
+  const { keys: keysViewState } = useApplicationContext();
+  const {
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    mode,
+    setMode,
+    filters,
+    setFilters,
+    sortAscending,
+    setSortAscending,
+    sortByPathFirst,
+    setSortByPathFirst,
+  } = keysViewState;
 
   // const getDefaultRowsPerPage = () => {
   //   const valueFromStorage = window.localStorage.getItem(constants.KEYS_ROWS_PER_PAGE);

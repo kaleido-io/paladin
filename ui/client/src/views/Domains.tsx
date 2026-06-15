@@ -26,7 +26,8 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useApplicationContext } from '../contexts/ApplicationContext';
 import { DomainDeploy } from '../components/DomainDeploy';
 import { Hash } from '../components/Hash';
 import { SmartContractsTable } from '../components/SmartContractsTable';
@@ -34,40 +35,25 @@ import { getDomainByName, listDomains } from '../queries/domains';
 import SearchIcon from '@mui/icons-material/Search';
 import { DomainContractLookupDialog } from '../dialogs/DomainContractLookp';
 import { Captions } from "lucide-react";
-import { IFilter } from '../interfaces';
 import { FiltersButton } from '../components/FiltersButton';
 import { Filters } from '../components/Filters';
 
-
-type Props = {
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  refTimestamps: string[]
-  setRefTimestamps: Dispatch<SetStateAction<string[]>>
-  selectedDomain: string | undefined
-  setSelectedDomain: Dispatch<SetStateAction<string | undefined>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-};
-
-export const Domains: React.FC<Props> = ({
-  sortAscending,
-  setSortAscending,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  refTimestamps,
-  setRefTimestamps,
-  selectedDomain,
-  setSelectedDomain,
-  filters,
-  setFilters
-}) => {
+export const Domains: React.FC = () => {
+  const { domains: domainsViewState } = useApplicationContext();
+  const {
+    sortAscending,
+    setSortAscending,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    refTimestamps,
+    setRefTimestamps,
+    selectedDomain,
+    setSelectedDomain,
+    filters,
+    setFilters,
+  } = domainsViewState;
 
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupDomainContractDialogOpen, setLookupDomainContractDialogOpen] = useState(false);

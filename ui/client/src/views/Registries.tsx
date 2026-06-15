@@ -16,12 +16,12 @@
 
 import { Alert, Box, Button, Collapse, Fade, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchRegistries, fetchRegistryEntries } from "../queries/registry";
 import { useTranslation } from "react-i18next";
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import { ResolveVerifierDialog } from "../dialogs/ResolveVerifier";
-import { IFilter } from "../interfaces";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { customNavigate } from "../utils";
 import { useNavigate } from "react-router-dom";
@@ -31,31 +31,20 @@ import { Captions } from "lucide-react";
 import { FiltersButton } from "../components/FiltersButton";
 import { Filters } from "../components/Filters";
 
-type Props = {
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-  refNames: string[]
-  setRefNames: Dispatch<SetStateAction<string[]>>
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-};
-
-export const Registries: React.FC<Props> = ({
-  filters,
-  setFilters,
-  refNames,
-  setRefNames,
-  sortAscending,
-  setSortAscending,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage
-}) => {
+export const Registries: React.FC = () => {
+  const { registry } = useApplicationContext();
+  const {
+    filters,
+    setFilters,
+    refNames,
+    setRefNames,
+    sortAscending,
+    setSortAscending,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+  } = registry;
 
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);

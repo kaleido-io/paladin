@@ -19,7 +19,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
 import { useQuery } from "@tanstack/react-query";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { listSchemas, queryStates } from "../queries/states";
 import { Timestamp } from "../components/Timestamp";
 import { Captions, Tag } from "lucide-react";
@@ -27,46 +28,31 @@ import { customNavigate } from "../utils";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Hash } from "../components/Hash";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { IFilter, IFilterField, ISchemaComponent, IState } from "../interfaces";
+import { IFilterField, ISchemaComponent, IState } from "../interfaces";
 import { Filters } from "../components/Filters";
 import { StateActions } from "../components/StateActions";
 import { FiltersButton } from "../components/FiltersButton";
 import { StateLookupDialog } from "../dialogs/StateLookup";
 import SearchIcon from '@mui/icons-material/Search';
 
-type Props = {
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  refTimestamps: string[]
-  setRefTimestamps: Dispatch<SetStateAction<string[]>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  selectedDomain: string | undefined
-  setSelectedDomain: Dispatch<SetStateAction<string | undefined>>
-  selectedSchemaId: string | undefined
-  setSelectedSchemaId: Dispatch<SetStateAction<string | undefined>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-};
-
-export const States: React.FC<Props> = ({
-  sortAscending,
-  setSortAscending,
-  refTimestamps,
-  setRefTimestamps,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  selectedDomain,
-  setSelectedDomain,
-  selectedSchemaId,
-  setSelectedSchemaId,
-  filters,
-  setFilters
-}) => {
+export const States: React.FC = () => {
+  const { states: statesViewState } = useApplicationContext();
+  const {
+    sortAscending,
+    setSortAscending,
+    refTimestamps,
+    setRefTimestamps,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    selectedDomain,
+    setSelectedDomain,
+    selectedSchemaId,
+    setSelectedSchemaId,
+    filters,
+    setFilters,
+  } = statesViewState;
 
   const [stateLookupDialogOpen, setStateLookupDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);

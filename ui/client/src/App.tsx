@@ -35,7 +35,6 @@ import { Keys } from "./views/Keys";
 import { Registries } from "./views/Registries";
 import { Transactions } from "./views/Transactions";
 import { TransactionDetails } from "./views/TransactionDetails";
-import { IFilter, IPaladinTransactionPagingReference, ITransactionPagingReference } from "./interfaces";
 import { Submissions } from "./views/Submissions";
 import { DomainContract } from "./views/DomainContract";
 import { PrivacyGroups } from "./views/PrivacyGroups";
@@ -53,84 +52,34 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-
-  const [txRefEntries, setTxRefEntries] = useState<ITransactionPagingReference[]>([]);
-  const [txPage, setTxPage] = useState(0);
-  const [txRowsPerPage, setTxRowsPerPage] = useState(10);
-  const [txShowTxsWithReceipt, SetTxShowTxsWithReceipt] = useState(true);
-  const [txFilters, setTxFilters] = useState<IFilter[]>([]);
-  const [submissionsSection, setSubmissionsSection] = useState<'pending' | 'failed'>('pending');
-  const [domainSortAscending, setDomainSortAscending] = useState(false);
-  const [domainsPage, SetDomainsPage] = useState(0);
-  const [domainsFilters, setDomainsFilters] = useState<IFilter[]>([]);
-  const [domainsRowsPerPage, SetDomainsRowsPerPage] = useState(10);
-  const [domainsRefTimestamps, setDomainsRefTimestamps] = useState<string[]>([]);
-  const [submissionsRefEntries, setSubmissionsSetRefEntries] = useState<IPaladinTransactionPagingReference[]>([]);
-  const [submissionsPage, setSubmissionsPage] = useState(0);
-  const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
-  const [submissionsSortAscending, setSubmissionsSortAscending] = useState(false);
-  const [submissionsFilters, setSubmissionsFilters] = useState<IFilter[]>([]);
-  const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<string>();
-  const [privacyGroupsFilters, setPrivacyGroupsFilters] = useState<IFilter[]>([]);
-  const [privacyGroupsPage, setPrivacyGroupsPage] = useState(0);
-  const [privacyGroupsRowsPerPage, setPrivacyGroupsRowsPerPage] = useState(10);
-  const [privacyGroupsRefTimestamps, sePrivacyGroupsRefTimestamps] = useState<string[]>([]);
-  const [privacyGroupsSortAscending, setPrivacyGroupsSortAscending] = useState(false);
-  const [navigationVisible, setNavigationVisible] = useState(false);
-  const [statesSelectedDomain, setStatesSelectedDomain] = useState<string>();
-  const [statesSelectedSchemaId, setStatesSelectedSchemaId] = useState<string>();
-  const [statePage, setStatePage] = useState(0);
-  const [stateRowsPerPage, setStateRowsPerPage] = useState(10);
-  const [stateRefTimestamps, setStateRefTimestamps] = useState<string[]>([]);
-  const [stateSortAscending, setStateSortAscending] = useState(false);
-  const [stateFilters, setStateFilters] = useState<IFilter[]>([]);
-  const [messagesPage, setMessagesPage] = useState(0);
-  const [messagesRowsPerPage, setMessagesRowsPerPage] = useState(10);
-  const [messagesRefTimestamps, setMessagesRefTimestamps] = useState<string[]>([]);
-  const [messagesSortAscending, setMessagesSortAscending] = useState(false);
-  const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
-  const [messagesSortBy, setMessagesSortBy] = useState('created');
-  const [registryFilters, setRegistryFilters] = useState<IFilter[]>([]);
-  const [registryRefNames, setRegistryRefNames] = useState<string[]>([]);
-  const [registrySortAscending, setRegistrySortAscending] = useState(true);
-  const [registryPage, setRegistryPage] = useState(0);
-  const [registryRowsPerPage, setRegistryRowsPerPage] = useState(10);
-  const [keysPage, setKeysPage] = useState(0);
-  const [keysRowsPerPage, setKeysRowsPerPage] = useState(10);
-  const [keysMode, setKeysMode] = useState<'explorer' | 'list'>('list');
-  const [keysFilters, setKeysFilters] = useState<IFilter[]>([]);
-  const [keysSortAscending, setKeysSortAscending] = useState(true);
-  const [keysSortByPathFirst, setKeysSortByPathFirst] = useState(true);
-
   const [systemTheme, setSystemTheme] = useState(
     window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
   );
 
   const [storedTheme, setStoredTheme] = useState<PaletteMode>();
 
   useEffect(() => {
     window
-      .matchMedia('(prefers-color-scheme: dark)')
-      .addEventListener('change', (event) => {
-        setSystemTheme(event.matches ? 'dark' : 'light');
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", (event) => {
+        setSystemTheme(event.matches ? "dark" : "light");
       });
   }, []);
 
-
   const theme = useMemo(() => {
-    const modeFromStorage = localStorage.getItem(constants.COLOR_MODE_STORAGE_KEY);
+    const modeFromStorage = localStorage.getItem(
+      constants.COLOR_MODE_STORAGE_KEY
+    );
     if (modeFromStorage === null) {
-      // If color mode not previously set
       return createTheme(
-        systemTheme === 'dark' ? darkThemeOptions : lightThemeOptions
+        systemTheme === "dark" ? darkThemeOptions : lightThemeOptions
       );
     } else {
-      // Create color mode based on local storage
       return createTheme(
-        modeFromStorage === 'dark' ? darkThemeOptions : lightThemeOptions
+        modeFromStorage === "dark" ? darkThemeOptions : lightThemeOptions
       );
     }
   }, [systemTheme, storedTheme]);
@@ -140,163 +89,77 @@ function App() {
       toggleColorMode: () => {
         const currentMode =
           localStorage.getItem(constants.COLOR_MODE_STORAGE_KEY) ?? systemTheme;
-        const newMode = currentMode === 'light' ? 'dark' : 'light';
+        const newMode = currentMode === "light" ? "dark" : "light";
         localStorage.setItem(constants.COLOR_MODE_STORAGE_KEY, newMode);
         setStoredTheme(newMode);
       },
     }),
-    []
+    [systemTheme]
   );
 
   const basePath = getBasePath();
-
-  const lessThanLarge = useMediaQuery(theme.breakpoints.down('lg'));
+  const lessThanLarge = useMediaQuery(theme.breakpoints.down("lg"));
 
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <ApplicationContextProvider colorMode={colorMode}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter basename={basePath}
-              future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
-            >
-              {lessThanLarge &&
-                <Header
-                  navigationVisible={navigationVisible}
-                  setNavigationVisible={setNavigationVisible}
-                />}
-              <Box sx={{ display: 'flex' }}>
-                <Navigation
-                  navigationVisible={navigationVisible}
-                  setNavigationVisible={setNavigationVisible}
-                />
-
-                <Box sx={{ flexGrow: 1, maxWidth: '100vw', minWidth: 0 }}>
-                  <Routes>
-                    <Route path={AppRoutes.Transactions} element={<Transactions
-                      refEntries={txRefEntries}
-                      setRefEntries={setTxRefEntries}
-                      page={txPage}
-                      setPage={setTxPage}
-                      rowsPerPage={txRowsPerPage}
-                      setRowsPerPage={setTxRowsPerPage}
-                      showTxsWithReceipt={txShowTxsWithReceipt}
-                      setShowTxsWithReceipt={SetTxShowTxsWithReceipt}
-                      filters={txFilters}
-                      setFilters={setTxFilters}
-                    />} />
-                    <Route path={AppRoutes.Submissions} element={<Submissions
-                      section={submissionsSection}
-                      setSection={setSubmissionsSection}
-                      page={submissionsPage}
-                      setPage={setSubmissionsPage}
-                      rowsPerPage={submissionsRowsPerPage}
-                      setRowsPerPage={setSubmissionsRowsPerPage}
-                      refEntries={submissionsRefEntries}
-                      setRefEntries={setSubmissionsSetRefEntries}
-                      sortAscending={submissionsSortAscending}
-                      setSortAscending={setSubmissionsSortAscending}
-                      filters={submissionsFilters}
-                      setFilters={setSubmissionsFilters}
-                    />} />
-                    <Route path={AppRoutes.Transaction} element={<TransactionDetails />} />
-                    <Route path={AppRoutes.Keys} element={<Keys
-                    page={keysPage}
-                    setPage={setKeysPage}
-                    rowsPerPage={keysRowsPerPage}
-                    setRowsPerPage={setKeysRowsPerPage}
-                    filters={keysFilters}
-                    setFilters={setKeysFilters}
-                    mode={keysMode}
-                    setMode={setKeysMode}
-                    sortAscending={keysSortAscending}
-                    setSortAscending={setKeysSortAscending}
-                    sortByPathFirst={keysSortByPathFirst}
-                    setSortByPathFirst={setKeysSortByPathFirst}
-                    />} />
-                    <Route path={AppRoutes.Registry} element={<Registries
-                      filters={registryFilters}
-                      setFilters={setRegistryFilters}
-                      refNames={registryRefNames}
-                      setRefNames={setRegistryRefNames}
-                      sortAscending={registrySortAscending}
-                      setSortAscending={setRegistrySortAscending}
-                      page={registryPage}
-                      setPage={setRegistryPage}
-                      rowsPerPage={registryRowsPerPage}
-                      setRowsPerPage={setRegistryRowsPerPage}
-                    />} />
-                    <Route path={AppRoutes.Domains} element={<Domains
-                      sortAscending={domainSortAscending}
-                      setSortAscending={setDomainSortAscending}
-                      page={domainsPage}
-                      setPage={SetDomainsPage}
-                      rowsPerPage={domainsRowsPerPage}
-                      setRowsPerPage={SetDomainsRowsPerPage}
-                      refTimestamps={domainsRefTimestamps}
-                      setRefTimestamps={setDomainsRefTimestamps}
-                      selectedDomain={domainsSelectedDomain}
-                      setSelectedDomain={setDomainsSelectedDomain}
-                      filters={domainsFilters}
-                      setFilters={setDomainsFilters}
-                    />} />
-                    <Route path={AppRoutes.DomainContract} element={<DomainContract />} />
-                    <Route path={AppRoutes.PrivactGroups} element={<PrivacyGroups
-                      sortAscending={privacyGroupsSortAscending}
-                      setSortAscending={setPrivacyGroupsSortAscending}
-                      refTimestamps={privacyGroupsRefTimestamps}
-                      setRefTimestamps={sePrivacyGroupsRefTimestamps}
-                      page={privacyGroupsPage}
-                      setPage={setPrivacyGroupsPage}
-                      rowsPerPage={privacyGroupsRowsPerPage}
-                      setRowsPerPage={setPrivacyGroupsRowsPerPage}
-                      filters={privacyGroupsFilters}
-                      setFilters={setPrivacyGroupsFilters}
-                    />} />
-                    <Route path={AppRoutes.PrivacyGroup} element={<PrivacyGroup />} />
-                    <Route path={AppRoutes.States} element={<States
-                      selectedDomain={statesSelectedDomain}
-                      setSelectedDomain={setStatesSelectedDomain}
-                      selectedSchemaId={statesSelectedSchemaId}
-                      setSelectedSchemaId={setStatesSelectedSchemaId}
-                      sortAscending={stateSortAscending}
-                      setSortAscending={setStateSortAscending}
-                      refTimestamps={stateRefTimestamps}
-                      setRefTimestamps={setStateRefTimestamps}
-                      page={statePage}
-                      setPage={setStatePage}
-                      rowsPerPage={stateRowsPerPage}
-                      setRowsPerPage={setStateRowsPerPage}
-                      filters={stateFilters}
-                      setFilters={setStateFilters}
-                    />} />
-                    <Route path={AppRoutes.State} element={<State />} />
-                    <Route path={AppRoutes.Messages} element={<Messages
-                      sortAscending={messagesSortAscending}
-                      setSortAscending={setMessagesSortAscending}
-                      page={messagesPage}
-                      setPage={setMessagesPage}
-                      rowsPerPage={messagesRowsPerPage}
-                      setRowsPerPage={setMessagesRowsPerPage}
-                      refTimestamps={messagesRefTimestamps}
-                      setRefTimestamps={setMessagesRefTimestamps}
-                      filters={messagesFilters}
-                      setFilters={setMessagesFilters}
-                      sortBy={messagesSortBy}
-                      setSortBy={setMessagesSortBy}
-                    />} />
-                    <Route path={AppRoutes.RegistryEntry} element={<RegistryEntry />} />
-                    <Route path={AppRoutes.Message} element={<Message />} />
-                    <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />
-                  </Routes>
-                </Box>
+    <QueryClientProvider client={queryClient}>
+      <ApplicationContextProvider colorMode={colorMode}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter
+            basename={basePath}
+            future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
+          >
+            {lessThanLarge && <Header />}
+            <Box sx={{ display: "flex" }}>
+              <Navigation />
+              <Box sx={{ flexGrow: 1, maxWidth: "100vw", minWidth: 0 }}>
+                <Routes>
+                  <Route
+                    path={AppRoutes.Transactions}
+                    element={<Transactions />}
+                  />
+                  <Route
+                    path={AppRoutes.Submissions}
+                    element={<Submissions />}
+                  />
+                  <Route
+                    path={AppRoutes.Transaction}
+                    element={<TransactionDetails />}
+                  />
+                  <Route path={AppRoutes.Keys} element={<Keys />} />
+                  <Route path={AppRoutes.Registry} element={<Registries />} />
+                  <Route path={AppRoutes.Domains} element={<Domains />} />
+                  <Route
+                    path={AppRoutes.DomainContract}
+                    element={<DomainContract />}
+                  />
+                  <Route
+                    path={AppRoutes.PrivactGroups}
+                    element={<PrivacyGroups />}
+                  />
+                  <Route
+                    path={AppRoutes.PrivacyGroup}
+                    element={<PrivacyGroup />}
+                  />
+                  <Route path={AppRoutes.States} element={<States />} />
+                  <Route path={AppRoutes.State} element={<State />} />
+                  <Route path={AppRoutes.Messages} element={<Messages />} />
+                  <Route
+                    path={AppRoutes.RegistryEntry}
+                    element={<RegistryEntry />}
+                  />
+                  <Route path={AppRoutes.Message} element={<Message />} />
+                  <Route
+                    path="*"
+                    element={<Navigate to={AppRoutes.Transactions} replace />}
+                  />
+                </Routes>
               </Box>
-            </BrowserRouter>
-          </ThemeProvider>
-        </ApplicationContextProvider>
-      </QueryClientProvider>
-    </>
+            </Box>
+          </BrowserRouter>
+        </ThemeProvider>
+      </ApplicationContextProvider>
+    </QueryClientProvider>
   );
 }
 

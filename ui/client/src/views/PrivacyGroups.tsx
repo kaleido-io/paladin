@@ -15,7 +15,8 @@
 // limitations under the License.
 
 import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApplicationContext } from "../contexts/ApplicationContext";
 import { useTranslation } from "react-i18next";
 import SearchIcon from '@mui/icons-material/Search';
 import { listPrivacyGroups } from "../queries/privacyGroups";
@@ -31,33 +32,21 @@ import { PrivacyGroupLookupDialog } from "../dialogs/PrivacyGroupLookup";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { FiltersButton } from "../components/FiltersButton";
 import { Filters } from "../components/Filters";
-import { IFilter } from "../interfaces";
 
-type Props = {
-  sortAscending: boolean
-  setSortAscending: Dispatch<SetStateAction<boolean>>
-  refTimestamps: string[]
-  setRefTimestamps: Dispatch<SetStateAction<string[]>>
-  page: number
-  setPage: Dispatch<SetStateAction<number>>
-  rowsPerPage: number
-  setRowsPerPage: Dispatch<SetStateAction<number>>
-  filters: IFilter[]
-  setFilters: Dispatch<SetStateAction<IFilter[]>>
-};
-
-export const PrivacyGroups: React.FC<Props> = ({
-  sortAscending,
-  setSortAscending,
-  refTimestamps,
-  setRefTimestamps,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  filters,
-  setFilters
-}) => {
+export const PrivacyGroups: React.FC = () => {
+  const { privacyGroups: privacyGroupsViewState } = useApplicationContext();
+  const {
+    sortAscending,
+    setSortAscending,
+    refTimestamps,
+    setRefTimestamps,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    filters,
+    setFilters,
+  } = privacyGroupsViewState;
 
   const [lookupPrivacyGroupDialogOpen, setLookupPrivacyGroupDialogOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);

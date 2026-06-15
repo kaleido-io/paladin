@@ -18,7 +18,7 @@ import i18next from "i18next";
 import { IFilter, ISchema, IState, IStateReceipt } from "../interfaces";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
-import { translateFilters } from "../utils";
+import { deepMerge, translateFilters } from "../utils";
 
 export const fetchStateReceipt = async (
   transactionId: string
@@ -81,6 +81,21 @@ export const queryStates = async (
 
   let translatedFilters = translateFilters(filters);
 
+  let customFilters: any = {};
+  if (refTimestamp !== undefined) {
+    if (sortAscending) {
+      customFilters.graterThan = [{
+        field: '.created',
+        value: refTimestamp
+      }];
+    } else {
+      customFilters.lessThan = [{
+        field: '.created',
+        value: refTimestamp
+      }];
+    }
+  };
+
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),
@@ -89,21 +104,10 @@ export const queryStates = async (
       domain,
       schemaId,
       {
-        ...translatedFilters,
+        ...deepMerge(translatedFilters, customFilters),
         limit,
         sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`],
-        greaterThan: refTimestamp !== undefined && sortAscending ? [
-          {
-            field: '.created',
-            value: refTimestamp
-          }
-        ] : undefined,
-        lessThan: refTimestamp !== undefined && !sortAscending ? [
-          {
-            field: '.created',
-            value: refTimestamp
-          }
-        ] : undefined
+
       },
       'all'
     ]

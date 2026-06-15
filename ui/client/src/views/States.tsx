@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, Collapse, Fade, Grid2, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
@@ -72,6 +72,7 @@ export const States: React.FC<Props> = ({
   const [count, setCount] = useState(-1);
   const [sortBy, setSortBy] = useState('.created');
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -87,10 +88,22 @@ export const States: React.FC<Props> = ({
   });
 
   const { data: states, error: statesError } = useQuery({
-    queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters,],
+    queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters],
     queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
     enabled: selectedSchemaId !== undefined
   });
+
+  useEffect(() => {
+    if(selectedDomain === undefined && domains !== undefined && domains.length > 0) {
+      setSelectedDomain(domains[0]);
+    }
+  }, [selectedDomain, domains]);
+
+    useEffect(() => {
+    if(selectedDomain !== undefined && schemas !== undefined && schemas.length > 0) {
+      setSelectedSchemaId(schemas[0].id);
+    }
+  }, [selectedDomain, schemas]);
 
   useEffect(() => {
     if (states !== undefined && count === -1) {
@@ -169,10 +182,23 @@ export const States: React.FC<Props> = ({
     }
   ];
 
+  console.log(indexedFields)
+
+  const getFilterType = (field: ISchemaComponent) => {
+    switch(field.type) {
+      case 'uint256': return 'number';
+      case 'string': return 'string'
+      case 'bool': return 'boolean';
+    }
+    return 'string';
+  };
+
   indexedFields.map(indexedField => filterFields.push({
-    label: `[ ${indexedField.name} ]`,
+    label: `${indexedField.name}`,
     name: indexedField.name,
-    type: indexedField.type === 'bool' ? 'boolean' : 'string'
+    type: getFilterType(indexedField),
+    isCustom: true,
+    isHexValue: indexedField.type === 'address'
   }));
 
   return (
@@ -186,42 +212,72 @@ export const States: React.FC<Props> = ({
             marginRight: "auto",
           }}
         >
-          <Box sx={{ marginBottom: '20px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <Typography variant="h5">
               {t("states")}
             </Typography>
-          </Box>
-          <Box
-            sx={{
-              backgroundColor: (theme) => theme.palette.background.paper,
-              borderRadius: '4px',
-              padding: '20px',
-              marginBottom: '20px'
-            }}
-          >
-            <Grid2 container spacing={2}>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              <Typography
+                color="secondary"
+                variant="body2"
+              >{t('domain')}</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                select
+                value={selectedDomain ?? ''}
+                sx={{ minWidth: '120px' }}
+                onChange={event => {
+                  setSelectedSchemaId(undefined);
+                  setSelectedDomain(event.target.value);
+                }}
+                slotProps={{
+                  input: {
+                    sx: {
+                      color: theme => theme.palette.text.secondary,
+                      fontWeight: 500,
+                      height: '28px',
+                      fontSize: '15px'
+                    }
+                  }
+                }}
+              >
+                {domains.map(domain =>
+                  <MenuItem key={domain} value={domain}>
+                    {t(domain)}
+                  </MenuItem>
+                )}
+              </TextField>
+            </Box>
+            {selectedDomain !== undefined &&
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <Typography
+                  color="secondary"
+                  variant="body2"
+                >{t('schema')}</Typography>
                 <TextField
-                  fullWidth
-                  label={t('domain')}
-                  select
-                  value={selectedDomain ?? ''}
-                  onChange={event => {
-                    setSelectedSchemaId(undefined);
-                    setSelectedDomain(event.target.value);
+                sx={{ minWidth: '120px' }}
+
+                  slotProps={{
+                    input: {
+                      sx: {
+                        color: theme => theme.palette.text.secondary,
+                        fontWeight: 500,
+                        height: '28px',
+                        fontSize: '15px'
+                      }
+                    }
                   }}
-                >
-                  {domains.map(domain =>
-                    <MenuItem key={domain} value={domain}>
-                      {t(domain)}
-                    </MenuItem>
-                  )}
-                </TextField>
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 6 }}>
-                <TextField
+                  size="small"
                   fullWidth
-                  label={t('schema')}
                   select={schemas !== undefined}
                   disabled={schemas === undefined}
                   value={selectedSchemaId ?? ''}
@@ -244,38 +300,36 @@ export const States: React.FC<Props> = ({
                     </MenuItem>
                   )}
                 </TextField>
-              </Grid2>
-            </Grid2>
-          </Box>
-          {states !== undefined &&
-            <>
-              <Box sx={{ display: 'flex', justifyContent: 'right', gap: '10px', marginBottom: '20px' }}>
-                <Button
-                  sx={{ borderRadius: '20px', minWidth: '120px' }}
-                  size="small"
-                  variant="outlined"
-                  startIcon={<SearchIcon />}
-                  onClick={() => setStateLookupDialogOpen(true)}
-                >
-                  {t('lookup')}
-                </Button>
-                <FiltersButton
-                  filtersVisible={filtersVisible}
-                  setFiltersVisible={setFiltersVisible}
-                />
-              </Box>
-              <Collapse in={filtersVisible}>
-                <Box sx={{ marginBottom: '20px' }}>
-                  <Filters
-                    filterFields={filterFields}
-                    filters={filters}
-                    setFilters={setFilters}
+              </Box>}
+            {states !== undefined &&
+              <>
+                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
+                  <Button
+                    sx={{ borderRadius: '20px', minWidth: '120px' }}
+                    size="small"
+                    variant="outlined"
+                    startIcon={<SearchIcon />}
+                    onClick={() => setStateLookupDialogOpen(true)}
+                  >
+                    {t('lookup')}
+                  </Button>
+                  <FiltersButton
+                    filtersVisible={filtersVisible}
+                    setFiltersVisible={setFiltersVisible}
                   />
                 </Box>
-              </Collapse>
-            </>
-          }
-
+              </>
+            }
+          </Box>
+          <Collapse in={filtersVisible}>
+            <Box sx={{ marginBottom: '20px' }}>
+              <Filters
+                filterFields={filterFields}
+                filters={filters}
+                setFilters={setFilters}
+              />
+            </Box>
+          </Collapse>
           {states !== undefined && states.length > 0 &&
             <Box>
               <TableContainer
@@ -325,6 +379,7 @@ export const States: React.FC<Props> = ({
                       </TableCell>
                       {indexedFields.map(field =>
                         <TableCell
+                          key={field.name}
                           width={1}
                           sx={{
                             backgroundColor: (theme) => theme.palette.background.paper,
@@ -343,7 +398,7 @@ export const States: React.FC<Props> = ({
                               setPage(0);
                             }}
                           >
-                            [ {field.name} ]
+                            <span style={{ color: theme.palette.primary.main }}>{field.name}</span>
                           </TableSortLabel>
                         </TableCell>
                       )}

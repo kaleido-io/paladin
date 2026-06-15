@@ -95,11 +95,11 @@ export const translateFilters = (filters: IFilter[]) => {
     if (filter.field.type === 'boolean') {
       entry.value = Boolean(entry.value);
     }
-    
-    if(filter.field.type === 'timestamp') {
-      if(filter.field.isSeconds) {
+
+    if (filter.field.type === 'timestamp') {
+      if (filter.field.isSeconds) {
         entry.value = entry.value / 1000;
-      } else if(filter.field.isNanoSeconds) {
+      } else if (filter.field.isNanoSeconds) {
         entry.value = entry.value * 1000000;
       }
     }
@@ -173,3 +173,23 @@ export const customNavigate = (destination: string, mouseEvent: React.MouseEvent
     navigate(destination);
   }
 };
+
+const isObject = (item: any): boolean => {
+  return item && typeof item === 'object' && !Array.isArray(item);
+}
+
+export const deepMerge = <T extends object, U extends object>(target: T, source: U): T & U => {
+  const output = { ...target } as any;
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach((key) => {
+      const sourceValue = (source as any)[key];
+      const targetValue = (target as any)[key];
+      if (isObject(sourceValue) && isObject(targetValue)) {
+        output[key] = deepMerge(targetValue, sourceValue);
+      } else {
+        output[key] = sourceValue;
+      }
+    });
+  }
+  return output as T & U;
+}

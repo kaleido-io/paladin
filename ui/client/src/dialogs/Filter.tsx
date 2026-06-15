@@ -226,7 +226,7 @@ export const FilterDialog: React.FC<Props> = ({
                   select
                 >
                   {filterFields.map(filterField =>
-                    <MenuItem key={filterField.name} value={filterField.name}>{filterField.label}</MenuItem>
+                    <MenuItem sx={{ color: theme => filterField.isCustom? theme.palette.primary.main : undefined}} key={filterField.name} value={filterField.name}>{filterField.label}</MenuItem>
                   )}
                 </TextField>
               </Grid2>

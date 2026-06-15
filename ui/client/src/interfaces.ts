@@ -197,6 +197,7 @@ export interface IFilterField {
   isUUID?: boolean
   isSeconds?: boolean
   isNanoSeconds?: boolean
+  isCustom?: boolean
 }
 
 export interface IFilter {

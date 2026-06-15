@@ -53,9 +53,10 @@ export const Domains: React.FC = () => {
     setSelectedDomain,
     filters,
     setFilters,
+    filtersVisible,
+    setFiltersVisible,
   } = domainsViewState;
 
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupDomainContractDialogOpen, setLookupDomainContractDialogOpen] = useState(false);
 
   const {

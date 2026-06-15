@@ -52,12 +52,13 @@ export const States: React.FC = () => {
     setSelectedSchemaId,
     filters,
     setFilters,
+    filtersVisible,
+    setFiltersVisible,
   } = statesViewState;
 
   const [stateLookupDialogOpen, setStateLookupDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const [sortBy, setSortBy] = useState('.created');
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();

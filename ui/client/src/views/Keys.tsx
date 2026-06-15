@@ -49,6 +49,8 @@ export const Keys: React.FC = () => {
     setSortAscending,
     sortByPathFirst,
     setSortByPathFirst,
+    filtersVisible,
+    setFiltersVisible,
   } = keysViewState;
 
   // const getDefaultRowsPerPage = () => {
@@ -98,7 +100,6 @@ export const Keys: React.FC = () => {
   const [verifiersDialogOpen, setVerifiersDialogOpen] = useState(false);
   // const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
   // const [mode, setMode] = useState<'explorer' | 'list'>(getDefaultMode());
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {

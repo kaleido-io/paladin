@@ -46,10 +46,11 @@ export const PrivacyGroups: React.FC = () => {
     setRowsPerPage,
     filters,
     setFilters,
+    filtersVisible,
+    setFiltersVisible,
   } = privacyGroupsViewState;
 
   const [lookupPrivacyGroupDialogOpen, setLookupPrivacyGroupDialogOpen] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const navigate = useNavigate();
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();

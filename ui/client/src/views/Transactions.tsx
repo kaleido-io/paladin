@@ -40,9 +40,10 @@ export const Transactions: React.FC = () => {
     setShowTxsWithReceipt,
     filters,
     setFilters,
+    filtersVisible,
+    setFiltersVisible,
   } = transactions;
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 

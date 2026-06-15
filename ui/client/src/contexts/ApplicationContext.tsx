@@ -28,36 +28,142 @@ import { ErrorDialog } from "../dialogs/Error";
 import { fetchLatestBlockWithTxs } from "../queries/blocks";
 import { constants } from "../components/config";
 import {
+  IFilter,
   IPaladinTransactionPagingReference,
   ITransactionPagingReference,
 } from "../interfaces";
-import {
-  DomainsViewState,
-  KeysViewState,
-  MessagesViewState,
-  PrivacyGroupsViewState,
-  RegistryViewState,
-  StatesViewState,
-  SubmissionsViewState,
-  TransactionsViewState,
-  usePaginatedFilteredViewState,
-  useSortedPaginatedFilteredViewState,
-  useTimestampPagedViewState,
-} from "./viewState";
 
-export type {
-  DomainsViewState,
-  KeysViewState,
-  MessagesViewState,
-  PaginatedFilteredViewState,
-  PrivacyGroupsViewState,
-  RegistryViewState,
-  SortedPaginatedFilteredViewState,
-  StatesViewState,
-  SubmissionsViewState,
-  TimestampPagedViewState,
-  TransactionsViewState,
-} from "./viewState";
+export interface TransactionsViewState {
+  refEntries: ITransactionPagingReference[];
+  setRefEntries: Dispatch<SetStateAction<ITransactionPagingReference[]>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  showTxsWithReceipt: boolean;
+  setShowTxsWithReceipt: Dispatch<SetStateAction<boolean>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface SubmissionsViewState {
+  section: "pending" | "failed";
+  setSection: Dispatch<SetStateAction<"pending" | "failed">>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  refEntries: IPaladinTransactionPagingReference[];
+  setRefEntries: Dispatch<SetStateAction<IPaladinTransactionPagingReference[]>>;
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface DomainsViewState {
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  refTimestamps: string[];
+  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  selectedDomain: string | undefined;
+  setSelectedDomain: Dispatch<SetStateAction<string | undefined>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface PrivacyGroupsViewState {
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  refTimestamps: string[];
+  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface StatesViewState {
+  selectedDomain: string | undefined;
+  setSelectedDomain: Dispatch<SetStateAction<string | undefined>>;
+  selectedSchemaId: string | undefined;
+  setSelectedSchemaId: Dispatch<SetStateAction<string | undefined>>;
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  refTimestamps: string[];
+  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface MessagesViewState {
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  refTimestamps: string[];
+  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  sortBy: string;
+  setSortBy: Dispatch<SetStateAction<string>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface RegistryViewState {
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  refNames: string[];
+  setRefNames: Dispatch<SetStateAction<string[]>>;
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface KeysViewState {
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  mode: "explorer" | "list";
+  setMode: Dispatch<SetStateAction<"explorer" | "list">>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  sortByPathFirst: boolean;
+  setSortByPathFirst: Dispatch<SetStateAction<boolean>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
 
 interface IApplicationContext {
   colorMode: {
@@ -98,108 +204,75 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [navigationVisible, setNavigationVisible] = useState(false);
 
-  const paginated = usePaginatedFilteredViewState();
-  const [txRefEntries, setTxRefEntries] = useState<
-    ITransactionPagingReference[]
-  >([]);
+  // Transactions view state
+  const [txRefEntries, setTxRefEntries] = useState<ITransactionPagingReference[]>([]);
+  const [txPage, setTxPage] = useState(0);
+  const [txRowsPerPage, setTxRowsPerPage] = useState(10);
   const [txShowTxsWithReceipt, setTxShowTxsWithReceipt] = useState(true);
-  const transactions = useMemo(
-    (): TransactionsViewState => ({
-      ...paginated,
-      refEntries: txRefEntries,
-      setRefEntries: setTxRefEntries,
-      showTxsWithReceipt: txShowTxsWithReceipt,
-      setShowTxsWithReceipt: setTxShowTxsWithReceipt,
-    }),
-    [paginated, txRefEntries, txShowTxsWithReceipt]
-  );
+  const [txFilters, setTxFilters] = useState<IFilter[]>([]);
+  const [txFiltersVisible, setTxFiltersVisible] = useState(false);
 
-  const sortedPaginated = useSortedPaginatedFilteredViewState(false);
-  const [submissionsSection, setSubmissionsSection] = useState<
-    "pending" | "failed"
-  >("pending");
-  const [submissionsRefEntries, setSubmissionsRefEntries] = useState<
-    IPaladinTransactionPagingReference[]
-  >([]);
-  const submissions = useMemo(
-    (): SubmissionsViewState => ({
-      ...sortedPaginated,
-      section: submissionsSection,
-      setSection: setSubmissionsSection,
-      refEntries: submissionsRefEntries,
-      setRefEntries: setSubmissionsRefEntries,
-    }),
-    [sortedPaginated, submissionsSection, submissionsRefEntries]
-  );
+  // Submissions view state
+  const [submissionsSection, setSubmissionsSection] = useState<"pending" | "failed">("pending");
+  const [submissionsRefEntries, setSubmissionsRefEntries] = useState<IPaladinTransactionPagingReference[]>([]);
+  const [submissionsPage, setSubmissionsPage] = useState(0);
+  const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
+  const [submissionsSortAscending, setSubmissionsSortAscending] = useState(false);
+  const [submissionsFilters, setSubmissionsFilters] = useState<IFilter[]>([]);
+  const [submissionsFiltersVisible, setSubmissionsFiltersVisible] = useState(false);
 
-  const timestampPaged = useTimestampPagedViewState(false);
-  const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<
-    string | undefined
-  >();
-  const domains = useMemo(
-    (): DomainsViewState => ({
-      ...timestampPaged,
-      selectedDomain: domainsSelectedDomain,
-      setSelectedDomain: setDomainsSelectedDomain,
-    }),
-    [timestampPaged, domainsSelectedDomain]
-  );
+  // Domains view state
+  const [domainSortAscending, setDomainSortAscending] = useState(false);
+  const [domainsPage, setDomainsPage] = useState(0);
+  const [domainsFilters, setDomainsFilters] = useState<IFilter[]>([]);
+  const [domainsRowsPerPage, setDomainsRowsPerPage] = useState(10);
+  const [domainsRefTimestamps, setDomainsRefTimestamps] = useState<string[]>([]);
+  const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<string | undefined>();
+  const [domainsFiltersVisible, setDomainsFiltersVisible] = useState(false);
 
-  const privacyGroups = useTimestampPagedViewState(false);
+  // Privacy groups view state
+  const [privacyGroupsFilters, setPrivacyGroupsFilters] = useState<IFilter[]>([]);
+  const [privacyGroupsPage, setPrivacyGroupsPage] = useState(0);
+  const [privacyGroupsRowsPerPage, setPrivacyGroupsRowsPerPage] = useState(10);
+  const [privacyGroupsRefTimestamps, setPrivacyGroupsRefTimestamps] = useState<string[]>([]);
+  const [privacyGroupsSortAscending, setPrivacyGroupsSortAscending] = useState(false);
+  const [privacyGroupsFiltersVisible, setPrivacyGroupsFiltersVisible] = useState(false);
 
-  const statesPaged = useTimestampPagedViewState(false);
-  const [statesSelectedDomain, setStatesSelectedDomain] = useState<
-    string | undefined
-  >();
-  const [statesSelectedSchemaId, setStatesSelectedSchemaId] = useState<
-    string | undefined
-  >();
-  const states = useMemo(
-    (): StatesViewState => ({
-      ...statesPaged,
-      selectedDomain: statesSelectedDomain,
-      setSelectedDomain: setStatesSelectedDomain,
-      selectedSchemaId: statesSelectedSchemaId,
-      setSelectedSchemaId: setStatesSelectedSchemaId,
-    }),
-    [statesPaged, statesSelectedDomain, statesSelectedSchemaId]
-  );
+  // States view state
+  const [statesSelectedDomain, setStatesSelectedDomain] = useState<string | undefined>();
+  const [statesSelectedSchemaId, setStatesSelectedSchemaId] = useState<string | undefined>();
+  const [statePage, setStatePage] = useState(0);
+  const [stateRowsPerPage, setStateRowsPerPage] = useState(10);
+  const [stateRefTimestamps, setStateRefTimestamps] = useState<string[]>([]);
+  const [stateSortAscending, setStateSortAscending] = useState(false);
+  const [stateFilters, setStateFilters] = useState<IFilter[]>([]);
+  const [stateFiltersVisible, setStateFiltersVisible] = useState(false);
 
-  const messagesPaged = useTimestampPagedViewState(false);
+  // Messages view state
+  const [messagesPage, setMessagesPage] = useState(0);
+  const [messagesRowsPerPage, setMessagesRowsPerPage] = useState(10);
+  const [messagesRefTimestamps, setMessagesRefTimestamps] = useState<string[]>([]);
+  const [messagesSortAscending, setMessagesSortAscending] = useState(false);
+  const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
   const [messagesSortBy, setMessagesSortBy] = useState("created");
-  const messages = useMemo(
-    (): MessagesViewState => ({
-      ...messagesPaged,
-      sortBy: messagesSortBy,
-      setSortBy: setMessagesSortBy,
-    }),
-    [messagesPaged, messagesSortBy]
-  );
+  const [messagesFiltersVisible, setMessagesFiltersVisible] = useState(false);
 
-  const registrySorted = useSortedPaginatedFilteredViewState(true);
+  // Registry view state
+  const [registryFilters, setRegistryFilters] = useState<IFilter[]>([]);
   const [registryRefNames, setRegistryRefNames] = useState<string[]>([]);
-  const registry = useMemo(
-    (): RegistryViewState => ({
-      ...registrySorted,
-      refNames: registryRefNames,
-      setRefNames: setRegistryRefNames,
-    }),
-    [registrySorted, registryRefNames]
-  );
+  const [registrySortAscending, setRegistrySortAscending] = useState(true);
+  const [registryPage, setRegistryPage] = useState(0);
+  const [registryRowsPerPage, setRegistryRowsPerPage] = useState(10);
+  const [registryFiltersVisible, setRegistryFiltersVisible] = useState(false);
 
-  const keysSorted = useSortedPaginatedFilteredViewState(true);
+  // Keys view state
+  const [keysPage, setKeysPage] = useState(0);
+  const [keysRowsPerPage, setKeysRowsPerPage] = useState(10);
   const [keysMode, setKeysMode] = useState<"explorer" | "list">("list");
+  const [keysFilters, setKeysFilters] = useState<IFilter[]>([]);
+  const [keysSortAscending, setKeysSortAscending] = useState(true);
   const [keysSortByPathFirst, setKeysSortByPathFirst] = useState(true);
-  const keys = useMemo(
-    (): KeysViewState => ({
-      ...keysSorted,
-      mode: keysMode,
-      setMode: setKeysMode,
-      sortByPathFirst: keysSortByPathFirst,
-      setSortByPathFirst: setKeysSortByPathFirst,
-    }),
-    [keysSorted, keysMode, keysSortByPathFirst]
-  );
+  const [keysFiltersVisible, setKeysFiltersVisible] = useState(false);
 
   const { data: actualLastBlockWithTransactions, error } = useQuery({
     queryKey: ["lastBlockWithTransactions"],
@@ -238,6 +311,224 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
     }
     setRefreshRequired(false);
   };
+
+  const transactions = useMemo(
+    (): TransactionsViewState => ({
+      refEntries: txRefEntries,
+      setRefEntries: setTxRefEntries,
+      page: txPage,
+      setPage: setTxPage,
+      rowsPerPage: txRowsPerPage,
+      setRowsPerPage: setTxRowsPerPage,
+      showTxsWithReceipt: txShowTxsWithReceipt,
+      setShowTxsWithReceipt: setTxShowTxsWithReceipt,
+      filters: txFilters,
+      setFilters: setTxFilters,
+      filtersVisible: txFiltersVisible,
+      setFiltersVisible: setTxFiltersVisible,
+    }),
+    [
+      txRefEntries,
+      txPage,
+      txRowsPerPage,
+      txShowTxsWithReceipt,
+      txFilters,
+      txFiltersVisible,
+    ]
+  );
+
+  const submissions = useMemo(
+    (): SubmissionsViewState => ({
+      section: submissionsSection,
+      setSection: setSubmissionsSection,
+      page: submissionsPage,
+      setPage: setSubmissionsPage,
+      rowsPerPage: submissionsRowsPerPage,
+      setRowsPerPage: setSubmissionsRowsPerPage,
+      refEntries: submissionsRefEntries,
+      setRefEntries: setSubmissionsRefEntries,
+      sortAscending: submissionsSortAscending,
+      setSortAscending: setSubmissionsSortAscending,
+      filters: submissionsFilters,
+      setFilters: setSubmissionsFilters,
+      filtersVisible: submissionsFiltersVisible,
+      setFiltersVisible: setSubmissionsFiltersVisible,
+    }),
+    [
+      submissionsSection,
+      submissionsPage,
+      submissionsRowsPerPage,
+      submissionsRefEntries,
+      submissionsSortAscending,
+      submissionsFilters,
+      submissionsFiltersVisible,
+    ]
+  );
+
+  const domains = useMemo(
+    (): DomainsViewState => ({
+      sortAscending: domainSortAscending,
+      setSortAscending: setDomainSortAscending,
+      page: domainsPage,
+      setPage: setDomainsPage,
+      rowsPerPage: domainsRowsPerPage,
+      setRowsPerPage: setDomainsRowsPerPage,
+      refTimestamps: domainsRefTimestamps,
+      setRefTimestamps: setDomainsRefTimestamps,
+      selectedDomain: domainsSelectedDomain,
+      setSelectedDomain: setDomainsSelectedDomain,
+      filters: domainsFilters,
+      setFilters: setDomainsFilters,
+      filtersVisible: domainsFiltersVisible,
+      setFiltersVisible: setDomainsFiltersVisible,
+    }),
+    [
+      domainSortAscending,
+      domainsPage,
+      domainsRowsPerPage,
+      domainsRefTimestamps,
+      domainsSelectedDomain,
+      domainsFilters,
+      domainsFiltersVisible,
+    ]
+  );
+
+  const privacyGroups = useMemo(
+    (): PrivacyGroupsViewState => ({
+      sortAscending: privacyGroupsSortAscending,
+      setSortAscending: setPrivacyGroupsSortAscending,
+      refTimestamps: privacyGroupsRefTimestamps,
+      setRefTimestamps: setPrivacyGroupsRefTimestamps,
+      page: privacyGroupsPage,
+      setPage: setPrivacyGroupsPage,
+      rowsPerPage: privacyGroupsRowsPerPage,
+      setRowsPerPage: setPrivacyGroupsRowsPerPage,
+      filters: privacyGroupsFilters,
+      setFilters: setPrivacyGroupsFilters,
+      filtersVisible: privacyGroupsFiltersVisible,
+      setFiltersVisible: setPrivacyGroupsFiltersVisible,
+    }),
+    [
+      privacyGroupsSortAscending,
+      privacyGroupsRefTimestamps,
+      privacyGroupsPage,
+      privacyGroupsRowsPerPage,
+      privacyGroupsFilters,
+      privacyGroupsFiltersVisible,
+    ]
+  );
+
+  const states = useMemo(
+    (): StatesViewState => ({
+      selectedDomain: statesSelectedDomain,
+      setSelectedDomain: setStatesSelectedDomain,
+      selectedSchemaId: statesSelectedSchemaId,
+      setSelectedSchemaId: setStatesSelectedSchemaId,
+      sortAscending: stateSortAscending,
+      setSortAscending: setStateSortAscending,
+      refTimestamps: stateRefTimestamps,
+      setRefTimestamps: setStateRefTimestamps,
+      page: statePage,
+      setPage: setStatePage,
+      rowsPerPage: stateRowsPerPage,
+      setRowsPerPage: setStateRowsPerPage,
+      filters: stateFilters,
+      setFilters: setStateFilters,
+      filtersVisible: stateFiltersVisible,
+      setFiltersVisible: setStateFiltersVisible,
+    }),
+    [
+      statesSelectedDomain,
+      statesSelectedSchemaId,
+      stateSortAscending,
+      stateRefTimestamps,
+      statePage,
+      stateRowsPerPage,
+      stateFilters,
+      stateFiltersVisible,
+    ]
+  );
+
+  const messages = useMemo(
+    (): MessagesViewState => ({
+      sortAscending: messagesSortAscending,
+      setSortAscending: setMessagesSortAscending,
+      page: messagesPage,
+      setPage: setMessagesPage,
+      rowsPerPage: messagesRowsPerPage,
+      setRowsPerPage: setMessagesRowsPerPage,
+      refTimestamps: messagesRefTimestamps,
+      setRefTimestamps: setMessagesRefTimestamps,
+      filters: messagesFilters,
+      setFilters: setMessagesFilters,
+      sortBy: messagesSortBy,
+      setSortBy: setMessagesSortBy,
+      filtersVisible: messagesFiltersVisible,
+      setFiltersVisible: setMessagesFiltersVisible,
+    }),
+    [
+      messagesSortAscending,
+      messagesPage,
+      messagesRowsPerPage,
+      messagesRefTimestamps,
+      messagesFilters,
+      messagesSortBy,
+      messagesFiltersVisible,
+    ]
+  );
+
+  const registry = useMemo(
+    (): RegistryViewState => ({
+      filters: registryFilters,
+      setFilters: setRegistryFilters,
+      refNames: registryRefNames,
+      setRefNames: setRegistryRefNames,
+      sortAscending: registrySortAscending,
+      setSortAscending: setRegistrySortAscending,
+      page: registryPage,
+      setPage: setRegistryPage,
+      rowsPerPage: registryRowsPerPage,
+      setRowsPerPage: setRegistryRowsPerPage,
+      filtersVisible: registryFiltersVisible,
+      setFiltersVisible: setRegistryFiltersVisible,
+    }),
+    [
+      registryFilters,
+      registryRefNames,
+      registrySortAscending,
+      registryPage,
+      registryRowsPerPage,
+      registryFiltersVisible,
+    ]
+  );
+
+  const keys = useMemo(
+    (): KeysViewState => ({
+      page: keysPage,
+      setPage: setKeysPage,
+      rowsPerPage: keysRowsPerPage,
+      setRowsPerPage: setKeysRowsPerPage,
+      mode: keysMode,
+      setMode: setKeysMode,
+      filters: keysFilters,
+      setFilters: setKeysFilters,
+      sortAscending: keysSortAscending,
+      setSortAscending: setKeysSortAscending,
+      sortByPathFirst: keysSortByPathFirst,
+      setSortByPathFirst: setKeysSortByPathFirst,
+      filtersVisible: keysFiltersVisible,
+      setFiltersVisible: setKeysFiltersVisible,
+    }),
+    [
+      keysPage,
+      keysRowsPerPage,
+      keysMode,
+      keysFilters,
+      keysSortAscending,
+      keysSortByPathFirst,
+      keysFiltersVisible,
+    ]
+  );
 
   return (
     <ApplicationContext.Provider

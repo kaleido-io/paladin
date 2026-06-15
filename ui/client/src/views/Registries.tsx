@@ -44,9 +44,10 @@ export const Registries: React.FC = () => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
+    filtersVisible,
+    setFiltersVisible,
   } = registry;
 
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const [activeFilter, setActiveFilter] = useState<'active' | 'inactive' | 'any'>('any');
   const [resolveVerifierDialogOpen, setResolveVerifierDialogOpen] = useState(false);

@@ -46,10 +46,11 @@ export const Submissions: React.FC = () => {
     setSortAscending,
     filters,
     setFilters,
+    filtersVisible,
+    setFiltersVisible,
   } = submissions;
 
   const navigate = useNavigate();
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();

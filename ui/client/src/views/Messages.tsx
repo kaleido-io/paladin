@@ -46,10 +46,11 @@ export const Messages: React.FC = () => {
     setFilters,
     sortBy,
     setSortBy,
+    filtersVisible,
+    setFiltersVisible,
   } = messagesViewState;
 
   const [lookupMessageDialogOpen, setLookupMessageDialogOpen] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(false);
   const [count, setCount] = useState(-1);
   const navigate = useNavigate();
   const { t } = useTranslation();

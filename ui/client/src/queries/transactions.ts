@@ -110,6 +110,7 @@ export const fetchIndexedTransactions = async (
 export const fetchSubmissions = async (
   type: 'pending' | 'failed',
   filters: IFilter[],
+  sortAscending?: boolean,
   pageParam?: IPaladinTransactionPagingReference
 ): Promise<IPaladinTransaction[]> => {
   let translatedFilters = translateFilters(filters);
@@ -118,19 +119,21 @@ export const fetchSubmissions = async (
     {
       ...translatedFilters,
       limit: constants.SUBMISSIONS_QUERY_LIMIT,
-      sort: ['created DESC'],
+      sort: [`created ${sortAscending? 'ASC' : 'DESC'}`],
+      greaterThan: pageParam !== undefined && sortAscending ? [
+        {
+          field: 'created',
+          value: pageParam.created
+        }
+      ] : undefined,
+      lessThan: pageParam !== undefined && !sortAscending ? [
+        {
+          field: 'created',
+          value: pageParam.created
+        }
+      ] : undefined
     },
   ];
-
-  if (pageParam !== undefined) {
-    if (params[0].lessThan === undefined) {
-      params[0].lessThan = [];
-    }
-    params[0].lessThan.push({
-      field: 'created',
-      value: pageParam.created,
-    });
-  }
 
   if (type === 'failed') {
     if (params[0].equal === undefined) {

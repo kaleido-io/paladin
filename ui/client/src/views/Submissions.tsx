@@ -14,10 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, Collapse, Fade, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
-import { PaladinTransaction } from "../components/PaladinTransaction";
 import { ApplicationContext } from "../contexts/ApplicationContext";
 import { fetchSubmissions } from "../queries/transactions";
 import { IFilter, IPaladinTransactionPagingReference } from "../interfaces";
@@ -27,6 +26,12 @@ import { constants } from "../components/config";
 import SearchIcon from '@mui/icons-material/Search';
 import { TransactionLookupDialog } from "../dialogs/TransactionLookup";
 import { FiltersButton } from "../components/FiltersButton";
+import { Timestamp } from "../components/Timestamp";
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Hash } from "../components/Hash";
+import { Tag } from "lucide-react";
+import { customNavigate } from "../utils";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   section: 'pending' | 'failed'
@@ -37,6 +42,8 @@ type Props = {
   setRowsPerPage: Dispatch<SetStateAction<number>>
   refEntries: IPaladinTransactionPagingReference[]
   setRefEntries: Dispatch<SetStateAction<IPaladinTransactionPagingReference[]>>
+  sortAscending: boolean
+  setSortAscending: Dispatch<SetStateAction<boolean>>
 };
 
 export const Submissions: React.FC<Props> = ({
@@ -47,7 +54,9 @@ export const Submissions: React.FC<Props> = ({
   rowsPerPage,
   setRowsPerPage,
   refEntries,
-  setRefEntries
+  setRefEntries,
+  sortAscending,
+  setSortAscending
 }) => {
 
   const getFiltersFromStorage = () => {
@@ -60,6 +69,7 @@ export const Submissions: React.FC<Props> = ({
     return [];
   };
 
+  const navigate = useNavigate();
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [lookupTransactionDialogOpen, setLookupTransactionDialogOpen] = useState(false);
   const { lastBlockWithTransactions } = useContext(ApplicationContext);
@@ -68,8 +78,8 @@ export const Submissions: React.FC<Props> = ({
   const { t } = useTranslation();
 
   const { data: transactions, error } = useQuery({
-    queryKey: ['submissions', section, lastBlockWithTransactions, filters, refEntries, rowsPerPage, page],
-    queryFn: () => fetchSubmissions(section, filters, refEntries[refEntries.length - 1])
+    queryKey: ['submissions', section, lastBlockWithTransactions, filters, sortAscending, refEntries, rowsPerPage, page],
+    queryFn: () => fetchSubmissions(section, filters, sortAscending, refEntries[refEntries.length - 1])
   });
 
   useEffect(() => {
@@ -129,16 +139,13 @@ export const Submissions: React.FC<Props> = ({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-
             <Typography variant="h5">
               {t("submissions")}
             </Typography>
-
             <ToggleButtonGroup size="small" sx={{ height: '30px' }} exclusive onChange={(_event, value) => setSection(value)} value={section}>
               <ToggleButton color="primary" value="pending" sx={{ width: '120px' }}>{t('pending')}</ToggleButton>
               <ToggleButton color="primary" value="failed" sx={{ width: '120px' }}>{t('failed')}</ToggleButton>
             </ToggleButtonGroup>
-
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
               <Button
                 sx={{ borderRadius: '20px', minWidth: '120px' }}
@@ -160,6 +167,22 @@ export const Submissions: React.FC<Props> = ({
               <Filters
                 filterFields={[
                   {
+                    label: t('created'),
+                    name: 'created',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('type'),
+                    name: 'type',
+                    type: 'string'
+                  },
+                  {
+                    label: t('domain'),
+                    name: 'domain',
+                    type: 'string'
+                  },
+                  {
                     label: t('id'),
                     name: 'id',
                     type: 'string',
@@ -174,16 +197,6 @@ export const Submissions: React.FC<Props> = ({
                     label: t('to'),
                     name: 'to',
                     type: 'string'
-                  },
-                  {
-                    label: t('type'),
-                    name: 'type',
-                    type: 'string'
-                  },
-                  {
-                    label: t('domain'),
-                    name: 'domain',
-                    type: 'string'
                   }
                 ]}
                 filters={filters}
@@ -192,36 +205,143 @@ export const Submissions: React.FC<Props> = ({
             </Box>
           </Collapse>
           <Box>
-            {
-              transactions?.map(transaction => (
-                <PaladinTransaction
-                  key={transaction.id}
-                  paladinTransaction={transaction}
+            {transactions !== undefined && transactions.length > 0 &&
+              <TableContainer
+                component={Paper}
+              >
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                        }}>
+                        <TableSortLabel
+                          active={true}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            setSortAscending(!sortAscending);
+                            setRefEntries([]);
+                            setPage(0);
+                          }}
+                        >
+                          {t('created')}
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('type')}
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('domain')}
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('id')}
+                      </TableCell>
+
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('from')}
+                      </TableCell>
+
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('to')}
+                      </TableCell>
+
+                      <TableCell
+                        width={'100%'}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {transactions.map(transaction =>
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          <Timestamp timestamp={transaction.created} />
+                        </TableCell>
+                        <TableCell>
+                          {transaction.type}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.domain ?? '--'}
+                        </TableCell>
+                        <TableCell>
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.id} />
+                        </TableCell>
+                        <TableCell>
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.from} />
+                        </TableCell>
+                        <TableCell>
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.to ?? '--'} />
+                        </TableCell>
+                        <TableCell align="right" sx={{ padding: '8px' }}>
+                          <Tooltip title={t('open')} arrow>
+                            <IconButton
+                              onClick={mouseEvent => customNavigate(`/ui/transactions/${transaction.id}?back=submissions`, mouseEvent, navigate)}>
+                              <OpenInNewIcon color="secondary" fontSize="medium" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <TablePagination
+                  slotProps={{
+                    actions: {
+                      lastButton: {
+                        disabled: true
+                      }
+                    }
+                  }}
+                  component="div"
+                  showFirstButton
+                  showLastButton
+                  count={count}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
                 />
-              )
-              )}
-            {transactions?.length === 0 ?
+              </TableContainer>}
+            {transactions !== undefined && transactions.length === 0 &&
               <Typography color="textSecondary" align="center" variant="h6" sx={{ marginTop: '40px' }}>
                 {t(section === 'pending' ? 'noPendingSubmissions' : 'noFailedSubmissions')}
-              </Typography>
-              :
-              <TablePagination
-                slotProps={{
-                  actions: {
-                    lastButton: {
-                      disabled: true
-                    }
-                  }
-                }}
-                component="div"
-                showFirstButton
-                showLastButton
-                count={count}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />}
+              </Typography>}
           </Box>
         </Box>
       </Fade>

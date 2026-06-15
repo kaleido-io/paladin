@@ -68,6 +68,7 @@ function App() {
   const [submissionsRefEntries, setSubmissionsSetRefEntries] = useState<IPaladinTransactionPagingReference[]>([]);
   const [submissionsPage, setSubmissionsPage] = useState(0);
   const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
+  const [submissionsSortAscending, setSubmissionsSortAscending] = useState(false);
   const [domainsSelectedDomain, setDomainsSelectedDomain] = useState<string>();
   const [privacyGroupsFilters, setPrivacyGroupsFilters] = useState<IFilter[]>([]);
   const [privacyGroupsPage, setPrivacyGroupsPage] = useState(0);
@@ -187,6 +188,8 @@ function App() {
                       setRowsPerPage={setSubmissionsRowsPerPage}
                       refEntries={submissionsRefEntries}
                       setRefEntries={setSubmissionsSetRefEntries}
+                      sortAscending={submissionsSortAscending}
+                      setSortAscending={setSubmissionsSortAscending}
                     />} />
                     <Route path={AppRoutes.Transaction} element={<TransactionDetails />} />
                     <Route path={AppRoutes.Keys} element={<Keys />} />

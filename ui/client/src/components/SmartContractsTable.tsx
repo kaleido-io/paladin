@@ -159,6 +159,15 @@ export const SmartContractsTable: React.FC<Props> = ({
                     {t('deployed')}
                   </TableSortLabel>
                 </TableCell>
+                <TableCell
+                  width={1}
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {t('contractAddress')}
+                </TableCell>
                 {selectedDomain === 'noto' &&
                   <TableCell
                     width={1}
@@ -200,15 +209,6 @@ export const SmartContractsTable: React.FC<Props> = ({
                     {t('tokenName')}
                   </TableCell>}
                 <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('contractAddress')}
-                </TableCell>
-                <TableCell
                   sx={{
                     backgroundColor: (theme) => theme.palette.background.paper,
                     whiteSpace: 'nowrap'
@@ -230,6 +230,9 @@ export const SmartContractsTable: React.FC<Props> = ({
                   <TableCell>
                     <Timestamp timestamp={contract.created} />
                   </TableCell>
+                  <TableCell>
+                    <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={contract.address} />
+                  </TableCell>
                   {selectedDomain === 'noto' && 'name' in contract.config.contractConfig &&
                     <TableCell>
                       {contract.config.contractConfig.name.length > 0 ? contract.config.contractConfig.name : '--'}
@@ -246,9 +249,6 @@ export const SmartContractsTable: React.FC<Props> = ({
                     <TableCell>
                       {contract.config.contractConfig.tokenName.length > 0 ? contract.config.contractConfig.tokenName : '--'}
                     </TableCell>}
-                  <TableCell>
-                    <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={contract.address} />
-                  </TableCell>
                   <TableCell>
                     <DomainButtons
                       domainName={contract.domainName}

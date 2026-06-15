@@ -75,6 +75,7 @@
 	"domain": "Domain",
 	"domainRegistryAddress": "Domain Registry Address",
 	"domainSmartContract": "Domain Smart Contract",
+	"domainSmartContracts": "Domain Smart Contracts",
 	"domainSmartContractNotFound": "Domain smart contract not found",
 	"domains": "Domains",
 	"domainDetails": "Domain Details",

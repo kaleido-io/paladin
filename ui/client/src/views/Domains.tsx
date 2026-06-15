@@ -117,7 +117,7 @@ export const Domains: React.FC<Props> = ({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <Typography variant="h5">
-              {t('domain')}
+              {t('domainSmartContracts')}
             </Typography>
             <TextField
               size="small"
@@ -147,11 +147,6 @@ export const Domains: React.FC<Props> = ({
                 <Hash Icon={<Captions size="18px" />} hideTitle title={t('domainRegistryAddress')} hash={domain.registryAddress} />
               </Box>
             }
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <Typography variant="h5">
-              {t('smartContracts')}
-            </Typography>
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
               <DomainDeploy domainName={selectedDomain ?? ''} />
 

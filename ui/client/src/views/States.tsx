@@ -373,11 +373,11 @@ export const States: React.FC<Props> = ({
                           <Timestamp timestamp={state.created} />
                         </TableCell>
                         <TableCell>
-                          <Hash Icon={<Tag size="18px" />} title={t('id')} hash={state.id} />
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={state.id} />
                         </TableCell>
                         <TableCell>
                           {state.contractAddress !== null ?
-                            <Hash Icon={<Captions size="18px" />} title={t('address')} hash={state.contractAddress} />
+                            <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={state.contractAddress} />
                             :
                             <>--</>}
                         </TableCell>

@@ -296,7 +296,7 @@ export const Messages: React.FC<Props> = ({
                             <>--</>}
                         </TableCell>
                         <TableCell>
-                          <Hash Icon={<Tag size="18px" />} title={t('id')} hash={message.id} />
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
                         </TableCell>
                         <TableCell>
                           {message.node}

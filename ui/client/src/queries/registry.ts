@@ -43,9 +43,7 @@ export const fetchRegistryEntries = async (
   pageParam?: string,
   sortAscending?: boolean
 ): Promise<IRegistryEntry[]> => {
-
   let translatedFilters = translateFilters(filters);
-
   let requestPayload: any = {
     jsonrpc: "2.0",
     id: Date.now(),
@@ -57,11 +55,10 @@ export const fetchRegistryEntries = async (
         limit: constants.REGISTRY_ENTRIES_QUERY_LIMIT,
         sort: [`.name ${sortAscending ? 'ASC' : 'DESC'}`]
       },
-      tab,
-    ],
+      tab
+    ]
   };
-
-  if(pageParam !== undefined) {
+  if (pageParam !== undefined) {
     requestPayload.params[1].greaterThan = [
       {
         "field": ".name",
@@ -69,11 +66,42 @@ export const fetchRegistryEntries = async (
       }
     ];
   }
-
   return <Promise<IRegistryEntry[]>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
       i18next.t("errorFetchingRegistryEntries")
     )
   );
+};
+
+export const fetchRegistryEntry = async (
+  registryName: string,
+  id: string
+) => {
+  let requestPayload: any = {
+    jsonrpc: "2.0",
+    id: Date.now(),
+    method: RpcMethods.reg_QueryEntriesWithProps,
+    params: [
+      registryName,
+      {
+        equal: [{
+          field: '.id',
+          value: id
+        }],
+        limit: 1
+      },
+      'all'
+    ]
+  };
+  const result = await <Promise<IRegistryEntry[]>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+      i18next.t("errorFetchingRegistryEntry")
+    )
+  );
+  if(result.length === 1) {
+    return result[0];
+  }
+  return null;
 };

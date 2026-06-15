@@ -277,7 +277,7 @@ export const PrivacyGroups: React.FC<Props> = ({
                           <Timestamp timestamp={privacyGroup.created} />
                         </TableCell>
                         <TableCell>
-                          <Hash Icon={<Tag size="18px" />} title={t('id')} hash={privacyGroup.id} />
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroup.id} />
                         </TableCell>
                         <TableCell>
                           {privacyGroup.name.length > 0 ? privacyGroup.name : '--'}
@@ -286,7 +286,7 @@ export const PrivacyGroups: React.FC<Props> = ({
                           {t(privacyGroup.domain)}
                         </TableCell>
                         <TableCell>
-                          <Hash Icon={<Captions size="18px" />} title={t('address')} hash={privacyGroup.contractAddress} />
+                          <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={privacyGroup.contractAddress} />
                         </TableCell>
                         <TableCell sx={{ maxWidth: 0, overflow: 'hidden', p: 0 }}>
                           <PrivacyGroupMembers members={privacyGroup.members} />

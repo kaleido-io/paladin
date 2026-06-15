@@ -27,5 +27,6 @@ export const AppRoutes = {
   States: '/ui/states',
   Messages: '/ui/messages',
   Message: '/ui/messages/:id',
-  State: '/ui/states/:domain/:schema/:id'
+  State: '/ui/states/:domain/:schema/:id',
+  RegistryEntry: '/ui/registry/:registry/:id'
 };

@@ -281,10 +281,10 @@ export const Registries: React.FC<Props> = ({
                         {registryEntry.name}
                       </TableCell>
                       <TableCell>
-                        <Hash Icon={<Tag size="18px" />} title={t('id')} hash={registryEntry.id} />
+                        <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={registryEntry.id} />
                       </TableCell>
                       <TableCell>
-                        <Hash Icon={<Captions size="18px" />} title={t('owner')} hash={registryEntry.properties.$owner} />
+                        <Hash Icon={<Captions size="18px" />} hideTitle title={t('owner')} hash={registryEntry.properties.$owner} />
                       </TableCell>
 
                       <TableCell>
@@ -293,7 +293,7 @@ export const Registries: React.FC<Props> = ({
                       <TableCell align="right" sx={{ padding: '8px' }}>
                         <Tooltip title={t('open')} arrow>
                           <IconButton
-                            onClick={mouseEvent => customNavigate(`/ui/registry`, mouseEvent, navigate)}>
+                            onClick={mouseEvent => customNavigate(`/ui/registry/${selectedRegistry}/${registryEntry.id}`, mouseEvent, navigate)}>
                             <OpenInNewIcon color="secondary" fontSize="medium" />
                           </IconButton>
                         </Tooltip>

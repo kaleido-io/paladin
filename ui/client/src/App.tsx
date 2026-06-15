@@ -45,6 +45,7 @@ import { States } from "./views/States";
 import { Messages } from "./views/Messages";
 import { Message } from "./views/Message";
 import { State } from "./views/State";
+import { RegistryEntry } from "./views/RegistryEntry";
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({}),
@@ -258,6 +259,7 @@ function App() {
                       sortBy={messagesSortBy}
                       setSortBy={setMessagesSortBy}
                     />} />
+                    <Route path={AppRoutes.RegistryEntry} element={<RegistryEntry />} />
                     <Route path={AppRoutes.Message} element={<Message />} />
                     <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />
                   </Routes>

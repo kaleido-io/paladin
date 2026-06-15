@@ -87,6 +87,12 @@ function App() {
   const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
   const [messagesSortBy, setMessagesSortBy] = useState('created');
 
+  const [registryFilters, setRegistryFilters] = useState<IFilter[]>([]);
+  const [registryRefNames, setRegistryRefNames] = useState<string[]>([]);
+  const [registrySortAscending, setRegistrySortAscending] = useState(true);
+  const [registryPage, setRegistryPage] = useState(0);
+  const [registryRowsPerPage, setRegistryRowsPerPage] = useState(10);
+
   const [systemTheme, setSystemTheme] = useState(
     window.matchMedia &&
       window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -183,7 +189,18 @@ function App() {
                     />} />
                     <Route path={AppRoutes.Transaction} element={<TransactionDetails />} />
                     <Route path={AppRoutes.Keys} element={<Keys />} />
-                    <Route path={AppRoutes.Registry} element={<Registries />} />
+                    <Route path={AppRoutes.Registry} element={<Registries
+                      filters={registryFilters}
+                      setFilters={setRegistryFilters}
+                      refNames={registryRefNames}
+                      setRefNames={setRegistryRefNames}
+                      sortAscending={registrySortAscending}
+                      setSortAscending={setRegistrySortAscending}
+                      page={registryPage}
+                      setPage={setRegistryPage}
+                      rowsPerPage={registryRowsPerPage}
+                      setRowsPerPage={setRegistryRowsPerPage}
+                    />} />
                     <Route path={AppRoutes.Domains} element={<Domains
                       sortAscending={domainSortAscending}
                       setSortAscending={setDomainSortAscending}

@@ -305,3 +305,5 @@ export interface IMessage {
     time: string
   }
 }
+
+export type RegistryEntryFilter = 'active' | 'inactive' | 'any';

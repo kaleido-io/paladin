@@ -40,7 +40,8 @@ export const fetchRegistryEntries = async (
   registryName: string,
   filters: IFilter[],
   tab: 'active' | 'inactive' | 'any',
-  pageParam?: IRegistryEntry
+  pageParam?: string,
+  sortAscending?: boolean
 ): Promise<IRegistryEntry[]> => {
 
   let translatedFilters = translateFilters(filters);
@@ -54,7 +55,7 @@ export const fetchRegistryEntries = async (
       {
         ...translatedFilters,
         limit: constants.REGISTRY_ENTRIES_QUERY_LIMIT,
-        sort: ['.name ASC']
+        sort: [`.name ${sortAscending ? 'ASC' : 'DESC'}`]
       },
       tab,
     ],
@@ -64,7 +65,7 @@ export const fetchRegistryEntries = async (
     requestPayload.params[1].greaterThan = [
       {
         "field": ".name",
-        "value": pageParam.name
+        "value": pageParam
       }
     ];
   }

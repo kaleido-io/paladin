@@ -34,7 +34,7 @@ import { useTranslation } from 'react-i18next';
 import { querySmartContractsByDomain } from '../queries/domains';
 import { DomainButtons } from './DomainButtons';
 import { Hash } from './Hash';
-import { IDomainContract } from '../interfaces';
+import { IDomainContract, IFilter } from '../interfaces';
 import { Timestamp } from './Timestamp';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -52,7 +52,8 @@ type Props = {
   setRowsPerPage: Dispatch<SetStateAction<number>>
   refTimestamps: string[]
   setRefTimestamps: Dispatch<SetStateAction<string[]>>
-  selectedDomain?: string
+  selectedDomain?: string,
+  filters: IFilter[]
 };
 
 export const SmartContractsTable: React.FC<Props> = ({
@@ -65,7 +66,8 @@ export const SmartContractsTable: React.FC<Props> = ({
   setRowsPerPage,
   refTimestamps,
   setRefTimestamps,
-  selectedDomain
+  selectedDomain,
+  filters
 }) => {
 
   const [count, setCount] = useState(-1);
@@ -76,8 +78,8 @@ export const SmartContractsTable: React.FC<Props> = ({
     data: contracts,
     error
   } = useQuery({
-    queryKey: ['contracts', domainAddress, sortAscending, page, rowsPerPage],
-    queryFn: () => querySmartContractsByDomain(domainAddress, sortAscending, rowsPerPage, refTimestamps[refTimestamps.length - 1]),
+    queryKey: ['contracts', domainAddress, sortAscending, page, rowsPerPage, filters],
+    queryFn: () => querySmartContractsByDomain(domainAddress, sortAscending, rowsPerPage, filters, refTimestamps[refTimestamps.length - 1]),
   });
 
   if (error) {
@@ -132,159 +134,161 @@ export const SmartContractsTable: React.FC<Props> = ({
   };
 
   return (
-    <TableContainer
-      component={Paper}
-    >
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            <TableCell
-              width={1}
-              sx={{
-                backgroundColor: (theme) => theme.palette.background.paper,
-              }}>
-              <TableSortLabel
-                active={true}
-                direction={sortAscending ? 'asc' : 'desc'}
-                onClick={() => {
-                  setSortAscending(!sortAscending);
-                  setRefTimestamps([]);
-                  setPage(0);
-                }}
-              >
-                {t('deployed')}
-              </TableSortLabel>
-            </TableCell>
-            {selectedDomain === 'noto' &&
-              <TableCell
-                width={1}
-                sx={{
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('name')}
-              </TableCell>}
-            {selectedDomain === 'noto' &&
-              <TableCell
-                width={1}
-                sx={{
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('symbol')}
-              </TableCell>}
-            {selectedDomain === 'noto' &&
-              <TableCell
-                width={1}
-                sx={{
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('isNotary')}
-              </TableCell>}
-            {selectedDomain === 'zeto' &&
-              <TableCell
-                width={1}
-                sx={{
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('tokenName')}
-              </TableCell>}
-            <TableCell
-              width={1}
-              sx={{
-                backgroundColor: (theme) => theme.palette.background.paper,
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {t('contractAddress')}
-            </TableCell>
-            <TableCell
-              sx={{
-                backgroundColor: (theme) => theme.palette.background.paper,
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {t('actions')}
-            </TableCell>
-            <TableCell
-              sx={{
-                backgroundColor: (theme) => theme.palette.background.paper,
-                whiteSpace: 'nowrap'
-              }}
-            />
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {contracts?.map((contract: IDomainContract) => (
-            <TableRow key={contract.address} >
-              <TableCell>
-                <Timestamp timestamp={contract.created} />
-              </TableCell>
-              {selectedDomain === 'noto' && 'name' in contract.config.contractConfig &&
-                <TableCell>
-                  {contract.config.contractConfig.name.length > 0 ? contract.config.contractConfig.name : '--'}
-                </TableCell>}
-              {selectedDomain === 'noto' && 'symbol' in contract.config.contractConfig &&
-                <TableCell>
-                  {contract.config.contractConfig.symbol.length > 0 ? contract.config.contractConfig.symbol : '--'}
-                </TableCell>}
-              {selectedDomain === 'noto' && 'isNotary' in contract.config.contractConfig &&
-                <TableCell>
-                  {t(contract.config.contractConfig.isNotary ? 'yes' : 'no')}
-                </TableCell>}
-              {selectedDomain === 'zeto' && 'tokenName' in contract.config.contractConfig &&
-                <TableCell>
-                  {contract.config.contractConfig.tokenName.length > 0 ? contract.config.contractConfig.tokenName : '--'}
-                </TableCell>}
-              <TableCell>
-                <Hash Icon={<Captions size="18px" />} title={t('address')} hash={contract.address} />
-              </TableCell>
-              <TableCell>
-                <DomainButtons
-                  domainName={contract.domainName}
-                  contractAddress={contract.address}
+    <>
+      {contracts !== undefined && contracts.length > 0 &&
+        <TableContainer
+          component={Paper}
+        >
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  width={1}
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                  }}>
+                  <TableSortLabel
+                    active={true}
+                    direction={sortAscending ? 'asc' : 'desc'}
+                    onClick={() => {
+                      setSortAscending(!sortAscending);
+                      setRefTimestamps([]);
+                      setPage(0);
+                    }}
+                  >
+                    {t('deployed')}
+                  </TableSortLabel>
+                </TableCell>
+                {selectedDomain === 'noto' &&
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('name')}
+                  </TableCell>}
+                {selectedDomain === 'noto' &&
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('symbol')}
+                  </TableCell>}
+                {selectedDomain === 'noto' &&
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('isNotary')}
+                  </TableCell>}
+                {selectedDomain === 'zeto' &&
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('tokenName')}
+                  </TableCell>}
+                <TableCell
+                  width={1}
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {t('contractAddress')}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {t('actions')}
+                </TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    whiteSpace: 'nowrap'
+                  }}
                 />
-              </TableCell>
-              <TableCell align="right" sx={{ padding: '8px' }}>
-                <Tooltip title={t('open')} arrow>
-                  <IconButton
-                    onClick={mouseEvent => customNavigate(`/ui/domains/${contract.address}?back=domains`, mouseEvent, navigate)}>
-                    <OpenInNewIcon color="secondary" fontSize="medium" />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {contracts?.length === 0 && page === 0 ?
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {contracts?.map((contract: IDomainContract) => (
+                <TableRow key={contract.address} >
+                  <TableCell>
+                    <Timestamp timestamp={contract.created} />
+                  </TableCell>
+                  {selectedDomain === 'noto' && 'name' in contract.config.contractConfig &&
+                    <TableCell>
+                      {contract.config.contractConfig.name.length > 0 ? contract.config.contractConfig.name : '--'}
+                    </TableCell>}
+                  {selectedDomain === 'noto' && 'symbol' in contract.config.contractConfig &&
+                    <TableCell>
+                      {contract.config.contractConfig.symbol.length > 0 ? contract.config.contractConfig.symbol : '--'}
+                    </TableCell>}
+                  {selectedDomain === 'noto' && 'isNotary' in contract.config.contractConfig &&
+                    <TableCell>
+                      {t(contract.config.contractConfig.isNotary ? 'yes' : 'no')}
+                    </TableCell>}
+                  {selectedDomain === 'zeto' && 'tokenName' in contract.config.contractConfig &&
+                    <TableCell>
+                      {contract.config.contractConfig.tokenName.length > 0 ? contract.config.contractConfig.tokenName : '--'}
+                    </TableCell>}
+                  <TableCell>
+                    <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={contract.address} />
+                  </TableCell>
+                  <TableCell>
+                    <DomainButtons
+                      domainName={contract.domainName}
+                      contractAddress={contract.address}
+                    />
+                  </TableCell>
+                  <TableCell align="right" sx={{ padding: '8px' }}>
+                    <Tooltip title={t('open')} arrow>
+                      <IconButton
+                        onClick={mouseEvent => customNavigate(`/ui/domains/${contract.address}?back=domains`, mouseEvent, navigate)}>
+                        <OpenInNewIcon color="secondary" fontSize="medium" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <TablePagination
+            slotProps={{
+              actions: {
+                lastButton: {
+                  disabled: true
+                }
+              }
+            }}
+            component="div"
+            showFirstButton
+            showLastButton
+            count={count}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </TableContainer>}
+      {contracts !== undefined && contracts.length === 0 &&
         <Typography color="textSecondary" align="center" variant="h6" sx={{ marginTop: '40px' }}>
           {t('noSmartContracts')}
-        </Typography>
-        :
-        <TablePagination
-          slotProps={{
-            actions: {
-              lastButton: {
-                disabled: true
-              }
-            }
-          }}
-          component="div"
-          showFirstButton
-          showLastButton
-          count={count}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />}
-    </TableContainer>
+        </Typography>}
+    </>
   );
 };

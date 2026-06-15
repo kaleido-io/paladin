@@ -55,13 +55,14 @@ const queryClient = new QueryClient({
 function App() {
 
   const [txRefEntries, setTxRefEntries] = useState<ITransactionPagingReference[]>([]);
-  const [txPage, txSetPage] = useState(0);
+  const [txPage, setTxPage] = useState(0);
   const [txRowsPerPage, setTxRowsPerPage] = useState(10);
-  const [txShowTxsWithReceipt, txSetShowTxsWithReceipt] = useState(true);
+  const [txShowTxsWithReceipt, SetTxShowTxsWithReceipt] = useState(true);
   const [txFilters, setTxFilters] = useState<IFilter[]>([]);
   const [submissionsSection, setSubmissionsSection] = useState<'pending' | 'failed'>('pending');
   const [domainSortAscending, setDomainSortAscending] = useState(false);
-  const [domainsPage, txSetDomainsPage] = useState(0);
+  const [domainsPage, SetDomainsPage] = useState(0);
+  const [domainsFilters, setDomainsFilters] = useState<IFilter[]>([]);
   const [domainsRowsPerPage, SetDomainsRowsPerPage] = useState(10);
   const [domainsRefTimestamps, setDomainsRefTimestamps] = useState<string[]>([]);
   const [submissionsRefEntries, setSubmissionsSetRefEntries] = useState<IPaladinTransactionPagingReference[]>([]);
@@ -87,7 +88,6 @@ function App() {
   const [messagesSortAscending, setMessagesSortAscending] = useState(false);
   const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
   const [messagesSortBy, setMessagesSortBy] = useState('created');
-
   const [registryFilters, setRegistryFilters] = useState<IFilter[]>([]);
   const [registryRefNames, setRegistryRefNames] = useState<string[]>([]);
   const [registrySortAscending, setRegistrySortAscending] = useState(true);
@@ -170,11 +170,11 @@ function App() {
                       refEntries={txRefEntries}
                       setRefEntries={setTxRefEntries}
                       page={txPage}
-                      setPage={txSetPage}
+                      setPage={setTxPage}
                       rowsPerPage={txRowsPerPage}
                       setRowsPerPage={setTxRowsPerPage}
                       showTxsWithReceipt={txShowTxsWithReceipt}
-                      setShowTxsWithReceipt={txSetShowTxsWithReceipt}
+                      setShowTxsWithReceipt={SetTxShowTxsWithReceipt}
                       filters={txFilters}
                       setFilters={setTxFilters}
                     />} />
@@ -206,13 +206,15 @@ function App() {
                       sortAscending={domainSortAscending}
                       setSortAscending={setDomainSortAscending}
                       page={domainsPage}
-                      setPage={txSetDomainsPage}
+                      setPage={SetDomainsPage}
                       rowsPerPage={domainsRowsPerPage}
                       setRowsPerPage={SetDomainsRowsPerPage}
                       refTimestamps={domainsRefTimestamps}
                       setRefTimestamps={setDomainsRefTimestamps}
                       selectedDomain={domainsSelectedDomain}
                       setSelectedDomain={setDomainsSelectedDomain}
+                      filters={domainsFilters}
+                      setFilters={setDomainsFilters}
                     />} />
                     <Route path={AppRoutes.DomainContract} element={<DomainContract />} />
                     <Route path={AppRoutes.PrivactGroups} element={<PrivacyGroups

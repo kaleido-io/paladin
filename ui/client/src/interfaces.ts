@@ -307,3 +307,9 @@ export interface IMessage {
 }
 
 export type RegistryEntryFilter = 'active' | 'inactive' | 'any';
+
+export interface IDomain {
+  name: string
+  registryAddress: string
+  config: any
+}

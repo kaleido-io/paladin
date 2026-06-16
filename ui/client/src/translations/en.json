@@ -169,6 +169,7 @@
 	"messages": "Messages",
 	"messageValue": "Message {{value}}",
 	"messageNotFound": "Message not found",
+	"messagesEmptyState": "There are no messages",
 	"messagesReceived": "Messages Received",
 	"messagesSent": "Messages Sent",
 	"mint": "Mint",

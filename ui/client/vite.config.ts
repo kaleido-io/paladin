@@ -16,8 +16,7 @@ export default defineConfig(({ mode }) => ({
             ? 'http://localhost:31648'
             : 'http://localhost:31548',
         secure: false,
-        bypass: (req, _resolveConfig, _options) =>
-          req.method === 'POST' ? undefined : req.url,
+        bypass: (req) => (req.method === 'POST' ? undefined : req.url),
       },
     },
   },

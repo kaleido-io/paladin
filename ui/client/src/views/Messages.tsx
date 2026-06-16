@@ -30,6 +30,7 @@ import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
 import { MessageLookupDialog } from "../dialogs/MessageLookup";
 import SearchIcon from '@mui/icons-material/Search';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 export const Messages: React.FC = () => {
   const { messages: messagesViewState } = useApplicationContext();
@@ -67,10 +68,6 @@ export const Messages: React.FC = () => {
       }
     }
   }, [messages, rowsPerPage, page]);
-
-  if (messages === undefined) {
-    return <></>
-  }
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -317,6 +314,12 @@ export const Messages: React.FC = () => {
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
               </TableContainer>}
+            {messages !== undefined && messages.length === 0 &&
+              <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+                <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+                <Typography>{t('messagesEmptyState')}</Typography>
+              </Box>
+            }
           </Box>
         </Box>
       </Fade>

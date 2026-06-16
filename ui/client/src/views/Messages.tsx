@@ -267,10 +267,10 @@ export const Messages: React.FC = () => {
                   <TableBody>
                     {messages.map(message =>
                       <TableRow key={message.id}>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Timestamp timestamp={message.created} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           {message.ack?.time ?
                             <Timestamp timestamp={message.ack.time} />
                             :
@@ -285,7 +285,7 @@ export const Messages: React.FC = () => {
                         <TableCell>
                           {message.messageType}
                         </TableCell>
-                        <TableCell align="right" sx={{ padding: '8px' }}>
+                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Tooltip title={t('open')} arrow>
                             <IconButton
                               onClick={mouseEvent => customNavigate(`/ui/messages/${message.id}`, mouseEvent, navigate)}>

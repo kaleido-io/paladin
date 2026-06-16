@@ -392,7 +392,7 @@ export const Keys: React.FC = () => {
                   {mode === 'explorer' &&
                     <TableCell width={1} sx={{ minWidth: '70px', backgroundColor: theme => theme.palette.background.paper }} />
                   }
-                  <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper, width: '100%' }}>
+                  <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     <TableSortLabel
                       active={sortByPathFirst}
                       direction={sortAscending ? 'asc' : 'desc'}
@@ -436,9 +436,9 @@ export const Keys: React.FC = () => {
               </TableHead>
               <TableBody>
                 {keys?.map(key =>
-                  <TableRow sx={{ height: '70px' }} key={`${key.path}${key.index}`}>
+                  <TableRow key={`${key.path}${key.index}`}>
                     {mode === 'explorer' &&
-                      <TableCell>{key.hasChildren &&
+                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.hasChildren &&
                         <Tooltip arrow title={t('openFolder')}>
                           <IconButton onClick={() => { setParent(key.path) }}>
                             <FolderOpenIcon fontSize="small" />
@@ -447,14 +447,14 @@ export const Keys: React.FC = () => {
                       }</TableCell>}
                     <TableCell sx={{ maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mode === 'explorer' ? removeParentFromPath(key.path) : key.path}</TableCell>
                     <TableCell>{key.index}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                       {getEthAddress(key)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                       {getOtherVerifiers(key)}
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{key.wallet.length > 0 ? key.wallet : <RemoveIcon color="disabled" />}</TableCell>
-                    <TableCell>{key.keyHandle.length > 0 ?
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.keyHandle.length > 0 ?
                       <Hash hash={key.keyHandle} title={t('handle')} hideTitle secondary />
                       : <RemoveIcon color="disabled" />}</TableCell>
                   </TableRow>

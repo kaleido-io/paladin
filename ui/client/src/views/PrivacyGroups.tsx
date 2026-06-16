@@ -263,10 +263,10 @@ export const PrivacyGroups: React.FC = () => {
                   <TableBody>
                     {privacyGroups?.map(privacyGroup =>
                       <TableRow key={privacyGroup.id}>
-                        <TableCell >
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Timestamp timestamp={privacyGroup.created} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroup.id} />
                         </TableCell>
                         <TableCell>
@@ -275,13 +275,13 @@ export const PrivacyGroups: React.FC = () => {
                         <TableCell>
                           {t(privacyGroup.domain)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={privacyGroup.contractAddress} />
                         </TableCell>
                         <TableCell sx={{ maxWidth: 0, overflow: 'hidden', p: 0 }}>
                           <PrivacyGroupMembers members={privacyGroup.members} />
                         </TableCell>
-                        <TableCell align="right" sx={{ padding: '8px' }}>
+                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Tooltip title={t('open')} arrow>
                             <IconButton
                               onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}`, mouseEvent, navigate)}>

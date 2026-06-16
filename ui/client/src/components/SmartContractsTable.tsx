@@ -227,10 +227,10 @@ export const SmartContractsTable: React.FC<Props> = ({
             <TableBody>
               {contracts?.map((contract: IDomainContract) => (
                 <TableRow key={contract.address} >
-                  <TableCell>
+                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     <Timestamp timestamp={contract.created} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={contract.address} />
                   </TableCell>
                   {selectedDomain === 'noto' && 'name' in contract.config.contractConfig &&
@@ -249,13 +249,13 @@ export const SmartContractsTable: React.FC<Props> = ({
                     <TableCell>
                       {contract.config.contractConfig.tokenName.length > 0 ? contract.config.contractConfig.tokenName : '--'}
                     </TableCell>}
-                  <TableCell>
+                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     <DomainButtons
                       domainName={contract.domainName}
                       contractAddress={contract.address}
                     />
                   </TableCell>
-                  <TableCell align="right" sx={{ padding: '8px' }}>
+                  <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     <Tooltip title={t('open')} arrow>
                       <IconButton
                         onClick={mouseEvent => customNavigate(`/ui/domains/${contract.address}?back=domains`, mouseEvent, navigate)}>

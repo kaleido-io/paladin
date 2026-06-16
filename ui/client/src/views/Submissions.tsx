@@ -264,7 +264,7 @@ export const Submissions: React.FC = () => {
                   <TableBody>
                     {transactions.map(transaction =>
                       <TableRow key={transaction.id}>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Timestamp timestamp={transaction.created} />
                         </TableCell>
                         <TableCell>
@@ -273,16 +273,16 @@ export const Submissions: React.FC = () => {
                         <TableCell>
                           {transaction.domain ?? '--'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.id} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.from} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.to ?? '--'} />
                         </TableCell>
-                        <TableCell align="right" sx={{ padding: '8px' }}>
+                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Tooltip title={t('open')} arrow>
                             <IconButton
                               onClick={mouseEvent => customNavigate(`/ui/transactions/${transaction.id}?back=submissions`, mouseEvent, navigate)}>

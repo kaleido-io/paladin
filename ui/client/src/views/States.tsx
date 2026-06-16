@@ -409,13 +409,13 @@ export const States: React.FC = () => {
                   <TableBody>
                     {states.map(state =>
                       <TableRow key={state.id}>
-                        <TableCell >
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Timestamp timestamp={state.created} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={state.id} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           {state.contractAddress !== null ?
                             <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={state.contractAddress} />
                             :
@@ -426,10 +426,10 @@ export const States: React.FC = () => {
                             {getIndexedFieldContent(state, field)}
                           </TableCell>
                         )}
-                        <TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <StateActions state={state} />
                         </TableCell>
-                        <TableCell align="right" sx={{ padding: '8px' }}>
+                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                           <Tooltip title={t('open')} arrow>
                             <IconButton
                               onClick={mouseEvent => customNavigate(`/ui/states/${state.domain}/${state.schema}/${state.id}`, mouseEvent, navigate)}>

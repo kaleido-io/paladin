@@ -154,7 +154,8 @@ export const Messages: React.FC = () => {
                   {
                     label: t('id'),
                     name: 'id',
-                    type: 'string'
+                    type: 'string',
+                    isUUID: true
                   },
                   {
                     label: t('node'),

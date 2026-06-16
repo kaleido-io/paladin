@@ -80,29 +80,31 @@ export const FilterDialog: React.FC<Props> = ({
 
   useEffect(() => {
     if (selectedFilterField !== undefined) {
+      let availableOperators: ReactElement[] = [];
+      let availableValues: ReactElement[] = [];
+
       switch (selectedFilterField.type) {
         case 'boolean':
-          setOperators([
+          availableOperators = [
             <MenuItem key="equal" value="equal">{t('equal')}</MenuItem>
-          ]);
-          setValues([
+          ];
+          availableValues = [
             <MenuItem key="true" value="true">{t('true')}</MenuItem>,
             <MenuItem key="false" value="false">{t('false')}</MenuItem>
-          ]);
+          ];
           break;
         case 'number':
-          setOperators([
+          availableOperators = [
             <MenuItem key="equal" value="equal">{t('equal')}</MenuItem>,
             <MenuItem key="neq" value="neq">{t('notEqual')}</MenuItem>,
             <MenuItem key="greaterThan" value="greaterThan">{t('greaterThan')}</MenuItem>,
             <MenuItem key="greaterThanOrEqual" value="greaterThanOrEqual">{t('greaterThanOrEqual')}</MenuItem>,
             <MenuItem key="lessThan" value="lessThan">{t('lessThan')}</MenuItem>,
             <MenuItem key="lessThanOrEqual" value="lessThanOrEqual">{t('lessThanOrEqual')}</MenuItem>
-          ]);
-          setValues([]);
+          ];
           break;
         case 'string':
-          setOperators([
+          availableOperators = [
             <MenuItem key="equal" value="equal">{t('equal')}</MenuItem>,
             <MenuItem key="neq" value="neq">{t('notEqual')}</MenuItem>,
             <MenuItem key="contains" value="contains">{t('contains')}</MenuItem>,
@@ -111,31 +113,38 @@ export const FilterDialog: React.FC<Props> = ({
             <MenuItem key="doesNotContain" value="doesNotContain">{t('doesNotContain')}</MenuItem>,
             <MenuItem key="doesNotStartWith" value="doesNotStartWith">{t('doesNotStartWith')}</MenuItem>,
             <MenuItem key="doesNotEndWith" value="doesNotEndWith">{t('doesNotEndWith')}</MenuItem>
-          ]);
-          setValues([]);
+          ];
           break;
         case 'timestamp':
-          setOperators([
+          availableOperators = [
             <MenuItem key="on" value="on">{t('on')}</MenuItem>,
             <MenuItem key="onOrAfter" value="onOrAfter">{t('onOrAfter')}</MenuItem>,
             <MenuItem key="onOrBefore" value="onOrBefore">{t('onOrBefore')}</MenuItem>,
             <MenuItem key="after" value="after">{t('after')}</MenuItem>,
             <MenuItem key="before" value="before">{t('before')}</MenuItem>
-          ]);
-          setValues([]);
+          ];
           break;
         case 'enum':
-          setOperators([
+          availableOperators = [
             <MenuItem key="equal" value="equal">{t('equal')}</MenuItem>,
             <MenuItem key="neq" value="neq">{t('notEqual')}</MenuItem>,
-          ]);
-          setValues(selectedFilterField.enum!.map(entry =>
+          ];
+          availableValues = selectedFilterField.enum!.map(entry =>
             <MenuItem key={entry} value={entry}>{t(entry)}</MenuItem>
-          ))
+          );
           break;
       }
+
+      if (selectedOperator !== undefined && !availableOperators.some(operator => operator.key === selectedOperator)) {
+        setSelectedOperator(undefined);
+        setValue('');
+        setDateValue(null);
+      }
+
+      setOperators(availableOperators);
+      setValues(availableValues);
     }
-  }, [selectedFilterField, selectedOperator]);
+  }, [selectedFilterField, selectedOperator, t]);
 
   const handleSubmit = () => {
     let newValue: string | number | boolean;
@@ -193,10 +202,6 @@ export const FilterDialog: React.FC<Props> = ({
     && (selectedFilterField.type !== 'number' || !isNaN(Number(value)))
     && valueHelperText === undefined;
 
-  if (selectedOperator !== undefined && !operators.map(entry => entry.key).includes(selectedOperator)) {
-    return <></>
-  }
-
   return (
     <Dialog
       open={dialogOpen}
@@ -221,7 +226,10 @@ export const FilterDialog: React.FC<Props> = ({
                   fullWidth
                   value={selectedFilterField?.name ?? ''}
                   onChange={event => {
-                    setSelectedFilterField(filterFields.find(filterField => filterField.name === event.target.value))
+                    setSelectedFilterField(filterFields.find(filterField => filterField.name === event.target.value));
+                    setSelectedOperator(undefined);
+                    setValue('');
+                    setDateValue(null);
                   }}
                   select
                 >

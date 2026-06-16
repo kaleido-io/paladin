@@ -392,7 +392,7 @@ export const Keys: React.FC = () => {
                   {mode === 'explorer' &&
                     <TableCell width={1} sx={{ minWidth: '70px', backgroundColor: theme => theme.palette.background.paper }} />
                   }
-                  <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper }}>
+                  <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper, width: '100%' }}>
                     <TableSortLabel
                       active={sortByPathFirst}
                       direction={sortAscending ? 'asc' : 'desc'}
@@ -445,7 +445,7 @@ export const Keys: React.FC = () => {
                           </IconButton>
                         </Tooltip>
                       }</TableCell>}
-                    <TableCell sx={{ wordBreak: 'break-all' }}>{mode === 'explorer' ? removeParentFromPath(key.path) : key.path}</TableCell>
+                    <TableCell sx={{ maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mode === 'explorer' ? removeParentFromPath(key.path) : key.path}</TableCell>
                     <TableCell>{key.index}</TableCell>
                     <TableCell>
                       {getEthAddress(key)}

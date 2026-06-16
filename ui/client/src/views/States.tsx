@@ -160,12 +160,14 @@ export const States: React.FC = () => {
     {
       label: t('id'),
       name: '.id',
-      type: 'string'
+      type: 'string',
+      isHexValue: true
     },
     {
       label: t('contractAddress'),
       name: 'contractAddress',
-      type: 'string'
+      type: 'string',
+      isHexValue: true
     }
   ];
 

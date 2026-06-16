@@ -67,7 +67,7 @@ export const StateEntry: React.FC = () => {
             {t('backToStates')}
           </Button>
         </Box>
-        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('state')}</Typography>
+        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('state')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >

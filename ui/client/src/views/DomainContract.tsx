@@ -64,7 +64,7 @@ export const DomainContract: React.FC = () => {
             {t('backToDomains')}
           </Button>
         </Box>
-        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('domainSmartContract')}</Typography>
+        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('domainSmartContract')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >

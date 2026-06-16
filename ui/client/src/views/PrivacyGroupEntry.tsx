@@ -85,7 +85,7 @@ export const PrivacyGroupEntry: React.FC = () => {
             {t('backToPrivacyGroups')}
           </Button>
         </Box>
-        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('privacyGroup')}</Typography>
+        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('privacyGroup')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >
@@ -97,7 +97,6 @@ export const PrivacyGroupEntry: React.FC = () => {
             }}
             label={
               <Box>
-                {/* <span style={{ fontWeight: 600, marginRight: '6px' }}>{t(domainContract.domainName ?? 'public')}</span> */}
                 {getShortId(privacyGroup.id)}
               </Box>
             } />

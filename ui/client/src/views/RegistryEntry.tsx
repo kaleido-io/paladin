@@ -66,7 +66,7 @@ export const RegistryEntry: React.FC = () => {
             {t('backToRegistry')}
           </Button>
         </Box>
-        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('message')}</Typography>
+        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('message')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >

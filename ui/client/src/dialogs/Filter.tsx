@@ -146,6 +146,12 @@ export const FilterDialog: React.FC<Props> = ({
     }
   }, [selectedFilterField, selectedOperator, t]);
 
+  useEffect(() => {
+    if((selectedFilterField?.isUUID || selectedFilterField?.isHexValue) && selectedOperator === 'equal') {
+      setIsCaseSensitive(true);
+    }
+  }, [selectedFilterField, selectedOperator])
+
   const handleSubmit = () => {
     let newValue: string | number | boolean;
     switch (selectedFilterField?.type) {
@@ -285,7 +291,9 @@ export const FilterDialog: React.FC<Props> = ({
                   </LocalizationProvider>}
                 <Box sx={{ textAlign: 'center' }}>
                   <FormControlLabel
-                    disabled={selectedFilterField === undefined || selectedFilterField.type !== 'string'}
+                    disabled={selectedFilterField === undefined || selectedFilterField.type !== 'string'
+                      || selectedFilterField.isUUID || selectedFilterField.isHexValue
+                    }
                     control={<Checkbox checked={isCaseSensitive} onChange={event => setIsCaseSensitive(event.target.checked)} />}
                     label={t('caseSensitive')} />
                 </Box>

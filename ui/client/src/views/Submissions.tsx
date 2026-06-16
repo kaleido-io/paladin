@@ -30,6 +30,7 @@ import { Hash } from "../components/Hash";
 import { Tag } from "lucide-react";
 import { customNavigate } from "../utils";
 import { useNavigate } from "react-router-dom";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 export const Submissions: React.FC = () => {
   const { submissions } = useApplicationContext();
@@ -56,8 +57,8 @@ export const Submissions: React.FC = () => {
   const { t } = useTranslation();
 
   const { data: transactions, error } = useQuery({
-    queryKey: ['submissions', section, filters, sortAscending, refEntries, rowsPerPage, page],
-    queryFn: () => fetchSubmissions(section, filters, sortAscending, refEntries[refEntries.length - 1])
+    queryKey: ['submissions', rowsPerPage, section, filters, sortAscending, refEntries, rowsPerPage, page],
+    queryFn: () => fetchSubmissions(section, rowsPerPage, filters, sortAscending, refEntries[refEntries.length - 1])
   });
 
   useEffect(() => {
@@ -116,8 +117,13 @@ export const Submissions: React.FC = () => {
             <Typography variant="h5">
               {t("submissions")}
             </Typography>
-            <ToggleButtonGroup size="small" sx={{ height: '30px' }} exclusive onChange={(_event, value) => setSection(value)} value={section}>
+            <ToggleButtonGroup size="small" sx={{ height: '30px' }} exclusive onChange={(_event, value) => {
+              setPage(0);
+              setCount(-1);
+              setSection(value);
+            }} value={section}>
               <ToggleButton color="primary" value="pending" sx={{ width: '120px' }}>{t('pending')}</ToggleButton>
+              <ToggleButton color="primary" value="successful" sx={{ width: '120px' }}>{t('successful')}</ToggleButton>
               <ToggleButton color="primary" value="failed" sx={{ width: '120px' }}>{t('failed')}</ToggleButton>
             </ToggleButtonGroup>
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
@@ -313,9 +319,10 @@ export const Submissions: React.FC = () => {
                 />
               </TableContainer>}
             {transactions !== undefined && transactions.length === 0 &&
-              <Typography color="textSecondary" align="center" variant="h6" sx={{ marginTop: '40px' }}>
-                {t(section === 'pending' ? 'noPendingSubmissions' : 'noFailedSubmissions')}
-              </Typography>}
+              <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+                <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+                <Typography>{t('noSubmissions')}</Typography>
+              </Box>}
           </Box>
         </Box>
       </Fade>

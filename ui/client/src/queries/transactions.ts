@@ -66,11 +66,11 @@ export const fetchIndexedTransactions = async (
   pageParam?: ITransactionPagingReference
 ): Promise<IEnrichedTransaction[]> => {
   let translatedFilters = translateFilters(filters);
-  
+
   let requestPayload: any = {
     jsonrpc: '2.0',
     id: Date.now(),
-    method: withReceipt? RpcMethods.bidx_QueryIndexedTransactionsWithReceipt : RpcMethods.bidx_QueryIndexedTransactions,
+    method: withReceipt ? RpcMethods.bidx_QueryIndexedTransactionsWithReceipt : RpcMethods.bidx_QueryIndexedTransactions,
     params: [
       {
         ...translatedFilters,
@@ -108,7 +108,8 @@ export const fetchIndexedTransactions = async (
 };
 
 export const fetchSubmissions = async (
-  type: 'pending' | 'failed',
+  type: 'pending' | 'failed' | 'successful',
+  limit: number,
   filters: IFilter[],
   sortAscending?: boolean,
   pageParam?: IPaladinTransactionPagingReference
@@ -118,8 +119,8 @@ export const fetchSubmissions = async (
   let params: any = [
     {
       ...translatedFilters,
-      limit: constants.SUBMISSIONS_QUERY_LIMIT,
-      sort: [`created ${sortAscending? 'ASC' : 'DESC'}`],
+      limit,
+      sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
       greaterThan: pageParam !== undefined && sortAscending ? [
         {
           field: 'created',
@@ -135,14 +136,14 @@ export const fetchSubmissions = async (
     },
   ];
 
-  if (type === 'failed') {
+  if (['failed', 'successful'].includes(type)) {
     if (params[0].equal === undefined) {
       params[0].equal = [];
     }
     params[0].equal.push(
       {
         field: 'success',
-        value: false
+        value: type === 'successful'
       }
     );
   } else {
@@ -153,9 +154,9 @@ export const fetchSubmissions = async (
     jsonrpc: '2.0',
     id: Date.now(),
     method:
-      type === 'failed'
-        ? RpcMethods.ptx_QueryTransactionsFull
-        : RpcMethods.ptx_QueryPendingTransactions,
+      type === 'pending'
+        ? RpcMethods.ptx_QueryPendingTransactions
+        : RpcMethods.ptx_QueryTransactionsFull,
     params
   };
 

@@ -123,7 +123,6 @@ export const Submissions: React.FC = () => {
               setSection(value);
             }} value={section}>
               <ToggleButton color="primary" value="pending" sx={{ width: '120px' }}>{t('pending')}</ToggleButton>
-              <ToggleButton color="primary" value="successful" sx={{ width: '120px' }}>{t('successful')}</ToggleButton>
               <ToggleButton color="primary" value="failed" sx={{ width: '120px' }}>{t('failed')}</ToggleButton>
             </ToggleButtonGroup>
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>

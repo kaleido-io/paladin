@@ -169,13 +169,11 @@ export const States: React.FC = () => {
     }
   ];
 
-  console.log(indexedFields)
-
   const getFilterType = (field: ISchemaComponent) => {
-    switch(field.type) {
-      case 'uint256': return 'number';
-      case 'string': return 'string'
-      case 'bool': return 'boolean';
+    if(field.type.startsWith('int') || field.type.startsWith('uint')) {
+      return 'number';
+    } else if(field.type === 'bool') {
+      return 'boolean';
     }
     return 'string';
   };
@@ -185,7 +183,7 @@ export const States: React.FC = () => {
     name: indexedField.name,
     type: getFilterType(indexedField),
     isCustom: true,
-    isHexValue: indexedField.type === 'address'
+    isHexValue: indexedField.type === 'address' || indexedField.type.startsWith('bytes')
   }));
 
   return (

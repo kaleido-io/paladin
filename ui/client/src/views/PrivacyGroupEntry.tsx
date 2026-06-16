@@ -25,7 +25,7 @@ import { getPrivacyGroupByAddress, getPrivacyGroupById } from "../queries/privac
 import { JSONBox } from "../components/JSONBox";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-export const PrivacyGroup: React.FC = () => {
+export const PrivacyGroupEntry: React.FC = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();

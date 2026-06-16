@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { Box, ButtonBase, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApplicationContext } from "../contexts/ApplicationContext";
@@ -34,10 +34,11 @@ export const Navigation: React.FC = () => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
+  const [searchParams] = useSearchParams();
+  const back = searchParams.get('back') ?? '';
+
   const drawerContent = (
     <>
-      {/* <Toolbar className="mainNavigation" /> */}
-
       <ButtonBase
         sx={{
           marginTop: '20px',
@@ -52,14 +53,14 @@ export const Navigation: React.FC = () => {
         <ListItem>
           <ListItemButton
             onClick={event => customNavigate(AppRoutes.Transactions, event, navigate)}
-            selected={pathname.startsWith(AppRoutes.Transactions)}>
+            selected={pathname.startsWith(AppRoutes.Transactions) && !['submissions'].includes(back) }>
             <ListItemText primary={t('transactions')} />
           </ListItemButton>
         </ListItem>
         <ListItem>
           <ListItemButton
             onClick={event => customNavigate(AppRoutes.Submissions, event, navigate)}
-            selected={pathname.startsWith(AppRoutes.Submissions)}>
+            selected={pathname.startsWith(AppRoutes.Submissions) || back === 'submissions' }>
             <ListItemText primary={t('submissions')} />
           </ListItemButton>
         </ListItem>

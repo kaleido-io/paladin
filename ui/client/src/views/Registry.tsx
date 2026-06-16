@@ -31,7 +31,7 @@ import { Captions } from "lucide-react";
 import { FiltersButton } from "../components/FiltersButton";
 import { Filters } from "../components/Filters";
 
-export const Registries: React.FC = () => {
+export const Registry: React.FC = () => {
   const { registry } = useApplicationContext();
   const {
     filters,

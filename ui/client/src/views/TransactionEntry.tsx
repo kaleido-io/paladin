@@ -28,7 +28,7 @@ import { PaladinTransactionSection } from "../components/PaladinTransactionSecti
 import { ReceiptlessPaladinTransaction } from "../components/ReceiptlessPaladinTransaction";
 import { PaladinTransactionsDetails } from "../components/TransactionDetails";
 
-export const TransactionDetails: React.FC = () => {
+export const TransactionEntry: React.FC = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();

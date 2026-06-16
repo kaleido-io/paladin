@@ -32,18 +32,18 @@ import { darkThemeOptions, lightThemeOptions } from "./themes/default";
 import { getBasePath } from "./utils";
 import { Domains } from "./views/Domains";
 import { Keys } from "./views/Keys";
-import { Registries } from "./views/Registries";
+import { Registry } from "./views/Registry";
 import { Transactions } from "./views/Transactions";
-import { TransactionDetails } from "./views/TransactionDetails";
+import { TransactionEntry } from "./views/TransactionEntry";
 import { Submissions } from "./views/Submissions";
 import { DomainContract } from "./views/DomainContract";
 import { PrivacyGroups } from "./views/PrivacyGroups";
-import { PrivacyGroup } from "./views/PrivacyGroup";
+import { PrivacyGroupEntry } from "./views/PrivacyGroupEntry";
 import { Navigation } from "./components/Navigation";
 import { States } from "./views/States";
 import { Messages } from "./views/Messages";
-import { Message } from "./views/Message";
-import { State } from "./views/State";
+import { MessageEntry } from "./views/MessageEntry";
+import { StateEntry } from "./views/StateEntry";
 import { RegistryEntry } from "./views/RegistryEntry";
 
 const queryClient = new QueryClient({
@@ -124,10 +124,10 @@ function App() {
                   />
                   <Route
                     path={AppRoutes.Transaction}
-                    element={<TransactionDetails />}
+                    element={<TransactionEntry />}
                   />
                   <Route path={AppRoutes.Keys} element={<Keys />} />
-                  <Route path={AppRoutes.Registry} element={<Registries />} />
+                  <Route path={AppRoutes.Registry} element={<Registry />} />
                   <Route path={AppRoutes.Domains} element={<Domains />} />
                   <Route
                     path={AppRoutes.DomainContract}
@@ -139,16 +139,16 @@ function App() {
                   />
                   <Route
                     path={AppRoutes.PrivacyGroup}
-                    element={<PrivacyGroup />}
+                    element={<PrivacyGroupEntry />}
                   />
                   <Route path={AppRoutes.States} element={<States />} />
-                  <Route path={AppRoutes.State} element={<State />} />
+                  <Route path={AppRoutes.State} element={<StateEntry />} />
                   <Route path={AppRoutes.Messages} element={<Messages />} />
                   <Route
                     path={AppRoutes.RegistryEntry}
                     element={<RegistryEntry />}
                   />
-                  <Route path={AppRoutes.Message} element={<Message />} />
+                  <Route path={AppRoutes.Message} element={<MessageEntry />} />
                   <Route
                     path="*"
                     element={<Navigate to={AppRoutes.Transactions} replace />}

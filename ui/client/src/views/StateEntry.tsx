@@ -22,26 +22,27 @@ import { useTranslation } from "react-i18next";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { JSONBox } from "../components/JSONBox";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { getMessage } from "../queries/transport";
+import { getState } from "../queries/states";
+import { StateActions } from "../components/StateActions";
 
-export const Message: React.FC = () => {
+export const StateEntry: React.FC = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { id } = useParams();
+  const { domain, schema, id } = useParams();
 
-  const { data: message, error } = useQuery({
-    queryKey: [`message-by-id-${id}`],
-    queryFn: () => getMessage(id!),
-    enabled: id !== undefined
+  const { data: state, error } = useQuery({
+    queryKey: [`state-${domain}-${schema}-${id}`],
+    queryFn: () => getState(domain!, schema!, id!),
+    enabled: domain !== undefined && schema !== undefined && id !== undefined
   });
 
-  if (message === undefined) {
+  if (state === undefined) {
     return <></>;
   }
 
-  if (message === null) {
-    return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{t('messageNotFound')}</Alert>
+  if(state === null) {
+    return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{t('stateNotFound')}</Alert>
   }
 
   if (error) {
@@ -61,12 +62,12 @@ export const Message: React.FC = () => {
         <Box sx={{ marginBottom: '20px' }}>
           <Button
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => navigate('/ui/messages')}
+            onClick={() => navigate('/ui/states')}
           >
-            {t('backToMessages')}
+            {t('backToStates')}
           </Button>
         </Box>
-        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('message')}</Typography>
+        <Typography align="center" variant="h6" sx={{ marginBottom: '5px' }}>{t('state')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >
@@ -78,7 +79,7 @@ export const Message: React.FC = () => {
             }}
             label={
               <Box>
-                {getShortId(message.id)}
+                {getShortId(state.id)}
               </Box>
             } />
         </Tabs>
@@ -88,13 +89,14 @@ export const Message: React.FC = () => {
           paddingBottom: '5px',
           backgroundColor: theme => theme.palette.background.paper,
         }}>
+          <StateActions state={state} />
         </Box>
         <Accordion elevation={0} disableGutters defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             {t('details')}
           </AccordionSummary>
           <AccordionDetails >
-            <JSONBox data={message} />
+            <JSONBox data={state} />
           </AccordionDetails>
         </Accordion>
       </Box>

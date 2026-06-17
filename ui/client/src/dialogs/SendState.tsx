@@ -76,7 +76,7 @@ export const SendStateDialog: React.FC<Props> = ({
     setErrorMessage(undefined);
     setMessageId(undefined);
     pushMessage().then(result => {
-      if(result.isError) {
+      if (result.isError) {
         setErrorMessage(t('failedToPushMessageCheckRecipientNode'));
       } else if (result.data !== undefined && result.data.replace(/[0-]/g, '').length === 0) {
         setErrorMessage(t('mustPushStateToAccountInDifferentNode'));
@@ -117,9 +117,10 @@ export const SendStateDialog: React.FC<Props> = ({
             >
               {t('messageValue', { value: messageId })}
             </Alert>}
-            <Alert sx={{ marginBottom: '25px'}} variant="filled" severity="warning">
+          {messageId === undefined &&
+            <Alert sx={{ marginBottom: '25px' }} variant="filled" severity="warning">
               {t('sendPrivateStateWarning')}
-            </Alert>
+            </Alert>}
           <Box sx={{ marginTop: '6px' }}>
             <TextField
               label={t('recipient')}
@@ -148,7 +149,7 @@ export const SendStateDialog: React.FC<Props> = ({
             disableElevation
             onClick={() => setDialogOpen(false)}
           >
-            {t(lastRecepient !== undefined? 'close' : 'cancel')}
+            {t(lastRecepient !== undefined ? 'close' : 'cancel')}
           </Button>
         </DialogActions>
       </form>

@@ -142,9 +142,11 @@ export const States: React.FC = () => {
   const indexedFields = schemas?.find(schema => schema.id === selectedSchemaId)?.definition.components.filter(component => component.indexed) ?? [];
 
   const getIndexedFieldContent = (state: IState, component: ISchemaComponent) => {
+    if(component.type.startsWith('byte')) {
+      return <Hash Icon={<Captions size="18px" />} hideTitle title={component.type} hash={state.data[component.name]} />
+    }
     switch (component.type) {
-      case 'bytes32':
-      case 'address': return <Hash Icon={<Captions size="18px" />} title={t('address')} hash={state.data[component.name]} />
+      case 'address': return <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={state.data[component.name]} />
       case 'bool': return state.data[component.name] ? 'true' : 'false';
       default: return state.data[component.name];
     }
@@ -399,7 +401,7 @@ export const States: React.FC = () => {
                         {t('actions')}
                       </TableCell>
                       <TableCell
-                        width={1}
+                        width={'100%'}
                         sx={{
                           backgroundColor: (theme) => theme.palette.background.paper,
                           whiteSpace: 'nowrap'

@@ -30,7 +30,7 @@ type Props = {
   prefix?: string
 };
 
-export const EllapsedTime: React.FC<Props> = ({
+export const ElapsedTime: React.FC<Props> = ({
   timestamp,
   icon = <AccessTimeIcon />,
   prefix

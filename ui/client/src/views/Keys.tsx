@@ -54,53 +54,13 @@ export const Keys: React.FC = () => {
     setFiltersVisible,
   } = keysViewState;
 
-  // const getDefaultRowsPerPage = () => {
-  //   const valueFromStorage = window.localStorage.getItem(constants.KEYS_ROWS_PER_PAGE);
-  //   if (valueFromStorage !== null) {
-  //     return Number(valueFromStorage);
-  //   }
-  //   return 10;
-  // };
-
-  // const getDefaultMode = () => {
-  //   const valueFromStorage = window.localStorage.getItem(constants.KEYS_MODE);
-  //   if (valueFromStorage === 'explorer' || valueFromStorage === 'list') {
-  //     return valueFromStorage;
-  //   }
-  //   return 'explorer';
-  // };
-
-  // const getDefaultSortBy = () => {
-  //   return window.localStorage.getItem(constants.KEYS_SORT_BY_STORAGE_KEY) ?? 'index';
-  // };
-
-  // const getDefaultSortOrder = () => {
-  //   return window.localStorage.getItem(constants.KEYS_SORT_ORDER_STORAGE_KEY) as 'asc' | 'desc' ?? 'asc';
-  // };
-
-  // const getFiltersFromStorage = () => {
-  //   const value = window.localStorage.getItem(constants.KEYS_FILTERS_KEY);
-  //   if (value !== null) {
-  //     try {
-  //       return JSON.parse(value);
-  //     } catch (_err) { }
-  //   }
-  //   return [];
-  // };
-
   const [searchParams, setSearchParams] = useSearchParams();
   const [refEntries, setRefEntries] = useState<IKeyEntry[]>([]);
-  // const [page, setPage] = useState(0);
   const [count, setCount] = useState(-1);
-  // const [rowsPerPage, setRowsPerPage] = useState(getDefaultRowsPerPage());
   const [parent, setParent] = useState(searchParams.get('path') ?? '');
   const [reverseLookupDialogOpen, setReverseLookupDialogOpen] = useState(false);
-  // const [sortByPathFirst, setSortByPathFirst] = useState(getDefaultSortBy() === 'path');
-  // const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(getDefaultSortOrder);
   const [selectedVerifiers, setSelectedVerifiers] = useState<IVerifier[]>();
   const [verifiersDialogOpen, setVerifiersDialogOpen] = useState(false);
-  // const [filters, setFilters] = useState<IFilter[]>(getFiltersFromStorage());
-  // const [mode, setMode] = useState<'explorer' | 'list'>(getDefaultMode());
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -158,23 +118,6 @@ export const Keys: React.FC = () => {
   if (error) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{error.message}</Alert>
   }
-
-  // const handleSortChange = (column: string) => {
-  //   if ((column === 'path' && sortByPathFirst) || (column === 'index' && !sortByPathFirst)) {
-  //     const order = sortOrder === 'asc' ? 'desc' : 'asc';
-  //     setSortOrder(order);
-  //     window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, order);
-  //   } else {
-  //     window.localStorage.setItem(constants.KEYS_SORT_BY_STORAGE_KEY, column);
-  //     if (sortOrder !== 'asc') {
-  //       window.localStorage.setItem(constants.KEYS_SORT_ORDER_STORAGE_KEY, 'asc');
-  //       setSortOrder('asc');
-  //     }
-  //     setSortByPathFirst(column === 'path');
-  //   }
-  //   setPage(0);
-  //   setRefEntries([]);
-  // };
 
   let breadcrumbContent: JSX.Element[] = [];
   if (parent !== '') {

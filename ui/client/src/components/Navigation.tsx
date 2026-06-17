@@ -87,8 +87,8 @@ export const Navigation: React.FC = () => {
         </ListItem>
         <ListItem>
           <ListItemButton
-            onClick={event => customNavigate(AppRoutes.PrivactGroups, event, navigate)}
-            selected={pathname.startsWith(AppRoutes.PrivactGroups)}>
+            onClick={event => customNavigate(AppRoutes.PrivacyGroups, event, navigate)}
+            selected={pathname.startsWith(AppRoutes.PrivacyGroups)}>
             <ListItemText primary={t('privacyGroups')} />
           </ListItemButton>
         </ListItem>

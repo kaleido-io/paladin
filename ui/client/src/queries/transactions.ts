@@ -301,8 +301,6 @@ export const sendTransaction = async (
     method: RpcMethods.ptx_sendTransaction,
     params: [transaction],
   };
-  console.log('Sending transaction');
-
   return <Promise<string>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),

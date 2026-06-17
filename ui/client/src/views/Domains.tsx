@@ -33,7 +33,7 @@ import { Hash } from '../components/Hash';
 import { SmartContractsTable } from '../components/SmartContractsTable';
 import { getDomainByName, listDomains } from '../queries/domains';
 import SearchIcon from '@mui/icons-material/Search';
-import { DomainContractLookupDialog } from '../dialogs/DomainContractLookp';
+import { DomainContractLookupDialog } from '../dialogs/DomainContractLookup';
 import { Captions } from "lucide-react";
 import { FiltersButton } from '../components/FiltersButton';
 import { Filters } from '../components/Filters';

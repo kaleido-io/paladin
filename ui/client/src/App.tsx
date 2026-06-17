@@ -134,7 +134,7 @@ function App() {
                     element={<DomainContract />}
                   />
                   <Route
-                    path={AppRoutes.PrivactGroups}
+                    path={AppRoutes.PrivacyGroups}
                     element={<PrivacyGroups />}
                   />
                   <Route

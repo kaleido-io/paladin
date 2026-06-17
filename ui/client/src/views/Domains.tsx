@@ -166,7 +166,8 @@ export const Domains: React.FC = () => {
                   {
                     label: t('contractAddress'),
                     name: 'address',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   }
                 ]}
                 filters={filters}

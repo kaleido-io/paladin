@@ -134,20 +134,18 @@ export const FilterDialog: React.FC<Props> = ({
           );
           break;
       }
-
       if (selectedOperator !== undefined && !availableOperators.some(operator => operator.key === selectedOperator)) {
         setSelectedOperator(undefined);
         setValue('');
         setDateValue(null);
       }
-
       setOperators(availableOperators);
       setValues(availableValues);
     }
   }, [selectedFilterField, selectedOperator, t]);
 
   useEffect(() => {
-    if((selectedFilterField?.isUUID || selectedFilterField?.isHexValue) && selectedOperator === 'equal') {
+    if ((selectedFilterField?.isUUID || selectedFilterField?.isHexValue) && selectedOperator === 'equal') {
       setIsCaseSensitive(true);
     }
   }, [selectedFilterField, selectedOperator])
@@ -240,7 +238,7 @@ export const FilterDialog: React.FC<Props> = ({
                   select
                 >
                   {filterFields.map(filterField =>
-                    <MenuItem sx={{ color: theme => filterField.isCustom? theme.palette.primary.main : undefined}} key={filterField.name} value={filterField.name}>{filterField.label}</MenuItem>
+                    <MenuItem sx={{ color: theme => filterField.isCustom ? theme.palette.primary.main : undefined }} key={filterField.name} value={filterField.name}>{filterField.label}</MenuItem>
                   )}
                 </TextField>
               </Grid2>
@@ -292,7 +290,7 @@ export const FilterDialog: React.FC<Props> = ({
                 <Box sx={{ textAlign: 'center' }}>
                   <FormControlLabel
                     disabled={selectedFilterField === undefined || selectedFilterField.type !== 'string'
-                      || selectedFilterField.isUUID || selectedFilterField.isHexValue
+                      || ((selectedFilterField.isUUID || selectedFilterField.isHexValue) && selectedOperator === 'equal')
                     }
                     control={<Checkbox checked={isCaseSensitive} onChange={event => setIsCaseSensitive(event.target.checked)} />}
                     label={t('caseSensitive')} />

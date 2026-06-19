@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { listSchemas, queryStates } from "../queries/states";
 import { Timestamp } from "../components/Timestamp";
@@ -59,6 +59,7 @@ export const States: React.FC = () => {
   const [stateLookupDialogOpen, setStateLookupDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const [sortBy, setSortBy] = useState('.created');
+  const tableIndexedFieldsRef = useRef<ISchemaComponent[]>([]);
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -82,13 +83,13 @@ export const States: React.FC = () => {
   });
 
   useEffect(() => {
-    if(selectedDomain === undefined && domains !== undefined && domains.length > 0) {
+    if (selectedDomain === undefined && domains !== undefined && domains.length > 0) {
       setSelectedDomain(domains[0]);
     }
   }, [selectedDomain, domains]);
 
-    useEffect(() => {
-    if(selectedDomain !== undefined && schemas !== undefined && schemas.length > 0) {
+  useEffect(() => {
+    if (selectedDomain !== undefined && schemas !== undefined && schemas.length > 0) {
       setSelectedSchemaId(schemas[0].id);
     }
   }, [selectedDomain, schemas]);
@@ -100,6 +101,22 @@ export const States: React.FC = () => {
       }
     }
   }, [states, rowsPerPage, page]);
+
+  const selectedIndexedFields =
+    schemas?.find(schema => schema.id === selectedSchemaId)
+      ?.definition.components.filter(component => component.indexed) ?? [];
+
+  const statesMatchSelection =
+    states !== undefined &&
+    (states.length === 0 || states[0].schema === selectedSchemaId);
+
+  const tableIndexedFields = statesMatchSelection
+    ? selectedIndexedFields
+    : tableIndexedFieldsRef.current;
+
+  if (statesMatchSelection) {
+    tableIndexedFieldsRef.current = selectedIndexedFields;
+  }
 
   if (domains === undefined) {
     return <></>
@@ -140,16 +157,19 @@ export const States: React.FC = () => {
     setPage(0);
   };
 
-  const indexedFields = schemas?.find(schema => schema.id === selectedSchemaId)?.definition.components.filter(component => component.indexed) ?? [];
-
   const getIndexedFieldContent = (state: IState, component: ISchemaComponent) => {
-    if(component.type.startsWith('byte')) {
-      return <Hash Icon={<Captions size="18px" />} hideTitle title={component.type} hash={state.data[component.name]} />
+    const value = state.data[component.name];
+    if (value === undefined || value === null) {
+      return <>--</>;
+    }
+    if (component.type.startsWith('byte')) {
+      return <Hash Icon={<Captions size="18px" />} hideTitle title={component.type} hash={value} />
     }
     switch (component.type) {
-      case 'address': return <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={state.data[component.name]} />
-      case 'bool': return state.data[component.name] ? 'true' : 'false';
-      default: return state.data[component.name];
+      case 'address':
+        return <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={value} />
+      case 'bool': return value ? 'true' : 'false';
+      default: return value;
     }
   };
 
@@ -175,15 +195,15 @@ export const States: React.FC = () => {
   ];
 
   const getFilterType = (field: ISchemaComponent) => {
-    if(field.type.startsWith('int') || field.type.startsWith('uint')) {
+    if (field.type.startsWith('int') || field.type.startsWith('uint')) {
       return 'number';
-    } else if(field.type === 'bool') {
+    } else if (field.type === 'bool') {
       return 'boolean';
     }
     return 'string';
   };
 
-  indexedFields.map(indexedField => filterFields.push({
+  selectedIndexedFields.map(indexedField => filterFields.push({
     label: `${indexedField.name}`,
     name: indexedField.name,
     type: getFilterType(indexedField),
@@ -254,7 +274,7 @@ export const States: React.FC = () => {
                   variant="body2"
                 >{t('schema')}</Typography>
                 <TextField
-                sx={{ minWidth: '120px' }}
+                  sx={{ minWidth: '120px' }}
 
                   slotProps={{
                     input: {
@@ -367,7 +387,7 @@ export const States: React.FC = () => {
                       >
                         {t('contractAddress')}
                       </TableCell>
-                      {indexedFields.map(field =>
+                      {tableIndexedFields.map(field =>
                         <TableCell
                           key={field.name}
                           width={1}
@@ -426,7 +446,7 @@ export const States: React.FC = () => {
                             :
                             <>--</>}
                         </TableCell>
-                        {indexedFields.map(field =>
+                        {tableIndexedFields.map(field =>
                           <TableCell key={field.name}>
                             {getIndexedFieldContent(state, field)}
                           </TableCell>
@@ -465,7 +485,7 @@ export const States: React.FC = () => {
                 />
               </TableContainer>
             </Box>}
-          {states !== undefined && states.length === 0 &&
+          {statesMatchSelection && states !== undefined && states.length === 0 &&
             <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
               <Typography>{t('statesEmptyState')}</Typography>

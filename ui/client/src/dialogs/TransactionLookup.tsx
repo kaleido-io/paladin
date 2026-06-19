@@ -58,21 +58,24 @@ export const TransactionLookupDialog: React.FC<Props> = ({
     queryKey: ["blockchainTransactionByHash", hashOrId],
     queryFn: () => fetchEnrichedTransaction(hashOrId),
     refetchOnMount: false,
-    retry: false
+    retry: false,
+    enabled: false,
   });
 
   const { refetch: paladinReceiptById } = useQuery({
     queryKey: ["paladinReceiptById", hashOrId],
     queryFn: () => fetchTransactionReceipt(hashOrId),
     refetchOnMount: false,
-    retry: false
+    retry: false,
+    enabled: false,
   });
 
   const { refetch: paladinTransactionById } = useQuery({
     queryKey: ["paladinTransactionById", hashOrId],
     queryFn: () => fetchPaladinTransaction(hashOrId),
     refetchOnMount: false,
-    retry: false
+    retry: false,
+    enabled: false,
   });
 
   const handleSubmit = () => {

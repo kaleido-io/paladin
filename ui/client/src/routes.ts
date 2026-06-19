@@ -29,5 +29,5 @@ export const AppRoutes = {
   Message: '/ui/messages/:id',
   State: '/ui/states/:domain/:schema/:id',
   RegistryEntry: '/ui/registry/:registry/:id',
-  PrivacyGroupMessageEntry: '/ui/privacy-groups/:groupId/:messageId'
+  PrivacyGroupMessageEntry: '/ui/privacy-groups/:privacyGroupId/:messageId'
 };

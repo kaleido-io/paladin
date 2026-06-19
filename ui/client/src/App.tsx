@@ -45,6 +45,7 @@ import { Messages } from "./views/Messages";
 import { MessageEntry } from "./views/MessageEntry";
 import { StateEntry } from "./views/StateEntry";
 import { RegistryEntry } from "./views/RegistryEntry";
+import { PrivateGroupMessageEntry } from "./views/PrivateGroupMessageEntry";
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({}),
@@ -114,45 +115,22 @@ function App() {
               <Navigation />
               <Box sx={{ flexGrow: 1, maxWidth: "100vw", minWidth: 0 }}>
                 <Routes>
-                  <Route
-                    path={AppRoutes.Transactions}
-                    element={<Transactions />}
-                  />
-                  <Route
-                    path={AppRoutes.Submissions}
-                    element={<Submissions />}
-                  />
-                  <Route
-                    path={AppRoutes.Transaction}
-                    element={<TransactionEntry />}
-                  />
+                  <Route path={AppRoutes.Transactions} element={<Transactions />} />
+                  <Route path={AppRoutes.Submissions} element={<Submissions />} />
+                  <Route path={AppRoutes.Transaction} element={<TransactionEntry />} />
                   <Route path={AppRoutes.Keys} element={<Keys />} />
                   <Route path={AppRoutes.Registry} element={<Registry />} />
                   <Route path={AppRoutes.Domains} element={<Domains />} />
-                  <Route
-                    path={AppRoutes.DomainContract}
-                    element={<DomainContract />}
-                  />
-                  <Route
-                    path={AppRoutes.PrivacyGroups}
-                    element={<PrivacyGroups />}
-                  />
-                  <Route
-                    path={AppRoutes.PrivacyGroup}
-                    element={<PrivacyGroupEntry />}
-                  />
+                  <Route path={AppRoutes.DomainContract} element={<DomainContract />} />
+                  <Route path={AppRoutes.PrivacyGroups} element={<PrivacyGroups />} />
+                  <Route path={AppRoutes.PrivacyGroup} element={<PrivacyGroupEntry />} />
                   <Route path={AppRoutes.States} element={<States />} />
                   <Route path={AppRoutes.State} element={<StateEntry />} />
                   <Route path={AppRoutes.Messages} element={<Messages />} />
-                  <Route
-                    path={AppRoutes.RegistryEntry}
-                    element={<RegistryEntry />}
-                  />
+                  <Route path={AppRoutes.RegistryEntry} element={<RegistryEntry />} />
                   <Route path={AppRoutes.Message} element={<MessageEntry />} />
-                  <Route
-                    path="*"
-                    element={<Navigate to={AppRoutes.Transactions} replace />}
-                  />
+                  <Route path={AppRoutes.PrivacyGroupMessageEntry} element={<PrivateGroupMessageEntry />} />
+                  <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />
                 </Routes>
               </Box>
             </Box>

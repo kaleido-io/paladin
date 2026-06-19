@@ -138,3 +138,34 @@ export const getPrivacyGroupMessages = async (
     )
   );
 };
+
+export const getPrivacyGroupMessage = async (
+  privacyGroupId: string,
+  messageId: string
+): Promise<IPrivacyGroupMessage | null> => {
+  const payload = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: RpcMethods.pgroup_queryMessages,
+    params: [{
+      equal: [{
+        field: 'group',
+        value: privacyGroupId
+      }, {
+        field: 'id',
+        value: messageId
+      }],
+      limit: 1
+    }],
+  };
+  const response = await <Promise<IPrivacyGroupMessage[]>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+      i18next.t('errorFetchingPrivacyGroupMessage')
+    )
+  );
+  if(response.length === 1) {
+    return response[0];
+  }
+  return null;
+};

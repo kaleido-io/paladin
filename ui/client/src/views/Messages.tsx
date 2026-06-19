@@ -17,7 +17,7 @@
 import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { Timestamp } from "../components/Timestamp";
@@ -57,8 +57,9 @@ export const Messages: React.FC = () => {
   const { t } = useTranslation();
 
   const { data: messages, error } = useQuery({
-    queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters],
+    queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters, refTimestamps],
     queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {
@@ -173,155 +174,149 @@ export const Messages: React.FC = () => {
               />
             </Box>
           </Collapse>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            {messages !== undefined && messages.length > 0 &&
-              <TableContainer
-                component={Paper}
-              >
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}>
-                        <TableSortLabel
-                          active={sortBy === 'created'}
-                          direction={sortAscending ? 'asc' : 'desc'}
-                          onClick={() => {
-                            if (sortBy === 'created') {
-                              setSortAscending(!sortAscending);
-                            } else {
-                              setSortBy('created');
-                            }
-                            setRefTimestamps([]);
-                            setPage(0);
-                          }}
-                        >
-                          {t('created')}
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}>
-                        <TableSortLabel
-                          active={sortBy === 'acknowledged'}
-                          direction={sortAscending ? 'asc' : 'desc'}
-                          onClick={() => {
-                            if (sortBy === 'ack.time') {
-                              setSortAscending(!sortAscending);
-                            } else {
-                              setSortBy('ack.time')
-                            }
-                            setRefTimestamps([]);
-                            setPage(0);
-                          }}
-                        >
-                          {t('acknowledged')}
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
+          {messages !== undefined && messages.length > 0 &&
+            <TableContainer
+              component={Paper}
+            >
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                      }}>
+                      <TableSortLabel
+                        active={sortBy === 'created'}
+                        direction={sortAscending ? 'asc' : 'desc'}
+                        onClick={() => {
+                          if (sortBy === 'created') {
+                            setSortAscending(!sortAscending);
+                          } else {
+                            setSortBy('created');
+                          }
+                          setRefTimestamps([]);
+                          setPage(0);
                         }}
                       >
-                        {t('id')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
+                        {t('created')}
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                      }}>
+                      <TableSortLabel
+                        active={sortBy === 'acknowledged'}
+                        direction={sortAscending ? 'asc' : 'desc'}
+                        onClick={() => {
+                          if (sortBy === 'ack.time') {
+                            setSortAscending(!sortAscending);
+                          } else {
+                            setSortBy('ack.time')
+                          }
+                          setRefTimestamps([]);
+                          setPage(0);
                         }}
                       >
-                        {t('node')}
+                        {t('acknowledged')}
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {t('id')}
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {t('node')}
+                    </TableCell>
+                    <TableCell
+                      width={'100%'}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {t('type')}
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {messages.map(message =>
+                    <TableRow key={message.id}>
+                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                        <Timestamp timestamp={message.created} />
                       </TableCell>
-                      <TableCell
-                        width={'100%'}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('type')}
+                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                        {message.ack?.time ?
+                          <Timestamp timestamp={message.ack.time} />
+                          :
+                          <>--</>}
                       </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
+                      <TableCell>
+                        <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
+                      </TableCell>
+                      <TableCell>
+                        {message.node}
+                      </TableCell>
+                      <TableCell>
+                        {message.messageType}
+                      </TableCell>
+                      <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                        <Tooltip title={t('open')} arrow>
+                          <IconButton
+                            onClick={mouseEvent => customNavigate(`/ui/messages/${message.id}`, mouseEvent, navigate)}>
+                            <OpenInNewIcon color="secondary" fontSize="medium" />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {messages.map(message =>
-                      <TableRow key={message.id}>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Timestamp timestamp={message.created} />
-                        </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          {message.ack?.time ?
-                            <Timestamp timestamp={message.ack.time} />
-                            :
-                            <>--</>}
-                        </TableCell>
-                        <TableCell>
-                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
-                        </TableCell>
-                        <TableCell>
-                          {message.node}
-                        </TableCell>
-                        <TableCell>
-                          {message.messageType}
-                        </TableCell>
-                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Tooltip title={t('open')} arrow>
-                            <IconButton
-                              onClick={mouseEvent => customNavigate(`/ui/messages/${message.id}`, mouseEvent, navigate)}>
-                              <OpenInNewIcon color="secondary" fontSize="medium" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                <TablePagination
-                  slotProps={{
-                    actions: {
-                      lastButton: {
-                        disabled: true
-                      }
+                  )}
+                </TableBody>
+              </Table>
+              <TablePagination
+                slotProps={{
+                  actions: {
+                    lastButton: {
+                      disabled: true
                     }
-                  }}
-                  component="div"
-                  showFirstButton
-                  showLastButton
-                  count={count}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                />
-              </TableContainer>}
-            {messages !== undefined && messages.length === 0 &&
-              <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
-                <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
-                <Typography>{t('messagesEmptyState')}</Typography>
-              </Box>
-            }
-          </Box>
+                  }
+                }}
+                component="div"
+                showFirstButton
+                showLastButton
+                count={count}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </TableContainer>}
+          {messages !== undefined && messages.length === 0 &&
+            <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+              <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+              <Typography>{t('messagesEmptyState')}</Typography>
+            </Box>
+          }
         </Box>
       </Fade>
       <MessageLookupDialog

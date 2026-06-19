@@ -29,7 +29,7 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { querySmartContractsByDomain } from '../queries/domains';
 import { DomainButtons } from './DomainButtons';
@@ -80,6 +80,7 @@ export const SmartContractsTable: React.FC<Props> = ({
   } = useQuery({
     queryKey: ['contracts', domainAddress, sortAscending, page, rowsPerPage, filters],
     queryFn: () => querySmartContractsByDomain(domainAddress, sortAscending, rowsPerPage, filters, refTimestamps[refTimestamps.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   if (error) {

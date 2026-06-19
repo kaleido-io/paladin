@@ -64,13 +64,13 @@ export const Domains: React.FC = () => {
     error,
   } = useQuery({
     queryKey: ['domains'],
-    queryFn: () => listDomains(),
+    queryFn: () => listDomains()
   });
 
   const { data: domain } = useQuery({
     queryKey: ['domain', selectedDomain],
     queryFn: () => getDomainByName(selectedDomain ?? ''),
-    enabled: !!selectedDomain,
+    enabled: !!selectedDomain
   });
 
   useEffect(() => {

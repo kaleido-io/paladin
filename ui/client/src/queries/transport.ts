@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { IFilter, IMessage, ITransportPeer } from "../interfaces";
-import { translateFilters } from "../utils";
+import { deepMerge, translateFilters } from "../utils";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
 import i18next from "i18next";
@@ -71,31 +71,42 @@ export const queryMessages = async (
   sortBy: string,
   sortAscending: boolean,
   filters: IFilter[],
+  node?: string,
   refTimestamp?: string
 ): Promise<IMessage[]> => {
 
   let translatedFilters = translateFilters(filters);
-  
+
+  let customFilters: any = {};
+  if (refTimestamp !== undefined) {
+    if (sortAscending) {
+      customFilters.graterThan = [{
+        field: sortBy,
+        value: refTimestamp
+      }];
+    } else {
+      customFilters.lessThan = [{
+        field: sortBy,
+        value: refTimestamp
+      }];
+    }
+  };
+
+  if (node !== undefined) {
+    customFilters.equal = [{
+      field: 'node',
+      value: node
+    }];
+  }
+
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),
     method: RpcMethods.transport_queryReliableMessages,
     params: [{
-      ...translatedFilters,
+      ...deepMerge(translatedFilters, customFilters),
       limit,
-      sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`],
-      greaterThan: refTimestamp !== undefined && sortAscending ? [
-        {
-          field: sortBy,
-          value: refTimestamp
-        }
-      ] : undefined,
-      lessThan: refTimestamp !== undefined && !sortAscending ? [
-        {
-          field: sortBy,
-          value: refTimestamp
-        }
-      ] : undefined
+      sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`]
     }]
   };
 

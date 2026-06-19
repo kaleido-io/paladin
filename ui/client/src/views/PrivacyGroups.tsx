@@ -20,7 +20,7 @@ import { useApplicationContext } from "../contexts/ApplicationContext";
 import { useTranslation } from "react-i18next";
 import SearchIcon from '@mui/icons-material/Search';
 import { listPrivacyGroups } from "../queries/privacyGroups";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Timestamp } from "../components/Timestamp";
 import { Hash } from "../components/Hash";
 import { customNavigate } from "../utils";
@@ -58,6 +58,7 @@ export const PrivacyGroups: React.FC = () => {
   const { data: privacyGroups, error } = useQuery({
     queryKey: ['privacyGroups', page, rowsPerPage, filters, sortAscending],
     queryFn: () => listPrivacyGroups(rowsPerPage, filters, sortAscending, refTimestamps[refTimestamps.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   if (error) {

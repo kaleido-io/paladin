@@ -18,7 +18,7 @@ import { Alert, Box, Button, Collapse, Fade, IconButton, MenuItem, Paper, Table,
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { listDomains } from "../queries/domains";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { listSchemas, queryStates } from "../queries/states";
@@ -77,7 +77,8 @@ export const States: React.FC = () => {
   const { data: states, error: statesError } = useQuery({
     queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters],
     queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
-    enabled: selectedSchemaId !== undefined
+    enabled: selectedSchemaId !== undefined,
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {

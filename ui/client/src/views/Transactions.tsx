@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { Alert, Box, Button, Collapse, Fade, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchIndexedTransactions } from "../queries/transactions";
 import { EnrichedTransaction } from "../components/EnrichedTransaction";
 import { useEffect, useState } from "react";
@@ -49,7 +49,8 @@ export const Transactions: React.FC = () => {
 
   const { data: enrichedTransactions, error } = useQuery({
     queryKey: ['transactions', refEntries, rowsPerPage, showTxsWithReceipt, filters, page],
-    queryFn: () => fetchIndexedTransactions(rowsPerPage, showTxsWithReceipt, filters, refEntries[refEntries.length - 1])
+    queryFn: () => fetchIndexedTransactions(rowsPerPage, showTxsWithReceipt, filters, refEntries[refEntries.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {

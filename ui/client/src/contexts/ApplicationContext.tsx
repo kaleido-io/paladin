@@ -128,6 +128,21 @@ export interface MessagesViewState {
   setFiltersVisible: Dispatch<SetStateAction<boolean>>;
 }
 
+export interface PrivateGroupMessagesViewState {
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  refTimestamps: string[];
+  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
 export interface RegistryViewState {
   filters: IFilter[];
   setFilters: Dispatch<SetStateAction<IFilter[]>>;
@@ -170,6 +185,7 @@ interface IApplicationContext {
   submissions: SubmissionsViewState;
   domains: DomainsViewState;
   privacyGroups: PrivacyGroupsViewState;
+  privateGroupMessages: PrivateGroupMessagesViewState;
   states: StatesViewState;
   messages: MessagesViewState;
   registry: RegistryViewState;
@@ -242,6 +258,14 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
   const [messagesSortBy, setMessagesSortBy] = useState("created");
   const [messagesFiltersVisible, setMessagesFiltersVisible] = useState(false);
+
+  // Private Group Messages view state
+  const [privateGroupMessagesPage, setPrivateGroupMessagesPage] = useState(0);
+  const [privateGroupMessagesRowsPerPage, setPrivateGroupMessagesRowsPerPage] = useState(10);
+  const [privateGroupMessagesRefTimestamps, setPrivateGroupMessagesRefTimestamps] = useState<string[]>([]);
+  const [privateGroupMessagesSortAscending, setPrivateGroupMessagesSortAscending] = useState(false);
+  const [privateGroupMessagesFilters, setPrivateGroupMessagesFilters] = useState<IFilter[]>([]);
+  const [privateGroupMessagesFiltersVisible, setPrivateGroupMessagesFiltersVisible] = useState(false);
 
   // Registry view state
   const [registryFilters, setRegistryFilters] = useState<IFilter[]>([]);
@@ -425,6 +449,31 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
     ]
   );
 
+    const privateGroupMessages = useMemo(
+    (): PrivateGroupMessagesViewState => ({
+      sortAscending: privateGroupMessagesSortAscending,
+      setSortAscending: setPrivateGroupMessagesSortAscending,
+      page: privateGroupMessagesPage,
+      setPage: setPrivateGroupMessagesPage,
+      rowsPerPage: privateGroupMessagesRowsPerPage,
+      setRowsPerPage: setPrivateGroupMessagesRowsPerPage,
+      refTimestamps: privateGroupMessagesRefTimestamps,
+      setRefTimestamps: setPrivateGroupMessagesRefTimestamps,
+      filters: privateGroupMessagesFilters,
+      setFilters: setPrivateGroupMessagesFilters,
+      filtersVisible: privateGroupMessagesFiltersVisible,
+      setFiltersVisible: setPrivateGroupMessagesFiltersVisible,
+    }),
+    [
+      privateGroupMessagesSortAscending,
+      privateGroupMessagesPage,
+      privateGroupMessagesRowsPerPage,
+      privateGroupMessagesRefTimestamps,
+      privateGroupMessagesFilters,
+      privateGroupMessagesFiltersVisible,
+    ]
+  );
+
   const registry = useMemo(
     (): RegistryViewState => ({
       filters: registryFilters,
@@ -490,6 +539,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
         privacyGroups,
         states,
         messages,
+        privateGroupMessages,
         registry,
         keys,
       }}

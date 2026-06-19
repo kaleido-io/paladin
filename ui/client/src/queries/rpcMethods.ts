@@ -32,6 +32,7 @@ export const RpcMethods = {
   keymgr_reverseKeyLookup: 'keymgr_reverseKeyLookup',
   pgroup_getGroupByAddress: 'pgroup_getGroupByAddress',
   pgroup_getGroupById: 'pgroup_getGroupById',
+  pgroup_queryMessages: 'pgroup_queryMessages',
   pgroup_queryGroups: 'pgroup_queryGroups',
   pstate_listSchemas: 'pstate_listSchemas',
   pstate_queryStates: 'pstate_queryStates',

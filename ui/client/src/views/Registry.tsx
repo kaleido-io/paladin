@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { Alert, Box, Button, Collapse, Fade, IconButton, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchRegistries, fetchRegistryEntries } from "../queries/registry";
@@ -69,7 +69,8 @@ export const Registry: React.FC = () => {
   const { data: registryEntries, error: registryError } = useQuery({
     queryKey: ['registry', filters, activeFilter, refNames, sortAscending],
     queryFn: () => fetchRegistryEntries(selectedRegistry!, filters, activeFilter, refNames[refNames.length - 1], sortAscending),
-    enabled: selectedRegistry !== undefined
+    enabled: selectedRegistry !== undefined,
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {
@@ -190,12 +191,14 @@ export const Registry: React.FC = () => {
                   {
                     label: t('id'),
                     name: '.id',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   },
                   {
                     label: t('owner'),
                     name: '$owner',
-                    type: 'string'
+                    type: 'string',
+                    isHexValue: true
                   }
                 ]}
                 filters={filters}

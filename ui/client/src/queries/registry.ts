@@ -19,7 +19,7 @@ import { constants } from "../components/config";
 import { IFilter, IRegistryEntry } from "../interfaces";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
-import { translateFilters } from "../utils";
+import { deepMerge, translateFilters } from "../utils";
 
 export const fetchRegistries = async (): Promise<string[]> => {
   const requestPayload = {
@@ -41,9 +41,18 @@ export const fetchRegistryEntries = async (
   filters: IFilter[],
   tab: 'active' | 'inactive' | 'any',
   pageParam?: string,
-  sortAscending?: boolean
+  sortAscending?: boolean,
+  excludeRoot?: boolean
 ): Promise<IRegistryEntry[]> => {
-  let translatedFilters = translateFilters(filters);
+  const translatedFilters = translateFilters(filters);
+  let customFilters: any = {};
+  if(excludeRoot === true) {
+    customFilters.neq = [{
+      field: '.name',
+      value: 'root'
+    }]
+  }
+
   let requestPayload: any = {
     jsonrpc: "2.0",
     id: Date.now(),
@@ -51,7 +60,7 @@ export const fetchRegistryEntries = async (
     params: [
       registryName,
       {
-        ...translatedFilters,
+        ...deepMerge(translatedFilters, customFilters),
         limit: constants.REGISTRY_ENTRIES_QUERY_LIMIT,
         sort: [`.name ${sortAscending ? 'ASC' : 'DESC'}`]
       },

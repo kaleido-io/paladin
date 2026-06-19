@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchSubmissions } from "../queries/transactions";
@@ -58,7 +58,8 @@ export const Submissions: React.FC = () => {
 
   const { data: transactions, error } = useQuery({
     queryKey: ['submissions', rowsPerPage, section, filters, sortAscending, refEntries, rowsPerPage, page],
-    queryFn: () => fetchSubmissions(section, rowsPerPage, filters, sortAscending, refEntries[refEntries.length - 1])
+    queryFn: () => fetchSubmissions(section, rowsPerPage, filters, sortAscending, refEntries[refEntries.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {

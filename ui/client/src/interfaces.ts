@@ -314,3 +314,15 @@ export interface IDomain {
   registryAddress: string
   config: any
 }
+
+export interface IPrivacyGroupMessage {
+  id: string
+  localSequence: number
+  sent: string
+  received?: string
+  node: string
+  domain: string
+  group: string
+  topic: string
+  data: any
+}

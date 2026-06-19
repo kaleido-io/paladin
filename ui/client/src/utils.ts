@@ -174,22 +174,28 @@ export const customNavigate = (destination: string, mouseEvent: React.MouseEvent
   }
 };
 
-const isObject = (item: any): boolean => {
+type AnyObject = Record<string, any>;
+
+function isObject(item: any): item is AnyObject {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
-export const deepMerge = <T extends object, U extends object>(target: T, source: U): T & U => {
+export function deepMerge<T extends AnyObject, U extends AnyObject>(target: T, source: U): T & U {
   const output = { ...target } as any;
-  if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach((key) => {
-      const sourceValue = (source as any)[key];
-      const targetValue = (target as any)[key];
-      if (isObject(sourceValue) && isObject(targetValue)) {
-        output[key] = deepMerge(targetValue, sourceValue);
-      } else {
-        output[key] = sourceValue;
-      }
-    });
+  if (!isObject(target) || !isObject(source)) {
+    return source as any;
   }
-  return output as T & U;
+  Object.keys(source).forEach((key) => {
+    const targetValue = target[key];
+    const sourceValue = source[key];
+    if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      output[key] = [...targetValue, ...sourceValue];
+    } else if (isObject(targetValue) && isObject(sourceValue)) {
+      output[key] = deepMerge(targetValue, sourceValue);
+    } else {
+      output[key] = sourceValue;
+    }
+  });
+
+  return output;
 }

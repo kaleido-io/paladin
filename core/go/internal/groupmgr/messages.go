@@ -51,6 +51,7 @@ func (persistedMessage) TableName() string {
 var messageFilters = filters.FieldMap{
 	"localSequence": filters.Int64Field("local_seq"),
 	"domain":        filters.StringField("domain"),
+	"node":          filters.StringField("node"),
 	"group":         filters.HexBytesField(`"group"`),
 	"sent":          filters.TimestampField("sent"),
 	"received":      filters.TimestampField("received"),

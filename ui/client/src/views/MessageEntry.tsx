@@ -82,13 +82,6 @@ export const MessageEntry: React.FC = () => {
               </Box>
             } />
         </Tabs>
-        <Box sx={{
-          paddingLeft: '5px',
-          paddingTop: '15px',
-          paddingBottom: '5px',
-          backgroundColor: theme => theme.palette.background.paper,
-        }}>
-        </Box>
         <Accordion elevation={0} disableGutters defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             {t('details')}

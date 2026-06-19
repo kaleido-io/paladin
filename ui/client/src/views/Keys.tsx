@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { Alert, Box, Breadcrumbs, Button, Collapse, Fade, IconButton, Link, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { fetchKeys } from "../queries/keys";
@@ -69,7 +69,8 @@ export const Keys: React.FC = () => {
 
   const { data: keys, error } = useQuery({
     queryKey: ["keys", parent, sortByPathFirst, sortAscending, refEntries, rowsPerPage, filters, mode],
-    queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortAscending ? 'asc' : 'desc', filters, refEntries[refEntries.length - 1])
+    queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortAscending ? 'asc' : 'desc', filters, refEntries[refEntries.length - 1]),
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {
@@ -398,7 +399,7 @@ export const Keys: React.FC = () => {
                       <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                         {getOtherVerifiers(key)}
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{key.wallet.length > 0 ? key.wallet : <RemoveIcon color="disabled" />}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', padding: '8px' }}>{key.wallet.length > 0 ? key.wallet : <RemoveIcon color="disabled" />}</TableCell>
                       <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.keyHandle.length > 0 ?
                         <Hash hash={key.keyHandle} title={t('handle')} hideTitle secondary />
                         : <RemoveIcon color="disabled" />}</TableCell>

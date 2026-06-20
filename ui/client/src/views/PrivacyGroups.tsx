@@ -313,7 +313,7 @@ export const PrivacyGroups: React.FC = () => {
                 />
               </TableContainer>}
             {privacyGroups !== undefined && privacyGroups.length === 0 &&
-              <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+              <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
                 <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
                 <Typography>{t('privacyGroupsEmptyState')}</Typography>
               </Box>

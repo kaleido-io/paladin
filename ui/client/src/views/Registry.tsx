@@ -30,6 +30,7 @@ import { Tag } from "lucide-react";
 import { Captions } from "lucide-react";
 import { FiltersButton } from "../components/FiltersButton";
 import { Filters } from "../components/Filters";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 export const Registry: React.FC = () => {
   const { registry } = useApplicationContext();
@@ -312,6 +313,12 @@ export const Registry: React.FC = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
               />
             </TableContainer>}
+          {registryEntries !== undefined && registryEntries.length === 0 &&
+            <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+              <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+              <Typography>{t('noRegistryEntries')}</Typography>
+            </Box>
+          }
         </Box>
       </Fade>
       <ResolveVerifierDialog

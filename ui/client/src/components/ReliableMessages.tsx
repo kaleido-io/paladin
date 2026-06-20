@@ -16,32 +16,24 @@
 
 import { Alert, Box, Button, Collapse, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { IPrivacyGroup } from "../interfaces";
-import { getPrivacyGroupMessages } from "../queries/privacyGroups";
-import { useApplicationContext } from "../contexts/ApplicationContext";
+import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { FiltersButton } from "./FiltersButton";
-import SearchIcon from '@mui/icons-material/Search';
 import { useEffect, useState } from "react";
-import { Filters } from "./Filters";
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { useApplicationContext } from "../contexts/ApplicationContext";
+import { Timestamp } from "../components/Timestamp";
 import { Tag } from "lucide-react";
-import { Timestamp } from "./Timestamp";
-import { Hash } from "./Hash";
 import { customNavigate } from "../utils";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { useNavigate } from "react-router-dom";
+import { Hash } from "../components/Hash";
+import { queryMessages } from "../queries/transport";
+import { Filters } from "../components/Filters";
+import { FiltersButton } from "../components/FiltersButton";
+import { MessageLookupDialog } from "../dialogs/MessageLookup";
+import SearchIcon from '@mui/icons-material/Search';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-type Props = {
-  privacyGroup: IPrivacyGroup
-}
-
-export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
-
-  const [_lookupPrivateGroupMessageDialogOpen, setLookupPrivateGroupMessageDialogOpen] = useState(false);
-  const [count, setCount] = useState(-1);
-  const navigate = useNavigate();
-  const { privateGroupMessages: privateGroupMessagesViewStateState } = useApplicationContext();
+export const ReliableMessages: React.FC = () => {
+  const { messages: messagesViewState } = useApplicationContext();
   const {
     sortAscending,
     setSortAscending,
@@ -53,24 +45,30 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
     setRowsPerPage,
     filters,
     setFilters,
+    sortBy,
+    setSortBy,
     filtersVisible,
     setFiltersVisible,
-  } = privateGroupMessagesViewStateState;
+  } = messagesViewState;
+
+  const [lookupMessageDialogOpen, setLookupMessageDialogOpen] = useState(false);
+  const [count, setCount] = useState(-1);
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data: privacyGroupMessages, error } = useQuery({
-    queryKey: ['privacy-group-messages', rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps],
-    queryFn: () => getPrivacyGroupMessages(rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps[refTimestamps.length - 1]),
+  const { data: messages, error } = useQuery({
+    queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters, refTimestamps],
+    queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (privacyGroupMessages !== undefined && count === -1) {
-      if (privacyGroupMessages.length < rowsPerPage) {
-        setCount(rowsPerPage * page + privacyGroupMessages.length);
+    if (messages !== undefined && count === -1) {
+      if (messages.length < rowsPerPage) {
+        setCount(rowsPerPage * page + messages.length);
       }
     }
-  }, [privacyGroupMessages, rowsPerPage, page]);
+  }, [messages, rowsPerPage, page]);
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -85,9 +83,9 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
     if (newPage === 0) {
       setRefTimestamps([]);
     } else if (newPage > page) {
-      if (privacyGroupMessages !== undefined) {
+      if (messages !== undefined) {
         const refEntriesCopy = [...refTimestamps];
-        refEntriesCopy.push(privacyGroupMessages[privacyGroupMessages.length - 1].sent);
+        refEntriesCopy.push(messages[messages.length - 1].created);
         setRefTimestamps(refEntriesCopy);
       }
     } else {
@@ -110,14 +108,16 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
   return (
     <>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <Typography variant="h6">{t('privacyGroupMessages')}</Typography>
+        <Typography variant="h5">
+          {t("transportReliableMessages")}
+        </Typography>
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
           <Button
             sx={{ borderRadius: '20px', minWidth: '120px' }}
             size="small"
             variant="outlined"
             startIcon={<SearchIcon />}
-            onClick={() => setLookupPrivateGroupMessageDialogOpen(true)}
+            onClick={() => setLookupMessageDialogOpen(true)}
           >
             {t('lookup')}
           </Button>
@@ -132,14 +132,14 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
           <Filters
             filterFields={[
               {
-                label: t('sent'),
-                name: 'sent',
+                label: t('created'),
+                name: 'created',
                 type: 'timestamp',
                 isNanoSeconds: true
               },
               {
-                label: t('received'),
-                name: 'received',
+                label: t('acknowledged'),
+                name: 'ack.time',
                 type: 'timestamp',
                 isNanoSeconds: true
               },
@@ -155,19 +155,9 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
                 type: 'string'
               },
               {
-                label: t('domain'),
-                name: 'domain',
+                label: t('type'),
+                name: 'messageType',
                 type: 'string'
-              },
-              {
-                label: t('topic'),
-                name: 'topic',
-                type: 'string'
-              },
-              {
-                label: t('localSequence'),
-                name: 'localSequence',
-                type: 'number'
               }
             ]}
             filters={filters}
@@ -175,7 +165,7 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
           />
         </Box>
       </Collapse>
-      {privacyGroupMessages !== undefined && privacyGroupMessages.length > 0 &&
+      {messages !== undefined && messages.length > 0 &&
         <TableContainer
           component={Paper}
         >
@@ -188,25 +178,41 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
                     backgroundColor: (theme) => theme.palette.background.paper,
                   }}>
                   <TableSortLabel
-                    active={true}
+                    active={sortBy === 'created'}
                     direction={sortAscending ? 'asc' : 'desc'}
                     onClick={() => {
-                      setSortAscending(!sortAscending);
+                      if (sortBy === 'created') {
+                        setSortAscending(!sortAscending);
+                      } else {
+                        setSortBy('created');
+                      }
                       setRefTimestamps([]);
                       setPage(0);
                     }}
                   >
-                    {t('sent')}
+                    {t('created')}
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
                   width={1}
                   sx={{
                     backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('received')}
+                  }}>
+                  <TableSortLabel
+                    active={sortBy === 'acknowledged'}
+                    direction={sortAscending ? 'asc' : 'desc'}
+                    onClick={() => {
+                      if (sortBy === 'ack.time') {
+                        setSortAscending(!sortAscending);
+                      } else {
+                        setSortBy('ack.time')
+                      }
+                      setRefTimestamps([]);
+                      setPage(0);
+                    }}
+                  >
+                    {t('acknowledged')}
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   width={1}
@@ -227,31 +233,13 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
                   {t('node')}
                 </TableCell>
                 <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('domain')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('topic')}
-                </TableCell>
-                <TableCell
                   width={'100%'}
                   sx={{
                     backgroundColor: (theme) => theme.palette.background.paper,
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  {t('localSequence')}
+                  {t('type')}
                 </TableCell>
                 <TableCell
                   width={1}
@@ -264,36 +252,30 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {privacyGroupMessages.map(privacyGroupMessage =>
-                <TableRow key={privacyGroupMessage.id}>
+              {messages.map(message =>
+                <TableRow key={message.id}>
                   <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    <Timestamp timestamp={privacyGroupMessage.sent} />
+                    <Timestamp timestamp={message.created} />
                   </TableCell>
                   <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    {privacyGroupMessage.received ?
-                      <Timestamp timestamp={privacyGroupMessage.received} />
+                    {message.ack?.time ?
+                      <Timestamp timestamp={message.ack.time} />
                       :
                       <>--</>}
                   </TableCell>
                   <TableCell>
-                    <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroupMessage.id} />
+                    <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
                   </TableCell>
                   <TableCell>
-                    {privacyGroupMessage.node}
+                    {message.node}
                   </TableCell>
                   <TableCell>
-                    {privacyGroupMessage.domain}
-                  </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.topic}
-                  </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.localSequence}
+                    {message.messageType}
                   </TableCell>
                   <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                     <Tooltip title={t('open')} arrow>
                       <IconButton
-                        onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}/${privacyGroupMessage.id}`, mouseEvent, navigate)}>
+                        onClick={mouseEvent => customNavigate(`/ui/transports/messages/${message.id}`, mouseEvent, navigate)}>
                         <OpenInNewIcon color="secondary" fontSize="medium" />
                       </IconButton>
                     </Tooltip>
@@ -320,12 +302,17 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </TableContainer>}
-      {privacyGroupMessages !== undefined && privacyGroupMessages.length === 0 &&
+      {messages !== undefined && messages.length === 0 &&
         <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
           <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
-          <Typography>{t('privacyGroupMessagesEmptyState')}</Typography>
+          <Typography>{t('messagesEmptyState')}</Typography>
         </Box>
       }
+      <MessageLookupDialog
+        dialogOpen={lookupMessageDialogOpen}
+        setDialogOpen={setLookupMessageDialogOpen}
+      />
     </>
   );
+
 }

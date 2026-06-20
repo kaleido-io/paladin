@@ -23,6 +23,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { JSONBox } from "../components/JSONBox";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getMessage } from "../queries/transport";
+import { AppRoutes } from "../routes";
 
 export const MessageEntry: React.FC = () => {
 
@@ -61,12 +62,12 @@ export const MessageEntry: React.FC = () => {
         <Box sx={{ marginBottom: '20px' }}>
           <Button
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => navigate('/ui/messages')}
+            onClick={() => navigate(AppRoutes.Transports)}
           >
-            {t('backToMessages')}
+            {t('backToTransports')}
           </Button>
         </Box>
-        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('message')}</Typography>
+        <Typography variant="h6" sx={{ marginBottom: '15px' }}>{t('reliableMessage')}</Typography>
         <Tabs value="contract"
           TabIndicatorProps={{ style: { display: 'none' } }}
         >

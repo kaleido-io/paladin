@@ -144,6 +144,7 @@ export type ABIUploadResponse = string;
 export interface ITransportPeer {
   name: string;
   stats: {
+    createdAt: string;
     sentMsgs: number;
     receivedMsgs: number;
     sentBytes: number;
@@ -151,7 +152,6 @@ export interface ITransportPeer {
     lastSend: string;
     lastReceive: string | null;
     reliableHighestSent: number;
-    reliableAckBase: number;
   };
   activated: string;
   outboundTransport: string;

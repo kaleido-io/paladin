@@ -58,5 +58,6 @@ export const RpcMethods = {
   transport_localTransportDetails: 'transport_localTransportDetails',
   transport_nodeName: 'transport_nodeName',
   transport_peers: 'transport_peers',
-  transport_queryReliableMessages: 'transport_queryReliableMessages'
+  transport_queryReliableMessages: 'transport_queryReliableMessages',
+  transport_peersWithQuery: 'transport_peersWithQuery'
 };

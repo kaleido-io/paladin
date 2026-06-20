@@ -128,6 +128,23 @@ export interface MessagesViewState {
   setFiltersVisible: Dispatch<SetStateAction<boolean>>;
 }
 
+export interface TransportsViewState {
+  sortAscending: boolean;
+  setSortAscending: Dispatch<SetStateAction<boolean>>;
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  rowsPerPage: number;
+  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  refNames: string[];
+  setRefNames: Dispatch<SetStateAction<string[]>>;
+  filters: IFilter[];
+  setFilters: Dispatch<SetStateAction<IFilter[]>>;
+  sortBy: string;
+  setSortBy: Dispatch<SetStateAction<string>>;
+  filtersVisible: boolean;
+  setFiltersVisible: Dispatch<SetStateAction<boolean>>;
+}
+
 export interface PrivateGroupMessagesViewState {
   sortAscending: boolean;
   setSortAscending: Dispatch<SetStateAction<boolean>>;
@@ -188,6 +205,7 @@ interface IApplicationContext {
   privateGroupMessages: PrivateGroupMessagesViewState;
   states: StatesViewState;
   messages: MessagesViewState;
+  transports: TransportsViewState;
   registry: RegistryViewState;
   keys: KeysViewState;
 }
@@ -258,6 +276,15 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [messagesFilters, setMessagesFilters] = useState<IFilter[]>([]);
   const [messagesSortBy, setMessagesSortBy] = useState("created");
   const [messagesFiltersVisible, setMessagesFiltersVisible] = useState(false);
+
+  // Transports view state
+  const [transportsPage, setTransportsPage] = useState(0);
+  const [transportsRowsPerPage, setTransportsRowsPerPage] = useState(10);
+  const [transportsRefNames, setTransportsRefNames] = useState<string[]>([]);
+  const [transportsSortAscending, setTransportsSortAscending] = useState(false);
+  const [transportsFilters, setTransportsFilters] = useState<IFilter[]>([]);
+  const [transportsSortBy, setTransportsSortBy] = useState("name");
+  const [transportsFiltersVisible, setTransportsFiltersVisible] = useState(false);
 
   // Private Group Messages view state
   const [privateGroupMessagesPage, setPrivateGroupMessagesPage] = useState(0);
@@ -449,7 +476,35 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
     ]
   );
 
-    const privateGroupMessages = useMemo(
+  const transports = useMemo(
+    (): TransportsViewState => ({
+      sortAscending: transportsSortAscending,
+      setSortAscending: setTransportsSortAscending,
+      page: transportsPage,
+      setPage: setTransportsPage,
+      rowsPerPage: transportsRowsPerPage,
+      setRowsPerPage: setTransportsRowsPerPage,
+      refNames: transportsRefNames,
+      setRefNames: setTransportsRefNames,
+      filters: transportsFilters,
+      setFilters: setTransportsFilters,
+      sortBy: transportsSortBy,
+      setSortBy: setTransportsSortBy,
+      filtersVisible: transportsFiltersVisible,
+      setFiltersVisible: setTransportsFiltersVisible,
+    }),
+    [
+      transportsSortAscending,
+      transportsPage,
+      transportsRowsPerPage,
+      transportsRefNames,
+      transportsFilters,
+      transportsSortBy,
+      transportsFiltersVisible,
+    ]
+  );
+
+  const privateGroupMessages = useMemo(
     (): PrivateGroupMessagesViewState => ({
       sortAscending: privateGroupMessagesSortAscending,
       setSortAscending: setPrivateGroupMessagesSortAscending,
@@ -539,6 +594,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
         privacyGroups,
         states,
         messages,
+        transports,
         privateGroupMessages,
         registry,
         keys,

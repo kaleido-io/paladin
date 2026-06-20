@@ -72,6 +72,14 @@ func TestRPCLocalDetails(t *testing.T) {
 	require.Len(t, peers, 1)
 	require.Equal(t, "node2", peers[0].Name)
 
+	filteredPeers, rpcErr := transportRPC.PeersWithQuery(ctx, query.NewQueryBuilder().
+		Equal("name", "node2").
+		Limit(100).
+		Query())
+	require.NoError(t, rpcErr)
+	require.Len(t, filteredPeers, 1)
+	require.Equal(t, "node2", filteredPeers[0].Name)
+
 	peer, rpcErr := transportRPC.PeerInfo(ctx, "node2")
 	require.NoError(t, rpcErr)
 	require.Equal(t, "node2", peer.Name)

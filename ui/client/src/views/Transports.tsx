@@ -14,31 +14,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Button, Collapse, Fade, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Collapse, Fade, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
 import { Timestamp } from "../components/Timestamp";
-import { Tag } from "lucide-react";
-import { customNavigate } from "../utils";
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Hash } from "../components/Hash";
-import { queryMessages } from "../queries/transport";
+import { fetchTransportPeersWithQuery } from "../queries/transport";
 import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
-import { MessageLookupDialog } from "../dialogs/MessageLookup";
-import SearchIcon from '@mui/icons-material/Search';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import prettyBytes from "pretty-bytes";
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { ReliableMessages } from "../components/ReliableMessages";
 
-export const Messages: React.FC = () => {
-  const { messages: messagesViewState } = useApplicationContext();
+export const Transports: React.FC = () => {
+  const { transports: transportsViewState } = useApplicationContext();
   const {
     sortAscending,
     setSortAscending,
-    refTimestamps,
-    setRefTimestamps,
+    refNames,
+    setRefNames,
     page,
     setPage,
     rowsPerPage,
@@ -49,26 +45,28 @@ export const Messages: React.FC = () => {
     setSortBy,
     filtersVisible,
     setFiltersVisible,
-  } = messagesViewState;
+  } = transportsViewState;
 
-  const [lookupMessageDialogOpen, setLookupMessageDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data: messages, error } = useQuery({
-    queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters, refTimestamps],
-    queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
+  const { data: peers, error, refetch } = useQuery({
+    queryKey: ['transports', page, rowsPerPage, sortBy, sortAscending, filters, refNames],
+    queryFn: () => fetchTransportPeersWithQuery(rowsPerPage, sortBy, sortAscending, filters, refNames[refNames.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (messages !== undefined && count === -1) {
-      if (messages.length < rowsPerPage) {
-        setCount(rowsPerPage * page + messages.length);
+    // runCall();
+  }, [])
+
+  useEffect(() => {
+    if (peers !== undefined && count === -1) {
+      if (peers.length < rowsPerPage) {
+        setCount(rowsPerPage * page + peers.length);
       }
     }
-  }, [messages, rowsPerPage, page]);
+  }, [peers, rowsPerPage, page]);
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -81,17 +79,17 @@ export const Messages: React.FC = () => {
     newPage: number
   ) => {
     if (newPage === 0) {
-      setRefTimestamps([]);
+      setRefNames([]);
     } else if (newPage > page) {
-      if (messages !== undefined) {
-        const refEntriesCopy = [...refTimestamps];
-        refEntriesCopy.push(messages[messages.length - 1].created);
-        setRefTimestamps(refEntriesCopy);
+      if (peers !== undefined) {
+        const refEntriesCopy = [...refNames];
+        refEntriesCopy.push(peers[peers.length - 1].name);
+        setRefNames(refEntriesCopy);
       }
     } else {
-      const refEntriesCopy = [...refTimestamps];
+      const refEntriesCopy = [...refNames];
       refEntriesCopy.pop();
-      setRefTimestamps(refEntriesCopy);
+      setRefNames(refEntriesCopy);
     }
     setPage(newPage);
   };
@@ -101,7 +99,7 @@ export const Messages: React.FC = () => {
   ) => {
     const value = parseInt(event.target.value, 10);
     setRowsPerPage(value);
-    setRefTimestamps([]);
+    setRefNames([]);
     setPage(0);
   };
 
@@ -118,17 +116,17 @@ export const Messages: React.FC = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <Typography variant="h5">
-              {t("messages")}
+              {t("transportActivePeerConnections")}
             </Typography>
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
               <Button
                 sx={{ borderRadius: '20px', minWidth: '120px' }}
                 size="small"
                 variant="outlined"
-                startIcon={<SearchIcon />}
-                onClick={() => setLookupMessageDialogOpen(true)}
+                startIcon={<RefreshIcon />}
+                onClick={() => refetch()}
               >
-                {t('lookup')}
+                {t('refresh')}
               </Button>
               <FiltersButton
                 filtersVisible={filtersVisible}
@@ -141,32 +139,37 @@ export const Messages: React.FC = () => {
               <Filters
                 filterFields={[
                   {
-                    label: t('created'),
-                    name: 'created',
-                    type: 'timestamp',
-                    isNanoSeconds: true
-                  },
-                  {
-                    label: t('acknowledged'),
-                    name: 'ack.time',
-                    type: 'timestamp',
-                    isNanoSeconds: true
-                  },
-                  {
-                    label: t('id'),
-                    name: 'id',
-                    type: 'string',
-                    isUUID: true
-                  },
-                  {
                     label: t('node'),
-                    name: 'node',
+                    name: 'name',
                     type: 'string'
                   },
                   {
-                    label: t('type'),
-                    name: 'messageType',
-                    type: 'string'
+                    label: t('activated'),
+                    name: 'activated',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('lastSend'),
+                    name: 'stats.lastSend',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('lastReceive'),
+                    name: 'stats.lastReceive',
+                    type: 'timestamp',
+                    isNanoSeconds: true
+                  },
+                  {
+                    label: t('messagesSent'),
+                    name: 'stats.sentMsgs',
+                    type: 'number',
+                  },
+                  {
+                    label: t('messagesReceived'),
+                    name: 'stats.receivedMsgs',
+                    type: 'number',
                   }
                 ]}
                 filters={filters}
@@ -174,7 +177,7 @@ export const Messages: React.FC = () => {
               />
             </Box>
           </Collapse>
-          {messages !== undefined && messages.length > 0 &&
+          {peers !== undefined && peers.length > 0 &&
             <TableContainer
               component={Paper}
             >
@@ -185,42 +188,88 @@ export const Messages: React.FC = () => {
                       width={1}
                       sx={{
                         backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
                       }}>
                       <TableSortLabel
-                        active={sortBy === 'created'}
+                        active={sortBy === 'name'}
                         direction={sortAscending ? 'asc' : 'desc'}
                         onClick={() => {
-                          if (sortBy === 'created') {
+                          if (sortBy === 'name') {
                             setSortAscending(!sortAscending);
                           } else {
-                            setSortBy('created');
+                            setSortBy('name');
                           }
-                          setRefTimestamps([]);
+                          setRefNames([]);
                           setPage(0);
                         }}
                       >
-                        {t('created')}
+                        {t('node')}
                       </TableSortLabel>
                     </TableCell>
                     <TableCell
                       width={1}
                       sx={{
                         backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
                       }}>
                       <TableSortLabel
-                        active={sortBy === 'acknowledged'}
+                        active={sortBy === 'activated'}
                         direction={sortAscending ? 'asc' : 'desc'}
                         onClick={() => {
-                          if (sortBy === 'ack.time') {
+                          if (sortBy === 'activated') {
                             setSortAscending(!sortAscending);
                           } else {
-                            setSortBy('ack.time')
+                            setSortBy('activated');
                           }
-                          setRefTimestamps([]);
+                          setRefNames([]);
                           setPage(0);
                         }}
                       >
-                        {t('acknowledged')}
+                        {t('activated')}
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}>
+                      <TableSortLabel
+                        active={sortBy === 'stats.lastSend'}
+                        direction={sortAscending ? 'asc' : 'desc'}
+                        onClick={() => {
+                          if (sortBy === 'stats.lastSend') {
+                            setSortAscending(!sortAscending);
+                          } else {
+                            setSortBy('stats.lastSend');
+                          }
+                          setRefNames([]);
+                          setPage(0);
+                        }}
+                      >
+                        {t('lastSend')}
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}>
+                      <TableSortLabel
+                        active={sortBy === 'stats.lastReceive'}
+                        direction={sortAscending ? 'asc' : 'desc'}
+                        onClick={() => {
+                          if (sortBy === 'stats.lastReceive') {
+                            setSortAscending(!sortAscending);
+                          } else {
+                            setSortBy('stats.lastReceive');
+                          }
+                          setRefNames([]);
+                          setPage(0);
+                        }}
+                      >
+                        {t('lastReceive')}
                       </TableSortLabel>
                     </TableCell>
                     <TableCell
@@ -230,7 +279,7 @@ export const Messages: React.FC = () => {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {t('id')}
+                      {t('messagesSent')}
                     </TableCell>
                     <TableCell
                       width={1}
@@ -239,7 +288,16 @@ export const Messages: React.FC = () => {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {t('node')}
+                      {t('messagesReceived')}
+                    </TableCell>
+                    <TableCell
+                      width={1}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.paper,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {t('dataSent')}
                     </TableCell>
                     <TableCell
                       width={'100%'}
@@ -248,46 +306,42 @@ export const Messages: React.FC = () => {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {t('type')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
+                      {t('dataReceived')}
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {messages.map(message =>
-                    <TableRow key={message.id}>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Timestamp timestamp={message.created} />
+                  {peers.map(peer =>
+                    <TableRow key={peer.name}>
+                      <TableCell>
+                        {peer.name}
                       </TableCell>
                       <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        {message.ack?.time ?
-                          <Timestamp timestamp={message.ack.time} />
+                        <Timestamp timestamp={peer.stats.createdAt} />
+                      </TableCell>
+                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                        {peer.stats.lastSend ?
+                          <Timestamp timestamp={peer.stats.lastSend} />
+                          :
+                          <>--</>}
+                      </TableCell>
+                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                        {peer.stats.lastReceive ?
+                          <Timestamp timestamp={peer.stats.lastReceive} />
                           :
                           <>--</>}
                       </TableCell>
                       <TableCell>
-                        <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
+                        {peer.stats.sentMsgs.toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        {message.node}
+                        {peer.stats.receivedMsgs.toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        {message.messageType}
+                        {prettyBytes(peer.stats.sentBytes)}
                       </TableCell>
-                      <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Tooltip title={t('open')} arrow>
-                          <IconButton
-                            onClick={mouseEvent => customNavigate(`/ui/messages/${message.id}`, mouseEvent, navigate)}>
-                            <OpenInNewIcon color="secondary" fontSize="medium" />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell>
+                        {prettyBytes(peer.stats.receivedBytes)}
                       </TableCell>
                     </TableRow>
                   )}
@@ -311,18 +365,17 @@ export const Messages: React.FC = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
               />
             </TableContainer>}
-          {messages !== undefined && messages.length === 0 &&
-            <Box sx={{ marginTop: '60px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+          {peers !== undefined && peers.length === 0 &&
+            <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
-              <Typography>{t('messagesEmptyState')}</Typography>
+              <Typography>{t('peersEmptyState')}</Typography>
             </Box>
           }
+          <Box sx={{ marginTop: '40px' }}>
+            <ReliableMessages />
+          </Box>
         </Box>
       </Fade>
-      <MessageLookupDialog
-        dialogOpen={lookupMessageDialogOpen}
-        setDialogOpen={setLookupMessageDialogOpen}
-      />
     </>
   );
 

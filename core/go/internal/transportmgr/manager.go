@@ -97,6 +97,21 @@ var reliableMessageAckFilters = filters.FieldMap{
 	"error":     filters.StringField("error"),
 }
 
+var peerInfoFilters = filters.FieldMap{
+	"name":                      filters.StringField("name"),
+	"activated":                 filters.TimestampField("activated"),
+	"outboundTransport":         filters.StringField("outboundTransport"),
+	"outboundError":             filters.StringField("outboundError"),
+	"stats.createdAt":           filters.TimestampField("stats.createdAt"),
+	"stats.sentMsgs":            filters.Int64Field("stats.sentMsgs"),
+	"stats.receivedMsgs":        filters.Int64Field("stats.receivedMsgs"),
+	"stats.sentBytes":           filters.Int64Field("stats.sentBytes"),
+	"stats.receivedBytes":       filters.Int64Field("stats.receivedBytes"),
+	"stats.lastSend":            filters.TimestampField("stats.lastSend"),
+	"stats.lastReceive":         filters.TimestampField("stats.lastReceive"),
+	"stats.reliableHighestSent": filters.Int64Field("stats.reliableHighestSent"),
+}
+
 func NewTransportManager(bgCtx context.Context, conf *pldconf.TransportManagerInlineConfig) components.TransportManager {
 	tm := &transportManager{
 		conf:                      conf,

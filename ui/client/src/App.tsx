@@ -41,11 +41,11 @@ import { PrivacyGroups } from "./views/PrivacyGroups";
 import { PrivacyGroupEntry } from "./views/PrivacyGroupEntry";
 import { Navigation } from "./components/Navigation";
 import { States } from "./views/States";
-import { Messages } from "./views/Messages";
-import { MessageEntry } from "./views/MessageEntry";
+import { MessageEntry } from "./views/ReliableMessageEntry";
 import { StateEntry } from "./views/StateEntry";
 import { RegistryEntry } from "./views/RegistryEntry";
 import { PrivateGroupMessageEntry } from "./views/PrivateGroupMessageEntry";
+import { Transports } from "./views/Transports";
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({}),
@@ -126,10 +126,10 @@ function App() {
                   <Route path={AppRoutes.PrivacyGroup} element={<PrivacyGroupEntry />} />
                   <Route path={AppRoutes.States} element={<States />} />
                   <Route path={AppRoutes.State} element={<StateEntry />} />
-                  <Route path={AppRoutes.Messages} element={<Messages />} />
                   <Route path={AppRoutes.RegistryEntry} element={<RegistryEntry />} />
-                  <Route path={AppRoutes.Message} element={<MessageEntry />} />
+                  <Route path={AppRoutes.ReliableMessage} element={<MessageEntry />} />
                   <Route path={AppRoutes.PrivacyGroupMessageEntry} element={<PrivateGroupMessageEntry />} />
+                  <Route path={AppRoutes.Transports} element={<Transports />} />
                   <Route path="*" element={<Navigate to={AppRoutes.Transactions} replace />} />
                 </Routes>
               </Box>

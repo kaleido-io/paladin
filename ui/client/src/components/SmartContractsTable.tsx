@@ -16,6 +16,7 @@
 
 import {
   Alert,
+  Box,
   IconButton,
   Paper,
   Table,
@@ -41,6 +42,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
 import { customNavigate } from '../utils';
 import { Captions } from 'lucide-react';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 type Props = {
   domainAddress: string
@@ -287,9 +289,12 @@ export const SmartContractsTable: React.FC<Props> = ({
           />
         </TableContainer>}
       {contracts !== undefined && contracts.length === 0 &&
-        <Typography color="textSecondary" align="center" variant="h6" sx={{ marginTop: '40px' }}>
-          {t('noSmartContracts')}
-        </Typography>}
+        <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
+          <InfoOutlinedIcon sx={{ fontSize: '50px' }} />
+          <Typography>
+            {t('noSmartContracts')}
+          </Typography>
+        </Box>}
     </>
   );
 };

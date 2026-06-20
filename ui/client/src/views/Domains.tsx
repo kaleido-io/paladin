@@ -175,7 +175,6 @@ export const Domains: React.FC = () => {
               />
             </Box>
           </Collapse>
-
           {domain?.registryAddress && (
             <SmartContractsTable
               domainAddress={domain.registryAddress}

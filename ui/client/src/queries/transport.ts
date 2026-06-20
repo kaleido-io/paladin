@@ -26,7 +26,6 @@ export const fetchTransportNodeName = async (): Promise<string> => {
     id: Date.now(),
     method: RpcMethods.transport_nodeName,
   };
-
   return <Promise<string>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
@@ -42,7 +41,6 @@ export const fetchTransportLocalDetails = async (transport: string): Promise<str
     method: RpcMethods.transport_localTransportDetails,
     params: [transport]
   };
-
   return <Promise<string>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
@@ -51,13 +49,38 @@ export const fetchTransportLocalDetails = async (transport: string): Promise<str
   );
 };
 
-export const fetchTransportPeers = async (): Promise<ITransportPeer[]> => {
+export const fetchTransportPeersWithQuery = async (
+  limit: number,
+  sortBy: string,
+  sortAscending: boolean,
+  filters: IFilter[],
+  refData?: string
+): Promise<ITransportPeer[]> => {
+  let translatedFilters = translateFilters(filters);
+  let customFilters: any = {};
+  if (refData !== undefined) {
+    if (sortAscending) {
+      customFilters.graterThan = [{
+        field: sortBy,
+        value: refData
+      }];
+    } else {
+      customFilters.lessThan = [{
+        field: sortBy,
+        value: refData
+      }];
+    }
+  };
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),
-    method: RpcMethods.transport_peers,
+    method: RpcMethods.transport_peersWithQuery,
+    params: [{
+      ...deepMerge(translatedFilters, customFilters),
+      limit,
+      sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`]
+    }]
   };
-
   return <Promise<ITransportPeer[]>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
@@ -74,9 +97,7 @@ export const queryMessages = async (
   node?: string,
   refTimestamp?: string
 ): Promise<IMessage[]> => {
-
   let translatedFilters = translateFilters(filters);
-
   let customFilters: any = {};
   if (refTimestamp !== undefined) {
     if (sortAscending) {
@@ -91,14 +112,12 @@ export const queryMessages = async (
       }];
     }
   };
-
   if (node !== undefined) {
     customFilters.equal = [{
       field: 'node',
       value: node
     }];
   }
-
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),
@@ -109,7 +128,6 @@ export const queryMessages = async (
       sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`]
     }]
   };
-
   return <Promise<IMessage[]>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),

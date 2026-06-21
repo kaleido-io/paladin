@@ -111,7 +111,7 @@ export const SendStateDialog: React.FC<Props> = ({
             <Alert variant="filled" severity="success" sx={{ marginBottom: '20px' }}
               action={
                 <Button variant="outlined" color="inherit" size="small"
-                  onClick={event => customNavigate(`/ui/messages/${messageId}`, event, navigate)}
+                  onClick={event => customNavigate(`/ui/transports/messages/${messageId}`, event, navigate)}
                 >{t('view')}</Button>
               }
             >

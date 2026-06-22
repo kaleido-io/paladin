@@ -233,44 +233,18 @@ export const Transports: React.FC = () => {
                       sx={{
                         backgroundColor: (theme) => theme.palette.background.paper,
                         whiteSpace: 'nowrap'
-                      }}>
-                      <TableSortLabel
-                        active={sortBy === 'stats.lastSend'}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (sortBy === 'stats.lastSend') {
-                            setSortAscending(!sortAscending);
-                          } else {
-                            setSortBy('stats.lastSend');
-                          }
-                          setRefNames([]);
-                          setPage(0);
-                        }}
-                      >
-                        {t('lastSend')}
-                      </TableSortLabel>
+                      }}
+                    >
+                      {t('lastSend')}
                     </TableCell>
                     <TableCell
                       width={1}
                       sx={{
                         backgroundColor: (theme) => theme.palette.background.paper,
                         whiteSpace: 'nowrap'
-                      }}>
-                      <TableSortLabel
-                        active={sortBy === 'stats.lastReceive'}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (sortBy === 'stats.lastReceive') {
-                            setSortAscending(!sortAscending);
-                          } else {
-                            setSortBy('stats.lastReceive');
-                          }
-                          setRefNames([]);
-                          setPage(0);
-                        }}
-                      >
-                        {t('lastReceive')}
-                      </TableSortLabel>
+                      }}
+                    >
+                      {t('lastReceive')}
                     </TableCell>
                     <TableCell
                       width={1}

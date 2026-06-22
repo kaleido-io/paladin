@@ -25,6 +25,7 @@ import {
 import {
   IFilter,
   IPaladinTransactionPagingReference,
+  IStatePagingReference,
   ITransactionPagingReference,
 } from "../interfaces";
 
@@ -99,8 +100,8 @@ export interface StatesViewState {
   setSelectedSchemaId: Dispatch<SetStateAction<string | undefined>>;
   sortAscending: boolean;
   setSortAscending: Dispatch<SetStateAction<boolean>>;
-  refTimestamps: string[];
-  setRefTimestamps: Dispatch<SetStateAction<string[]>>;
+  refEntries: IStatePagingReference[];
+  setRefEntries: Dispatch<SetStateAction<IStatePagingReference[]>>;
   page: number;
   setPage: Dispatch<SetStateAction<number>>;
   rowsPerPage: number;
@@ -263,7 +264,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [statesSelectedSchemaId, setStatesSelectedSchemaId] = useState<string | undefined>();
   const [statePage, setStatePage] = useState(0);
   const [stateRowsPerPage, setStateRowsPerPage] = useState(10);
-  const [stateRefTimestamps, setStateRefTimestamps] = useState<string[]>([]);
+  const [stateRefEntries, setStateRefEntries] = useState<IStatePagingReference[]>([]);
   const [stateSortAscending, setStateSortAscending] = useState(false);
   const [stateFilters, setStateFilters] = useState<IFilter[]>([]);
   const [stateFiltersVisible, setStateFiltersVisible] = useState(false);
@@ -425,8 +426,8 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
       setSelectedSchemaId: setStatesSelectedSchemaId,
       sortAscending: stateSortAscending,
       setSortAscending: setStateSortAscending,
-      refTimestamps: stateRefTimestamps,
-      setRefTimestamps: setStateRefTimestamps,
+      refEntries: stateRefEntries,
+      setRefEntries: setStateRefEntries,
       page: statePage,
       setPage: setStatePage,
       rowsPerPage: stateRowsPerPage,
@@ -440,7 +441,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
       statesSelectedDomain,
       statesSelectedSchemaId,
       stateSortAscending,
-      stateRefTimestamps,
+      stateRefEntries,
       statePage,
       stateRowsPerPage,
       stateFilters,

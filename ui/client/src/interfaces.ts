@@ -31,6 +31,11 @@ export interface IPaladinTransactionPagingReference {
   created: string;
 }
 
+export interface IStatePagingReference {
+  sortValue: any;
+  id: string;
+}
+
 export interface ITransaction {
   hash: string;
   blockNumber: number;

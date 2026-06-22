@@ -21,7 +21,7 @@ import { listDomains } from "../queries/domains";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useApplicationContext } from "../contexts/ApplicationContext";
-import { listSchemas, queryStates } from "../queries/states";
+import { listSchemas, queryStates, buildStatePagingReference } from "../queries/states";
 import { Timestamp } from "../components/Timestamp";
 import { Captions, Tag } from "lucide-react";
 import { customNavigate } from "../utils";
@@ -40,8 +40,8 @@ export const States: React.FC = () => {
   const {
     sortAscending,
     setSortAscending,
-    refTimestamps,
-    setRefTimestamps,
+    refEntries,
+    setRefEntries,
     page,
     setPage,
     rowsPerPage,
@@ -76,8 +76,8 @@ export const States: React.FC = () => {
   });
 
   const { data: states, error: statesError, isPlaceholderData } = useQuery({
-    queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters],
-    queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
+    queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters, refEntries],
+    queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refEntries[refEntries.length - 1]),
     enabled: selectedSchemaId !== undefined,
     placeholderData: keepPreviousData
   });
@@ -101,6 +101,12 @@ export const States: React.FC = () => {
       }
     }
   }, [states, rowsPerPage, page]);
+
+  useEffect(() => {
+    setRefEntries([]);
+    setPage(0);
+    setCount(-1);
+  }, [filters]);
 
   const selectedIndexedFields =
     schemas?.find(schema => schema.id === selectedSchemaId)
@@ -128,22 +134,28 @@ export const States: React.FC = () => {
     return <></>
   }
 
+  const resetPagination = () => {
+    setRefEntries([]);
+    setPage(0);
+    setCount(-1);
+  };
+
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
     newPage: number
   ) => {
     if (newPage === 0) {
-      setRefTimestamps([]);
+      setRefEntries([]);
     } else if (newPage > page) {
       if (states !== undefined) {
-        const refEntriesCopy = [...refTimestamps];
-        refEntriesCopy.push(states[states.length - 1].created);
-        setRefTimestamps(refEntriesCopy);
+        const refEntriesCopy = [...refEntries];
+        refEntriesCopy.push(buildStatePagingReference(states[states.length - 1], sortBy));
+        setRefEntries(refEntriesCopy);
       }
     } else {
-      const refEntriesCopy = [...refTimestamps];
+      const refEntriesCopy = [...refEntries];
       refEntriesCopy.pop();
-      setRefTimestamps(refEntriesCopy);
+      setRefEntries(refEntriesCopy);
     }
     setPage(newPage);
   };
@@ -153,8 +165,7 @@ export const States: React.FC = () => {
   ) => {
     const value = parseInt(event.target.value, 10);
     setRowsPerPage(value);
-    setRefTimestamps([]);
-    setPage(0);
+    resetPagination();
   };
 
   const getIndexedFieldContent = (state: IState, component: ISchemaComponent) => {
@@ -292,8 +303,7 @@ export const States: React.FC = () => {
                   disabled={schemas === undefined}
                   value={selectedSchemaId ?? ''}
                   onChange={event => {
-                    setPage(0);
-                    setCount(-1);
+                    resetPagination();
                     setSelectedSchemaId(event.target.value);
                     setFilters([]);
                   }}
@@ -362,8 +372,7 @@ export const States: React.FC = () => {
                             } else {
                               setSortBy('.created');
                             }
-                            setRefTimestamps([]);
-                            setPage(0);
+                            resetPagination();
                           }}
                         >
                           {t('created')}
@@ -404,8 +413,7 @@ export const States: React.FC = () => {
                               } else {
                                 setSortBy(field.name)
                               }
-                              setRefTimestamps([]);
-                              setPage(0);
+                              resetPagination();
                             }}
                           >
                             <span style={{ color: theme.palette.primary.main }}>{field.name}</span>

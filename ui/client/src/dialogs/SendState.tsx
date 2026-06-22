@@ -48,7 +48,7 @@ export const SendStateDialog: React.FC<Props> = ({
   const [errorMessage, setErrorMessage] = useState<string>();
   const [recipient, setRecipient] = useState('');
   const [messageId, setMessageId] = useState<string>();
-  const [lastRecepient, setLastRecepient] = useState<string>();
+  const [lastRecipient, setLastRecipient] = useState<string>();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export const SendStateDialog: React.FC<Props> = ({
     if (dialogOpen) {
       setErrorMessage(undefined);
       setMessageId(undefined);
-      setLastRecepient(undefined);
+      setLastRecipient(undefined);
     }
   }, [dialogOpen]);
 
@@ -82,12 +82,12 @@ export const SendStateDialog: React.FC<Props> = ({
         setErrorMessage(t('mustPushStateToAccountInDifferentNode'));
       } else {
         setMessageId(result.data);
-        setLastRecepient(recipient);
+        setLastRecipient(recipient);
       }
     });
   };
 
-  const canSubmit = /.+@.+/.test(recipient) && lastRecepient !== recipient;
+  const canSubmit = /.+@.+/.test(recipient) && lastRecipient !== recipient;
 
   return (
     <Dialog
@@ -124,7 +124,7 @@ export const SendStateDialog: React.FC<Props> = ({
           <Box sx={{ marginTop: '6px' }}>
             <TextField
               label={t('recipient')}
-              autoComplete="OFF"
+              autoComplete="off"
               sx={{ marginBottom: '20px' }}
               fullWidth
               value={recipient}
@@ -149,7 +149,7 @@ export const SendStateDialog: React.FC<Props> = ({
             disableElevation
             onClick={() => setDialogOpen(false)}
           >
-            {t(lastRecepient !== undefined ? 'close' : 'cancel')}
+            {t(lastRecipient !== undefined ? 'close' : 'cancel')}
           </Button>
         </DialogActions>
       </form>

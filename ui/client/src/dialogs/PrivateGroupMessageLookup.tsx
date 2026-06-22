@@ -32,13 +32,13 @@ import { useNavigate } from 'react-router-dom';
 import { getPrivacyGroupMessage } from '../queries/privacyGroups';
 
 type Props = {
-  privactGroupId: string
+  privacyGroupId: string
   dialogOpen: boolean
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const PrivacyGroupMessageLookupDialog: React.FC<Props> = ({
-  privactGroupId,
+  privacyGroupId,
   dialogOpen,
   setDialogOpen,
 }) => {
@@ -55,8 +55,8 @@ export const PrivacyGroupMessageLookupDialog: React.FC<Props> = ({
   }, [dialogOpen]);
 
   const { refetch: messageById } = useQuery({
-    queryKey: ['privacy-group-message', privactGroupId, id],
-    queryFn: () => getPrivacyGroupMessage(privactGroupId, id!),
+    queryKey: ['privacy-group-message', privacyGroupId, id],
+    queryFn: () => getPrivacyGroupMessage(privacyGroupId, id!),
     retry: false,
     enabled: false
   });
@@ -65,7 +65,7 @@ export const PrivacyGroupMessageLookupDialog: React.FC<Props> = ({
     setNotFound(false);
     messageById().then(result => {
       if (result.data !== null) {
-        navigate(`/ui/privacy-groups/${privactGroupId}/messages/${id}`);
+        navigate(`/ui/privacy-groups/${privacyGroupId}/messages/${id}`);
       } else {
         setNotFound(true);
       }
@@ -95,7 +95,7 @@ export const PrivacyGroupMessageLookupDialog: React.FC<Props> = ({
           <Box sx={{ marginTop: '6px' }}>
             <TextField
               label={t('messageId')}
-              autoComplete="OFF"
+              autoComplete="off"
               sx={{ marginBottom: '20px' }}
               fullWidth
               value={id}

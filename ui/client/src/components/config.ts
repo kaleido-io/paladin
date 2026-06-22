@@ -21,7 +21,7 @@ export const constants = {
   KEYS_ROWS_PER_PAGE: 'keys-rows-per-page',
   KEYS_FILTERS_KEY: 'keys-filters',
   KEYS_MODE: 'keys-mode',
-  SUBMISSIONS_FILTERS_KEY: 'submissions-fiters',
+  SUBMISSIONS_FILTERS_KEY: 'submissions-filters',
   REGISTRY_FILTERS: 'registry-filters',
   STATE_FILTERS: 'state-filters',
   MESSAGES_FILTERS: 'messages-filters',
@@ -31,7 +31,7 @@ export const constants = {
   TRANSACTION_QUERY_LIMIT: 10,
   EVENTS_PER_TRANSACTION_DEFAULT_LIMIT: 100,
   RECEIPTS_PER_TRANSACTION_DEFAULT_LIMIT: 100,
-  ELLAPSED_TIME_AUTO_REFRESH_FREQUENCY_SECONDS: 60,
+  ELAPSED_TIME_AUTO_REFRESH_FREQUENCY_SECONDS: 60,
   KEY_ETHEREUM_TYPE: 'eth_address',
   KEY_ETHEREUM_ALGORITHM: 'ecdsa:secp256k1'
 };

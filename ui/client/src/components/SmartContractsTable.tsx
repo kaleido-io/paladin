@@ -85,27 +85,13 @@ export const SmartContractsTable: React.FC<Props> = ({
     placeholderData: keepPreviousData
   });
 
-  if (error) {
-    return (
-      <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
-        {error.message}
-      </Alert>
-    );
-  }
-
   useEffect(() => {
     if (contracts !== undefined && count === -1) {
       if (contracts.length < rowsPerPage) {
         setCount(rowsPerPage * page + contracts.length);
       }
     }
-  }, [contracts, rowsPerPage, page]);
-
-  useEffect(() => {
-    if (count !== -1 && page !== 0 && page * rowsPerPage === count) {
-      handleChangePage(null, page - 1);
-    }
-  }, [count, rowsPerPage, page]);
+  }, [contracts, rowsPerPage, page, count]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -127,6 +113,12 @@ export const SmartContractsTable: React.FC<Props> = ({
     setPage(newPage);
   };
 
+  useEffect(() => {
+    if (count !== -1 && page !== 0 && page * rowsPerPage === count) {
+      handleChangePage(null, page - 1);
+    }
+  }, [count, rowsPerPage, page]);
+
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -135,6 +127,14 @@ export const SmartContractsTable: React.FC<Props> = ({
     setRefTimestamps([]);
     setPage(0);
   };
+
+  if (error) {
+    return (
+      <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
+        {error.message}
+      </Alert>
+    );
+  }
 
   return (
     <>

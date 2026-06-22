@@ -328,7 +328,7 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
         </Box>
       }
       <PrivacyGroupMessageLookupDialog
-        privactGroupId={privacyGroup.id}
+        privacyGroupId={privacyGroup.id}
         dialogOpen={lookupPrivateGroupMessageDialogOpen}
         setDialogOpen={setLookupPrivateGroupMessageDialogOpen}
       />

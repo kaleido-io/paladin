@@ -22,11 +22,13 @@ export const CONSTANTS = {
   NAVIGATION_DRAWER_WIDTH: 240
 }
 
-export const formatJSONWhenApplicable = (value: any) => {
-  if (typeof value === 'object') {
+export const formatJSONWhenApplicable = (value: unknown) => {
+  if (typeof value === 'object' && value !== null) {
     try {
       return JSON.stringify(value, null, 2);
-    } catch (err) { }
+    } catch {
+      return String(value);
+    }
   }
   return String(value);
 };

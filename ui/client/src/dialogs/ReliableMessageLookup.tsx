@@ -63,7 +63,7 @@ export const ReliableMessageLookupDialog: React.FC<Props> = ({
     setNotFound(false);
     messageById().then(result => {
       if (result.data !== null) {
-        navigate(`/ui/messages/${id}`);
+        navigate(`/ui/transports/messages/${id}`);
       } else {
         setNotFound(true);
       }
@@ -93,7 +93,7 @@ export const ReliableMessageLookupDialog: React.FC<Props> = ({
           <Box sx={{ marginTop: '6px' }}>
             <TextField
               label={t('messageId')}
-              autoComplete="OFF"
+              autoComplete="off"
               sx={{ marginBottom: '20px' }}
               fullWidth
               value={id}

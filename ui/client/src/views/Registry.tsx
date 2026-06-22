@@ -128,7 +128,7 @@ export const Registry: React.FC = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <Typography variant="h5">
-              {t('Registry')}
+              {t('registry')}
             </Typography>
             <TextField
               size="small"

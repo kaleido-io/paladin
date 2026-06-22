@@ -281,7 +281,7 @@ export const ApplicationContextProvider = ({ children, colorMode }: Props) => {
   const [transportsPage, setTransportsPage] = useState(0);
   const [transportsRowsPerPage, setTransportsRowsPerPage] = useState(10);
   const [transportsRefNames, setTransportsRefNames] = useState<string[]>([]);
-  const [transportsSortAscending, setTransportsSortAscending] = useState(false);
+  const [transportsSortAscending, setTransportsSortAscending] = useState(true);
   const [transportsFilters, setTransportsFilters] = useState<IFilter[]>([]);
   const [transportsSortBy, setTransportsSortBy] = useState("name");
   const [transportsFiltersVisible, setTransportsFiltersVisible] = useState(false);

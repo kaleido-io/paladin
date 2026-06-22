@@ -186,120 +186,120 @@ export const Submissions: React.FC = () => {
           </Collapse>
           <Box>
             {transactions !== undefined && transactions.length > 0 &&
-              <TableContainer
-                component={Paper}
-              >
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}>
-                        <TableSortLabel
-                          active={true}
-                          direction={sortAscending ? 'asc' : 'desc'}
-                          onClick={() => {
-                            setSortAscending(!sortAscending);
-                            setRefEntries([]);
-                            setPage(0);
+              <Paper>
+                <TableContainer>
+                  <Table stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                          }}>
+                          <TableSortLabel
+                            active={true}
+                            direction={sortAscending ? 'asc' : 'desc'}
+                            onClick={() => {
+                              setSortAscending(!sortAscending);
+                              setRefEntries([]);
+                              setPage(0);
+                            }}
+                          >
+                            {t('created')}
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
                           }}
                         >
-                          {t('created')}
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('type')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('domain')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('id')}
-                      </TableCell>
+                          {t('type')}
+                        </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('domain')}
+                        </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('id')}
+                        </TableCell>
 
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('from')}
-                      </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('from')}
+                        </TableCell>
 
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('to')}
-                      </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('to')}
+                        </TableCell>
 
-                      <TableCell
-                        width={'100%'}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {transactions.map(transaction =>
-                      <TableRow key={transaction.id}>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Timestamp timestamp={transaction.created} />
-                        </TableCell>
-                        <TableCell>
-                          {transaction.type}
-                        </TableCell>
-                        <TableCell>
-                          {transaction.domain ?? '--'}
-                        </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.id} />
-                        </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.from} />
-                        </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.to ?? '--'} />
-                        </TableCell>
-                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Tooltip title={t('open')} arrow>
-                            <IconButton
-                              onClick={mouseEvent => customNavigate(`/ui/transactions/${transaction.id}?back=submissions`, mouseEvent, navigate)}>
-                              <OpenInNewIcon color="secondary" fontSize="medium" />
-                            </IconButton>
-                          </Tooltip>
+                        <TableCell
+                          width={'100%'}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {transactions.map(transaction =>
+                        <TableRow key={transaction.id}>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Timestamp timestamp={transaction.created} />
+                          </TableCell>
+                          <TableCell>
+                            {transaction.type}
+                          </TableCell>
+                          <TableCell>
+                            {transaction.domain ?? '--'}
+                          </TableCell>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.id} />
+                          </TableCell>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.from} />
+                          </TableCell>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={transaction.to ?? '--'} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Tooltip title={t('open')} arrow>
+                              <IconButton
+                                onClick={mouseEvent => customNavigate(`/ui/transactions/${transaction.id}?back=submissions`, mouseEvent, navigate)}>
+                                <OpenInNewIcon color="secondary" fontSize="medium" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
                 <TablePagination
                   slotProps={{
                     actions: {
@@ -317,7 +317,7 @@ export const Submissions: React.FC = () => {
                   rowsPerPage={rowsPerPage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
-              </TableContainer>}
+              </Paper>}
             {transactions !== undefined && transactions.length === 0 &&
               <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
                 <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

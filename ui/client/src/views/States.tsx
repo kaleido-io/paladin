@@ -341,7 +341,7 @@ export const States: React.FC = () => {
             </Box>
           </Collapse>
           {states !== undefined && states.length > 0 &&
-            <Box>
+            <Paper>
               <TableContainer
                 component={Paper}
               >
@@ -466,25 +466,25 @@ export const States: React.FC = () => {
                     )}
                   </TableBody>
                 </Table>
-                <TablePagination
-                  slotProps={{
-                    actions: {
-                      lastButton: {
-                        disabled: true
-                      }
-                    }
-                  }}
-                  component="div"
-                  showFirstButton
-                  showLastButton
-                  count={count}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                />
               </TableContainer>
-            </Box>}
+              <TablePagination
+                slotProps={{
+                  actions: {
+                    lastButton: {
+                      disabled: true
+                    }
+                  }
+                }}
+                component="div"
+                showFirstButton
+                showLastButton
+                count={count}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </Paper>}
           {statesMatchSelection && states !== undefined && states.length === 0 &&
             <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

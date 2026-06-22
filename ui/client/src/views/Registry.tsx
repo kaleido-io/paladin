@@ -208,93 +208,93 @@ export const Registry: React.FC = () => {
             </Box>
           </Collapse>
           {selectedRegistry !== undefined && registryEntries !== undefined && registryEntries.length > 0 &&
-            <TableContainer
-              component={Paper}
-            >
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                      }}>
-                      <TableSortLabel
-                        active={true}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          setSortAscending(!sortAscending);
-                          setRefNames([]);
-                          setPage(0);
+            <Paper>
+              <TableContainer>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                        }}>
+                        <TableSortLabel
+                          active={true}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            setSortAscending(!sortAscending);
+                            setRefNames([]);
+                            setPage(0);
+                          }}
+                        >
+                          {t('name')}
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        {t('name')}
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('id')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('owner')}
-                    </TableCell>
-                    <TableCell
-                      width={'100%'}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('status')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {registryEntries.map(registryEntry =>
-                    <TableRow key={registryEntry.id}>
-                      <TableCell>
-                        {registryEntry.name}
+                        {t('id')}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={registryEntry.id} />
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('owner')}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Hash Icon={<Captions size="18px" />} hideTitle title={t('owner')} hash={registryEntry.properties.$owner} />
+                      <TableCell
+                        width={'100%'}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('status')}
                       </TableCell>
-                      <TableCell>
-                        {t(registryEntry.active !== false ? 'active' : 'inactive')}
-                      </TableCell>
-                      <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Tooltip title={t('open')} arrow>
-                          <IconButton
-                            onClick={mouseEvent => customNavigate(`/ui/registry/${selectedRegistry}/${registryEntry.id}`, mouseEvent, navigate)}>
-                            <OpenInNewIcon color="secondary" fontSize="medium" />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {registryEntries.map(registryEntry =>
+                      <TableRow key={registryEntry.id}>
+                        <TableCell>
+                          {registryEntry.name}
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={registryEntry.id} />
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          <Hash Icon={<Captions size="18px" />} hideTitle title={t('owner')} hash={registryEntry.properties.$owner} />
+                        </TableCell>
+                        <TableCell>
+                          {t(registryEntry.active !== false ? 'active' : 'inactive')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          <Tooltip title={t('open')} arrow>
+                            <IconButton
+                              onClick={mouseEvent => customNavigate(`/ui/registry/${selectedRegistry}/${registryEntry.id}`, mouseEvent, navigate)}>
+                              <OpenInNewIcon color="secondary" fontSize="medium" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <TablePagination
                 slotProps={{
                   actions: {
@@ -312,7 +312,7 @@ export const Registry: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
               />
-            </TableContainer>}
+            </Paper>}
           {registryEntries !== undefined && registryEntries.length === 0 &&
             <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

@@ -166,112 +166,112 @@ export const ReliableMessages: React.FC = () => {
         </Box>
       </Collapse>
       {messages !== undefined && messages.length > 0 &&
-        <TableContainer
-          component={Paper}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                  }}>
-                  <TableSortLabel
-                    active={sortBy === 'created'}
-                    direction={sortAscending ? 'asc' : 'desc'}
-                    onClick={() => {
-                      if (sortBy === 'created') {
-                        setSortAscending(!sortAscending);
-                      } else {
-                        setSortBy('created');
-                      }
-                      setRefTimestamps([]);
-                      setPage(0);
+        <Paper>
+          <TableContainer>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                    }}>
+                    <TableSortLabel
+                      active={sortBy === 'created'}
+                      direction={sortAscending ? 'asc' : 'desc'}
+                      onClick={() => {
+                        if (sortBy === 'created') {
+                          setSortAscending(!sortAscending);
+                        } else {
+                          setSortBy('created');
+                        }
+                        setRefTimestamps([]);
+                        setPage(0);
+                      }}
+                    >
+                      {t('created')}
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    {t('created')}
-                  </TableSortLabel>
-                </TableCell>                               
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('acknowledged')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('id')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('node')}
-                </TableCell>
-                <TableCell
-                  width={'100%'}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('type')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {messages.map(message =>
-                <TableRow key={message.id}>
-                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    <Timestamp timestamp={message.created} />
+                    {t('acknowledged')}
                   </TableCell>
-                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    {message.ack?.time ?
-                      <Timestamp timestamp={message.ack.time} />
-                      :
-                      <>--</>}
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('id')}
                   </TableCell>
-                  <TableCell>
-                    <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('node')}
                   </TableCell>
-                  <TableCell>
-                    {message.node}
+                  <TableCell
+                    width={'100%'}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('type')}
                   </TableCell>
-                  <TableCell>
-                    {message.messageType}
-                  </TableCell>
-                  <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    <Tooltip title={t('open')} arrow>
-                      <IconButton
-                        onClick={mouseEvent => customNavigate(`/ui/transports/messages/${message.id}`, mouseEvent, navigate)}>
-                        <OpenInNewIcon color="secondary" fontSize="medium" />
-                      </IconButton>
-                    </Tooltip>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {messages.map(message =>
+                  <TableRow key={message.id}>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      <Timestamp timestamp={message.created} />
+                    </TableCell>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      {message.ack?.time ?
+                        <Timestamp timestamp={message.ack.time} />
+                        :
+                        <>--</>}
+                    </TableCell>
+                    <TableCell>
+                      <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={message.id} />
+                    </TableCell>
+                    <TableCell>
+                      {message.node}
+                    </TableCell>
+                    <TableCell>
+                      {message.messageType}
+                    </TableCell>
+                    <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      <Tooltip title={t('open')} arrow>
+                        <IconButton
+                          onClick={mouseEvent => customNavigate(`/ui/transports/messages/${message.id}`, mouseEvent, navigate)}>
+                          <OpenInNewIcon color="secondary" fontSize="medium" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
           <TablePagination
             slotProps={{
               actions: {
@@ -289,7 +289,7 @@ export const ReliableMessages: React.FC = () => {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
-        </TableContainer>}
+        </Paper>}
       {messages !== undefined && messages.length === 0 &&
         <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
           <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

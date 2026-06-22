@@ -178,149 +178,149 @@ export const Transports: React.FC = () => {
             </Box>
           </Collapse>
           {peers !== undefined && peers.length > 0 &&
-            <TableContainer
-              component={Paper}
-            >
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}>
-                      <TableSortLabel
-                        active={sortBy === 'name'}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (sortBy === 'name') {
-                            setSortAscending(!sortAscending);
-                          } else {
-                            setSortBy('name');
-                          }
-                          setRefNames([]);
-                          setPage(0);
+            <Paper>
+              <TableContainer>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}>
+                        <TableSortLabel
+                          active={sortBy === 'name'}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            if (sortBy === 'name') {
+                              setSortAscending(!sortAscending);
+                            } else {
+                              setSortBy('name');
+                            }
+                            setRefNames([]);
+                            setPage(0);
+                          }}
+                        >
+                          {t('node')}
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}>
+                        <TableSortLabel
+                          active={sortBy === 'activated'}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            if (sortBy === 'activated') {
+                              setSortAscending(!sortAscending);
+                            } else {
+                              setSortBy('activated');
+                            }
+                            setRefNames([]);
+                            setPage(0);
+                          }}
+                        >
+                          {t('activated')}
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        {t('node')}
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}>
-                      <TableSortLabel
-                        active={sortBy === 'activated'}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (sortBy === 'activated') {
-                            setSortAscending(!sortAscending);
-                          } else {
-                            setSortBy('activated');
-                          }
-                          setRefNames([]);
-                          setPage(0);
+                        {t('lastSend')}
+                      </TableCell>
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        {t('activated')}
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('lastSend')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('lastReceive')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('messagesSent')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('messagesReceived')}
-                    </TableCell>
-                    <TableCell
-                      width={1}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('dataSent')}
-                    </TableCell>
-                    <TableCell
-                      width={'100%'}
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.background.paper,
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {t('dataReceived')}
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {peers.map(peer =>
-                    <TableRow key={peer.name}>
-                      <TableCell>
-                        {peer.name}
+                        {t('lastReceive')}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        <Timestamp timestamp={peer.stats.createdAt} />
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('messagesSent')}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        {peer.stats.lastSend ?
-                          <Timestamp timestamp={peer.stats.lastSend} />
-                          :
-                          <>--</>}
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('messagesReceived')}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        {peer.stats.lastReceive ?
-                          <Timestamp timestamp={peer.stats.lastReceive} />
-                          :
-                          <>--</>}
+                      <TableCell
+                        width={1}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('dataSent')}
                       </TableCell>
-                      <TableCell>
-                        {peer.stats.sentMsgs.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {peer.stats.receivedMsgs.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {prettyBytes(peer.stats.sentBytes)}
-                      </TableCell>
-                      <TableCell>
-                        {prettyBytes(peer.stats.receivedBytes)}
+                      <TableCell
+                        width={'100%'}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.paper,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t('dataReceived')}
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {peers.map(peer =>
+                      <TableRow key={peer.name}>
+                        <TableCell>
+                          {peer.name}
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          <Timestamp timestamp={peer.stats.createdAt} />
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          {peer.stats.lastSend ?
+                            <Timestamp timestamp={peer.stats.lastSend} />
+                            :
+                            <>--</>}
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          {peer.stats.lastReceive ?
+                            <Timestamp timestamp={peer.stats.lastReceive} />
+                            :
+                            <>--</>}
+                        </TableCell>
+                        <TableCell>
+                          {peer.stats.sentMsgs.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {peer.stats.receivedMsgs.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {prettyBytes(peer.stats.sentBytes)}
+                        </TableCell>
+                        <TableCell>
+                          {prettyBytes(peer.stats.receivedBytes)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <TablePagination
                 slotProps={{
                   actions: {
@@ -338,7 +338,7 @@ export const Transports: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
               />
-            </TableContainer>}
+            </Paper>}
           {peers !== undefined && peers.length === 0 &&
             <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

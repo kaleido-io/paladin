@@ -331,82 +331,84 @@ export const Keys: React.FC = () => {
             </Box>
           </Collapse>
           {keys !== undefined && keys.length > 0 &&
-            <TableContainer component={Paper}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    {mode === 'explorer' &&
-                      <TableCell width={1} sx={{ minWidth: '70px', backgroundColor: theme => theme.palette.background.paper }} />
-                    }
-                    <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <TableSortLabel
-                        active={sortByPathFirst}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (sortByPathFirst) {
-                            setSortAscending(!sortAscending)
-                          } else {
-                            setSortByPathFirst(true);
-                          }
-                          setPage(0);
-                          setRefEntries([]);
-                        }}
-                      >
-                        {t(mode === 'explorer' ? 'pathSegment' : 'path')}
-                      </TableSortLabel>
-                      {mode === 'explorer' && headerDivider}
-                    </TableCell>
-                    <TableCell width={1} sx={{ backgroundColor: theme => theme.palette.background.paper }}>
-                      <TableSortLabel
-                        active={!sortByPathFirst}
-                        direction={sortAscending ? 'asc' : 'desc'}
-                        onClick={() => {
-                          if (!sortByPathFirst) {
-                            setSortAscending(!sortAscending)
-                          } else {
-                            setSortByPathFirst(false);
-                          }
-                          setPage(0);
-                          setRefEntries([]);
-                        }}
-                      >
-                        {t('index')}
-                      </TableSortLabel>
-                      {headerDivider}
-                    </TableCell>
-                    <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1} >{t('address')}{headerDivider}</TableCell>
-                    <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper, whiteSpace: 'nowrap' }} width={1} >{t('otherVerifiers')}{headerDivider}</TableCell>
-                    <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1}>{t('wallet')}{headerDivider}</TableCell>
-                    <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1} >{t('handle')}{headerDivider}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {keys?.map(key =>
-                    <TableRow key={`${key.path}${key.index}`}>
+            <Paper>
+              <TableContainer>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
                       {mode === 'explorer' &&
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.hasChildren &&
-                          <Tooltip arrow title={t('openFolder')}>
-                            <IconButton onClick={() => { setParent(key.path) }}>
-                              <FolderOpenIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        }</TableCell>}
-                      <TableCell sx={{ minWidth: '200px', maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mode === 'explorer' ? removeParentFromPath(key.path) : key.path}</TableCell>
-                      <TableCell>{key.index}</TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        {getEthAddress(key)}
+                        <TableCell width={1} sx={{ minWidth: '70px', backgroundColor: theme => theme.palette.background.paper }} />
+                      }
+                      <TableCell sx={{ backgroundColor: theme => theme.palette.background.paper, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <TableSortLabel
+                          active={sortByPathFirst}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            if (sortByPathFirst) {
+                              setSortAscending(!sortAscending)
+                            } else {
+                              setSortByPathFirst(true);
+                            }
+                            setPage(0);
+                            setRefEntries([]);
+                          }}
+                        >
+                          {t(mode === 'explorer' ? 'pathSegment' : 'path')}
+                        </TableSortLabel>
+                        {mode === 'explorer' && headerDivider}
                       </TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                        {getOtherVerifiers(key)}
+                      <TableCell width={1} sx={{ backgroundColor: theme => theme.palette.background.paper }}>
+                        <TableSortLabel
+                          active={!sortByPathFirst}
+                          direction={sortAscending ? 'asc' : 'desc'}
+                          onClick={() => {
+                            if (!sortByPathFirst) {
+                              setSortAscending(!sortAscending)
+                            } else {
+                              setSortByPathFirst(false);
+                            }
+                            setPage(0);
+                            setRefEntries([]);
+                          }}
+                        >
+                          {t('index')}
+                        </TableSortLabel>
+                        {headerDivider}
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', padding: '8px' }}>{key.wallet.length > 0 ? key.wallet : <RemoveIcon color="disabled" />}</TableCell>
-                      <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.keyHandle.length > 0 ?
-                        <Hash hash={key.keyHandle} title={t('handle')} hideTitle secondary />
-                        : <RemoveIcon color="disabled" />}</TableCell>
+                      <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1} >{t('address')}{headerDivider}</TableCell>
+                      <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper, whiteSpace: 'nowrap' }} width={1} >{t('otherVerifiers')}{headerDivider}</TableCell>
+                      <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1}>{t('wallet')}{headerDivider}</TableCell>
+                      <TableCell sx={{ minWidth: '160px', backgroundColor: theme => theme.palette.background.paper }} width={1} >{t('handle')}{headerDivider}</TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {keys?.map(key =>
+                      <TableRow key={`${key.path}${key.index}`}>
+                        {mode === 'explorer' &&
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.hasChildren &&
+                            <Tooltip arrow title={t('openFolder')}>
+                              <IconButton onClick={() => { setParent(key.path) }}>
+                                <FolderOpenIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          }</TableCell>}
+                        <TableCell sx={{ minWidth: '200px', maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mode === 'explorer' ? removeParentFromPath(key.path) : key.path}</TableCell>
+                        <TableCell>{key.index}</TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          {getEthAddress(key)}
+                        </TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                          {getOtherVerifiers(key)}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap', padding: '8px' }}>{key.wallet.length > 0 ? key.wallet : <RemoveIcon color="disabled" />}</TableCell>
+                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>{key.keyHandle.length > 0 ?
+                          <Hash hash={key.keyHandle} title={t('handle')} hideTitle secondary />
+                          : <RemoveIcon color="disabled" />}</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <TablePagination
                 slotProps={{
                   actions: {
@@ -424,7 +426,7 @@ export const Keys: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
               />
-            </TableContainer>}
+            </Paper>}
           {keys !== undefined && keys.length === 0 &&
             <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
               <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

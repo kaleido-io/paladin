@@ -176,132 +176,132 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
         </Box>
       </Collapse>
       {privacyGroupMessages !== undefined && privacyGroupMessages.length > 0 &&
-        <TableContainer
-          component={Paper}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                  }}>
-                  <TableSortLabel
-                    active={true}
-                    direction={sortAscending ? 'asc' : 'desc'}
-                    onClick={() => {
-                      setSortAscending(!sortAscending);
-                      setRefTimestamps([]);
-                      setPage(0);
+        <Paper>
+          <TableContainer>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                    }}>
+                    <TableSortLabel
+                      active={true}
+                      direction={sortAscending ? 'asc' : 'desc'}
+                      onClick={() => {
+                        setSortAscending(!sortAscending);
+                        setRefTimestamps([]);
+                        setPage(0);
+                      }}
+                    >
+                      {t('sent')}
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    {t('sent')}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('received')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('id')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('node')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('domain')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('topic')}
-                </TableCell>
-                <TableCell
-                  width={'100%'}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {t('localSequence')}
-                </TableCell>
-                <TableCell
-                  width={1}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {privacyGroupMessages.map(privacyGroupMessage =>
-                <TableRow key={privacyGroupMessage.id}>
-                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    <Timestamp timestamp={privacyGroupMessage.sent} />
+                    {t('received')}
                   </TableCell>
-                  <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    {privacyGroupMessage.received ?
-                      <Timestamp timestamp={privacyGroupMessage.received} />
-                      :
-                      <>--</>}
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('id')}
                   </TableCell>
-                  <TableCell>
-                    <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroupMessage.id} />
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('node')}
                   </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.node}
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('domain')}
                   </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.domain}
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('topic')}
                   </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.topic}
+                  <TableCell
+                    width={'100%'}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t('localSequence')}
                   </TableCell>
-                  <TableCell>
-                    {privacyGroupMessage.localSequence}
-                  </TableCell>
-                  <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                    <Tooltip title={t('open')} arrow>
-                      <IconButton
-                        onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}/${privacyGroupMessage.id}`, mouseEvent, navigate)}>
-                        <OpenInNewIcon color="secondary" fontSize="medium" />
-                      </IconButton>
-                    </Tooltip>
+                  <TableCell
+                    width={1}
+                    sx={{
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {privacyGroupMessages.map(privacyGroupMessage =>
+                  <TableRow key={privacyGroupMessage.id}>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      <Timestamp timestamp={privacyGroupMessage.sent} />
+                    </TableCell>
+                    <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      {privacyGroupMessage.received ?
+                        <Timestamp timestamp={privacyGroupMessage.received} />
+                        :
+                        <>--</>}
+                    </TableCell>
+                    <TableCell>
+                      <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroupMessage.id} />
+                    </TableCell>
+                    <TableCell>
+                      {privacyGroupMessage.node}
+                    </TableCell>
+                    <TableCell>
+                      {privacyGroupMessage.domain}
+                    </TableCell>
+                    <TableCell>
+                      {privacyGroupMessage.topic}
+                    </TableCell>
+                    <TableCell>
+                      {privacyGroupMessage.localSequence}
+                    </TableCell>
+                    <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                      <Tooltip title={t('open')} arrow>
+                        <IconButton
+                          onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}/${privacyGroupMessage.id}`, mouseEvent, navigate)}>
+                          <OpenInNewIcon color="secondary" fontSize="medium" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
           <TablePagination
             slotProps={{
               actions: {
@@ -319,7 +319,7 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
-        </TableContainer>}
+        </Paper>}
       {privacyGroupMessages !== undefined && privacyGroupMessages.length === 0 &&
         <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
           <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

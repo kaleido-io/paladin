@@ -176,124 +176,123 @@ export const PrivacyGroups: React.FC = () => {
               />
             </Box>
           </Collapse>
-
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
             gap: '20px'
           }}>
             {privacyGroups !== undefined && privacyGroups.length > 0 &&
-              <TableContainer
-                component={Paper}
-              >
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                        }}>
-                        <TableSortLabel
-                          active={true}
-                          direction={sortAscending ? 'asc' : 'desc'}
-                          onClick={() => {
-                            setSortAscending(!sortAscending);
-                            setRefTimestamps([]);
-                            setPage(0);
+              <Paper>
+                <TableContainer>
+                  <Table stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                          }}>
+                          <TableSortLabel
+                            active={true}
+                            direction={sortAscending ? 'asc' : 'desc'}
+                            onClick={() => {
+                              setSortAscending(!sortAscending);
+                              setRefTimestamps([]);
+                              setPage(0);
+                            }}
+                          >
+                            {t('created')}
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
                           }}
                         >
-                          {t('created')}
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('id')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('name')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('domain')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {t('contractAddress')}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap',
-                          width: '100%'
-                        }}
-                      >
-                        {t('members')}
-                      </TableCell>
-                      <TableCell
-                        width={1}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.paper,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {privacyGroups?.map(privacyGroup =>
-                      <TableRow key={privacyGroup.id}>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Timestamp timestamp={privacyGroup.created} />
+                          {t('id')}
                         </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroup.id} />
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('name')}
                         </TableCell>
-                        <TableCell>
-                          {privacyGroup.name.length > 0 ? privacyGroup.name : '--'}
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('domain')}
                         </TableCell>
-                        <TableCell>
-                          {t(privacyGroup.domain)}
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t('contractAddress')}
                         </TableCell>
-                        <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={privacyGroup.contractAddress} />
+                        <TableCell
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap',
+                            width: '100%'
+                          }}
+                        >
+                          {t('members')}
                         </TableCell>
-                        <TableCell sx={{ maxWidth: 0, overflow: 'hidden', p: 0 }}>
-                          <PrivacyGroupMembers members={privacyGroup.members} />
-                        </TableCell>
-                        <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
-                          <Tooltip title={t('open')} arrow>
-                            <IconButton
-                              onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}`, mouseEvent, navigate)}>
-                              <OpenInNewIcon color="secondary" fontSize="medium" />
-                            </IconButton>
-                          </Tooltip>
+                        <TableCell
+                          width={1}
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.background.paper,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {privacyGroups?.map(privacyGroup =>
+                        <TableRow key={privacyGroup.id}>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Timestamp timestamp={privacyGroup.created} />
+                          </TableCell>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroup.id} />
+                          </TableCell>
+                          <TableCell>
+                            {privacyGroup.name.length > 0 ? privacyGroup.name : '--'}
+                          </TableCell>
+                          <TableCell>
+                            {t(privacyGroup.domain)}
+                          </TableCell>
+                          <TableCell sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Hash Icon={<Captions size="18px" />} hideTitle title={t('address')} hash={privacyGroup.contractAddress} />
+                          </TableCell>
+                          <TableCell sx={{ maxWidth: 0, overflow: 'hidden', p: 0 }}>
+                            <PrivacyGroupMembers members={privacyGroup.members} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                            <Tooltip title={t('open')} arrow>
+                              <IconButton
+                                onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}`, mouseEvent, navigate)}>
+                                <OpenInNewIcon color="secondary" fontSize="medium" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
                 <TablePagination
                   slotProps={{
                     actions: {
@@ -311,7 +310,7 @@ export const PrivacyGroups: React.FC = () => {
                   rowsPerPage={rowsPerPage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
-              </TableContainer>}
+              </Paper>}
             {privacyGroups !== undefined && privacyGroups.length === 0 &&
               <Box sx={{ marginTop: '20px', textAlign: 'center', color: theme => theme.palette.text.secondary }}>
                 <InfoOutlinedIcon sx={{ fontSize: '50px' }} />

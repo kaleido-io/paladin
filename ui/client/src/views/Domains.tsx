@@ -79,6 +79,10 @@ export const Domains: React.FC = () => {
     }
   }, [selectedDomain, domains]);
 
+  useEffect(() => {
+    setFilters([]);
+  }, [selectedDomain]);
+
   if (error) {
     return (
       <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -86,10 +90,6 @@ export const Domains: React.FC = () => {
       </Alert>
     );
   }
-
-  useEffect(() => {
-    setFilters([]);
-  }, [selectedDomain]);
 
   return (
     <>

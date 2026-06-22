@@ -61,14 +61,6 @@ export const PrivacyGroups: React.FC = () => {
     placeholderData: keepPreviousData
   });
 
-  if (error) {
-    return (
-      <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
-        {error.message}
-      </Alert>
-    );
-  }
-
   useEffect(() => {
     if (privacyGroups !== undefined && count === -1) {
       if (privacyGroups.length < rowsPerPage) {
@@ -76,6 +68,14 @@ export const PrivacyGroups: React.FC = () => {
       }
     }
   }, [privacyGroups, rowsPerPage, page]);
+
+  if (error) {
+    return (
+      <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
+        {error.message}
+      </Alert>
+    );
+  }
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement> | null,

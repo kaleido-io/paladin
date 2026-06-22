@@ -82,10 +82,6 @@ export const Registry: React.FC = () => {
     }
   }, [registryEntries, rowsPerPage, page]);
 
-  if (registries === undefined) {
-    return <></>
-  }
-
   if (registriesError !== null || registryError !== null) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{registriesError?.message ?? registryError?.message}</Alert>
   }

@@ -118,14 +118,14 @@ export const States: React.FC = () => {
     tableIndexedFieldsRef.current = selectedIndexedFields;
   }
 
-  if (domains === undefined) {
-    return <></>
-  }
-
   if (domainsError || schemasError || statesError) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">
       {domainsError?.message ?? schemasError?.message ?? statesError?.message}
     </Alert>
+  }
+
+  if (domains === undefined) {
+    return <></>
   }
 
   const handleChangePage = (

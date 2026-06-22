@@ -94,7 +94,6 @@ export const queryMessages = async (
   sortBy: string,
   sortAscending: boolean,
   filters: IFilter[],
-  node?: string,
   refTimestamp?: string
 ): Promise<IMessage[]> => {
   let translatedFilters = translateFilters(filters);
@@ -112,12 +111,6 @@ export const queryMessages = async (
       }];
     }
   };
-  if (node !== undefined) {
-    customFilters.equal = [{
-      field: 'node',
-      value: node
-    }];
-  }
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),

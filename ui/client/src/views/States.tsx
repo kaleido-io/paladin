@@ -75,7 +75,7 @@ export const States: React.FC = () => {
     enabled: selectedDomain !== undefined
   });
 
-  const { data: states, error: statesError } = useQuery({
+  const { data: states, error: statesError, isPlaceholderData } = useQuery({
     queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters],
     queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
     enabled: selectedSchemaId !== undefined,
@@ -95,7 +95,7 @@ export const States: React.FC = () => {
   }, [selectedDomain, schemas]);
 
   useEffect(() => {
-    if (states !== undefined && count === -1) {
+    if (states !== undefined && count === -1 && !isPlaceholderData) {
       if (states.length < rowsPerPage) {
         setCount(rowsPerPage * page + states.length);
       }

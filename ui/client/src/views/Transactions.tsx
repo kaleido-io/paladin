@@ -47,14 +47,14 @@ export const Transactions: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: enrichedTransactions, error } = useQuery({
+  const { data: enrichedTransactions, error, isPlaceholderData } = useQuery({
     queryKey: ['transactions', refEntries, rowsPerPage, showTxsWithReceipt, filters, page],
     queryFn: () => fetchIndexedTransactions(rowsPerPage, showTxsWithReceipt, filters, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (enrichedTransactions !== undefined && count === -1) {
+    if (enrichedTransactions !== undefined && count === -1 && !isPlaceholderData) {
       if (enrichedTransactions.length < rowsPerPage) {
         setCount(rowsPerPage * page + enrichedTransactions.length);
       }

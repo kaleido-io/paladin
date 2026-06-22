@@ -56,14 +56,14 @@ export const Submissions: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: transactions, error } = useQuery({
+  const { data: transactions, error, isPlaceholderData } = useQuery({
     queryKey: ['submissions', rowsPerPage, section, filters, sortAscending, refEntries, rowsPerPage, page],
     queryFn: () => fetchSubmissions(section, rowsPerPage, filters, sortAscending, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (transactions !== undefined && count === -1) {
+    if (transactions !== undefined && count === -1 && !isPlaceholderData) {
       if (transactions.length < rowsPerPage) {
         setCount(rowsPerPage * page + transactions.length);
       }

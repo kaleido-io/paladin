@@ -58,14 +58,14 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
   } = privateGroupMessagesViewStateState;
   const { t } = useTranslation();
 
-  const { data: privacyGroupMessages, error } = useQuery({
+  const { data: privacyGroupMessages, error, isPlaceholderData } = useQuery({
     queryKey: ['privacy-group-messages', rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps],
     queryFn: () => getPrivacyGroupMessages(rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (privacyGroupMessages !== undefined && count === -1) {
+    if (privacyGroupMessages !== undefined && count === -1 && !isPlaceholderData) {
       if (privacyGroupMessages.length < rowsPerPage) {
         setCount(rowsPerPage * page + privacyGroupMessages.length);
       }

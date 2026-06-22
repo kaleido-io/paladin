@@ -55,14 +55,14 @@ export const PrivacyGroups: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: privacyGroups, error } = useQuery({
+  const { data: privacyGroups, error, isPlaceholderData } = useQuery({
     queryKey: ['privacyGroups', page, rowsPerPage, filters, sortAscending],
     queryFn: () => listPrivacyGroups(rowsPerPage, filters, sortAscending, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (privacyGroups !== undefined && count === -1) {
+    if (privacyGroups !== undefined && count === -1 && !isPlaceholderData) {
       if (privacyGroups.length < rowsPerPage) {
         setCount(rowsPerPage * page + privacyGroups.length);
       }

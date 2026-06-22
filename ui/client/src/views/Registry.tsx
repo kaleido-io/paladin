@@ -67,7 +67,7 @@ export const Registry: React.FC = () => {
     }
   }, [registries]);
 
-  const { data: registryEntries, error: registryError } = useQuery({
+  const { data: registryEntries, error: registryError, isPlaceholderData } = useQuery({
     queryKey: ['registry', filters, activeFilter, refNames, sortAscending],
     queryFn: () => fetchRegistryEntries(selectedRegistry!, filters, activeFilter, refNames[refNames.length - 1], sortAscending),
     enabled: selectedRegistry !== undefined,
@@ -75,7 +75,7 @@ export const Registry: React.FC = () => {
   });
 
   useEffect(() => {
-    if (registryEntries !== undefined && count === -1) {
+    if (registryEntries !== undefined && count === -1 && !isPlaceholderData) {
       if (registryEntries.length < rowsPerPage) {
         setCount(rowsPerPage * page + registryEntries.length);
       }

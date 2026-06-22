@@ -50,7 +50,7 @@ export const Transports: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: peers, error, refetch } = useQuery({
+  const { data: peers, error, refetch, isPlaceholderData } = useQuery({
     queryKey: ['transports', page, rowsPerPage, sortBy, sortAscending, filters, refNames],
     queryFn: () => fetchTransportPeersWithQuery(rowsPerPage, sortBy, sortAscending, filters, refNames[refNames.length - 1]),
     placeholderData: keepPreviousData
@@ -61,7 +61,7 @@ export const Transports: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    if (peers !== undefined && count === -1) {
+    if (peers !== undefined && count === -1 && !isPlaceholderData) {
       if (peers.length < rowsPerPage) {
         setCount(rowsPerPage * page + peers.length);
       }

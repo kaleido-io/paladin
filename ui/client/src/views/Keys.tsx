@@ -67,7 +67,7 @@ export const Keys: React.FC = () => {
     setParent(searchParams.get('path') ?? '');
   }, [searchParams]);
 
-  const { data: keys, error } = useQuery({
+  const { data: keys, error, isPlaceholderData } = useQuery({
     queryKey: ["keys", parent, sortByPathFirst, sortAscending, refEntries, rowsPerPage, filters, mode],
     queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortAscending ? 'asc' : 'desc', filters, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
@@ -80,7 +80,7 @@ export const Keys: React.FC = () => {
   }, [count, rowsPerPage, page]);
 
   useEffect(() => {
-    if (keys !== undefined && count === -1) {
+    if (keys !== undefined && count === -1 && !isPlaceholderData) {
       if (keys.length < rowsPerPage) {
         setCount(rowsPerPage * page + keys.length);
       }

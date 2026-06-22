@@ -56,14 +56,14 @@ export const ReliableMessages: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data: messages, error } = useQuery({
+  const { data: messages, error, isPlaceholderData } = useQuery({
     queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters, refTimestamps],
     queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
   useEffect(() => {
-    if (messages !== undefined && count === -1) {
+    if (messages !== undefined && count === -1 && !isPlaceholderData) {
       if (messages.length < rowsPerPage) {
         setCount(rowsPerPage * page + messages.length);
       }

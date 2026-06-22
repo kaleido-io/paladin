@@ -192,27 +192,15 @@ export const ReliableMessages: React.FC = () => {
                   >
                     {t('created')}
                   </TableSortLabel>
-                </TableCell>
+                </TableCell>                               
                 <TableCell
                   width={1}
                   sx={{
                     backgroundColor: (theme) => theme.palette.background.paper,
-                  }}>
-                  <TableSortLabel
-                    active={sortBy === 'acknowledged'}
-                    direction={sortAscending ? 'asc' : 'desc'}
-                    onClick={() => {
-                      if (sortBy === 'ack.time') {
-                        setSortAscending(!sortAscending);
-                      } else {
-                        setSortBy('ack.time')
-                      }
-                      setRefTimestamps([]);
-                      setPage(0);
-                    }}
-                  >
-                    {t('acknowledged')}
-                  </TableSortLabel>
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {t('acknowledged')}
                 </TableCell>
                 <TableCell
                   width={1}

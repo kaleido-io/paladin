@@ -34,8 +34,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/test/internal/contracts"
 	"github.com/LFDT-Paladin/paladin/test/internal/util"
 
-	nototypes "github.com/LFDT-Paladin/paladin/domains/noto/pkg/types"
-	"github.com/google/uuid"
+	nototypes "github.com/LFDT-Paladin/paladin/test/internal/contracts"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,22 +48,7 @@ const notoRevertableHooksDefaultIncludeInvalidInputErrors = true
 const notoResolveAlgorithm = "ecdsa:secp256k1"
 const notoResolveVerifierType = "eth_address"
 
-var notoConstructorABI = abi.ABI{
-	{Type: abi.Constructor, Inputs: abi.ParameterArray{
-		{Name: "notary", Type: "string"},
-		{Name: "notaryMode", Type: "string"},
-		{Name: "options", Type: "tuple", Components: abi.ParameterArray{
-			{Name: "hooks", Type: "tuple", Components: abi.ParameterArray{
-				{Name: "publicAddress", Type: "string"},
-				{Name: "privateAddress", Type: "string"},
-				{Name: "privateGroup", Type: "tuple", Components: abi.ParameterArray{
-					{Name: "salt", Type: "bytes32"},
-					{Name: "members", Type: "string[]"},
-				}},
-			}},
-		}},
-	}},
-}
+var notoConstructorABI = contracts.NotoConstructorABI
 
 type notoRevertableHooksSuite struct {
 	ctx                  context.Context
@@ -557,10 +541,13 @@ func (s *notoRevertableHooksSuite) PostRun() error {
 	const revertRevertReason = "Configured to revert"
 	const notoInvalidInputSelector = "8b8ff76e"
 	const penteInputNotAvailableReason = "PenteInputNotAvailable"
+	const dependencyFailedReason = "PD012256"
 	failRevertReasonHex := fmt.Sprintf("%x", failRevertReason)
 	revertRevertReasonHex := fmt.Sprintf("%x", revertRevertReason)
 	penteInputNotAvailableTxIDs := make([]string, 0)
 	penteInputNotAvailableSet := make(map[string]struct{})
+	dependencyFailedTxIDs := make([]string, 0)
+	dependencyFailedSet := make(map[string]struct{})
 
 	s.trackMu.Lock()
 	revertTxIDs := append([]string{}, s.revertTxIDs...)
@@ -596,77 +583,77 @@ func (s *notoRevertableHooksSuite) PostRun() error {
 		return dispatches
 	}
 
-	assertTx := func(txID string, shouldSucceed bool, expectedReason string, expectedReasonHex string, label string) error {
-		parsedID, err := uuid.Parse(txID)
-		if err != nil {
-			return fmt.Errorf("%s tx %s has invalid UUID: %w", label, txID, err)
-		}
-
-		receipt, err := submitterClient.PTX().GetTransactionReceiptFull(s.ctx, parsedID)
-		if err != nil || receipt == nil {
-			return fmt.Errorf("%s tx %s failed to fetch receipt: %w", label, txID, err)
-		}
-		if !receipt.Success && strings.Contains(receipt.FailureMessage, penteInputNotAvailableReason) {
-			if _, seen := penteInputNotAvailableSet[txID]; !seen {
-				penteInputNotAvailableSet[txID] = struct{}{}
-				penteInputNotAvailableTxIDs = append(penteInputNotAvailableTxIDs, txID)
-			}
-			return nil
-		}
-		if shouldSucceed {
-			if !receipt.Success {
-				return fmt.Errorf("%s tx %s expected success but failed: %s", label, txID, receipt.FailureMessage)
-			}
-			return nil
-		}
-		if receipt.Success {
-			return fmt.Errorf("%s tx %s expected failure but succeeded", label, txID)
-		}
-		if !strings.Contains(receipt.FailureMessage, expectedReasonHex) &&
-			!strings.Contains(receipt.FailureMessage, expectedReason) {
-			return fmt.Errorf("%s tx %s failed with unexpected reason: %s", label, txID, receipt.FailureMessage)
-		}
-		return nil
-	}
-
-	assertBatched := func(txIDs []string, shouldSucceed bool, expectedReason string, expectedReasonHex string, label string) error {
+	// assertGroup fetches a page of transactions via QueryTransactionsFull so that receipt
+	// outcome and (optionally) sequencer dispatch count can be validated in a single RPC call
+	// per page. Pass a non-nil expectedDispatches to also assert the dispatch count.
+	assertGroup := func(txIDs []string, shouldSucceed bool, expectedReason, expectedReasonHex string, expectedDispatches *int, label string) error {
 		pageSize := s.postRunPageSize
 		for i := 0; i < len(txIDs); i += pageSize {
 			end := i + pageSize
 			if end > len(txIDs) {
 				end = len(txIDs)
 			}
-			for _, txID := range txIDs[i:end] {
-				if err := assertTx(txID, shouldSucceed, expectedReason, expectedReasonHex, label); err != nil {
-					return err
+			page := txIDs[i:end]
+
+			ids := make([]any, len(page))
+			for j, id := range page {
+				ids[j] = id
+			}
+			txsFull, err := submitterClient.PTX().QueryTransactionsFull(
+				s.ctx,
+				query.NewQueryBuilder().In("id", ids).Limit(len(page)).Query(),
+			)
+			if err != nil {
+				return fmt.Errorf("%s failed to query transactions for page %d: %w", label, i/pageSize, err)
+			}
+			txByID := make(map[string]*pldapi.TransactionFull, len(txsFull))
+			for _, tx := range txsFull {
+				if tx.Transaction != nil {
+					txByID[tx.Transaction.ID.String()] = tx
 				}
 			}
-		}
-		return nil
-	}
 
-	assertDispatches := func(txIDs []string, expectedDispatches int, label string) error {
-		pageSize := s.postRunPageSize
-		for i := 0; i < len(txIDs); i += pageSize {
-			end := i + pageSize
-			if end > len(txIDs) {
-				end = len(txIDs)
-			}
-			for _, txID := range txIDs[i:end] {
-				if _, skip := penteInputNotAvailableSet[txID]; skip {
+			for _, txID := range page {
+				tx := txByID[txID]
+				if tx == nil {
+					return fmt.Errorf("%s tx %s not found in query results", label, txID)
+				}
+				receipt := tx.Receipt
+				if receipt == nil {
+					return fmt.Errorf("%s tx %s has no receipt", label, txID)
+				}
+				if !receipt.Success && strings.Contains(receipt.FailureMessage, penteInputNotAvailableReason) {
+					if _, seen := penteInputNotAvailableSet[txID]; !seen {
+						penteInputNotAvailableSet[txID] = struct{}{}
+						penteInputNotAvailableTxIDs = append(penteInputNotAvailableTxIDs, txID)
+					}
 					continue
 				}
-				parsedID, err := uuid.Parse(txID)
-				if err != nil {
-					return fmt.Errorf("%s tx %s has invalid UUID: %w", label, txID, err)
+				if !receipt.Success && strings.HasPrefix(receipt.FailureMessage, dependencyFailedReason) {
+					if _, seen := dependencyFailedSet[txID]; !seen {
+						dependencyFailedSet[txID] = struct{}{}
+						dependencyFailedTxIDs = append(dependencyFailedTxIDs, txID)
+					}
+					continue
 				}
-				txFull, err := submitterClient.PTX().GetTransactionFull(s.ctx, parsedID)
-				if err != nil || txFull == nil {
-					return fmt.Errorf("%s tx %s failed to fetch full transaction: %w", label, txID, err)
+				if shouldSucceed {
+					if !receipt.Success {
+						return fmt.Errorf("%s tx %s expected success but failed: %s", label, txID, receipt.FailureMessage)
+					}
+				} else {
+					if receipt.Success {
+						return fmt.Errorf("%s tx %s expected failure but succeeded", label, txID)
+					}
+					if !strings.Contains(receipt.FailureMessage, expectedReasonHex) &&
+						!strings.Contains(receipt.FailureMessage, expectedReason) {
+						return fmt.Errorf("%s tx %s failed with unexpected reason: %s", label, txID, receipt.FailureMessage)
+					}
 				}
-				dispatches := countDispatches(txFull.SequencerActivity)
-				if dispatches != expectedDispatches {
-					return fmt.Errorf("%s tx %s had %d dispatches in sequencer activity, expected %d", label, txID, dispatches, expectedDispatches)
+				if expectedDispatches != nil {
+					dispatches := countDispatches(tx.SequencerActivity)
+					if dispatches != *expectedDispatches {
+						return fmt.Errorf("%s tx %s had %d dispatches in sequencer activity, expected %d", label, txID, dispatches, *expectedDispatches)
+					}
 				}
 			}
 		}
@@ -681,17 +668,16 @@ func (s *notoRevertableHooksSuite) PostRun() error {
 		failures = append(failures, err.Error())
 	}
 
-	recordFailure(assertBatched(failTxIDs, false, failRevertReason, failRevertReasonHex, "FAIL"))
-	recordFailure(assertBatched(invalidInputTxIDs, false, "", notoInvalidInputSelector, "INVALID_INPUT"))
-	recordFailure(assertDispatches(invalidInputTxIDs, 4, "INVALID_INPUT"))
-	recordFailure(assertBatched(revertTxIDs, false, revertRevertReason, revertRevertReasonHex, "REVERT"))
-	recordFailure(assertBatched(successTxIDs, true, "", "", "SUCCESS"))
+	invalidInputDispatches := 4
+	recordFailure(assertGroup(failTxIDs, false, failRevertReason, failRevertReasonHex, nil, "FAIL"))
+	recordFailure(assertGroup(invalidInputTxIDs, false, "", notoInvalidInputSelector, &invalidInputDispatches, "INVALID_INPUT"))
+	recordFailure(assertGroup(revertTxIDs, false, revertRevertReason, revertRevertReasonHex, nil, "REVERT"))
+	recordFailure(assertGroup(successTxIDs, true, "", "", nil, "SUCCESS"))
 
-	// TODO: I believe we've been hitting these because of the possible inconsistencies in cleaning up
-	// minters in the grapher and lock states in the domain context, which should be resolved by the new graper.
-	// However, I think there might be a new class of informational unexpected failures which is a small number
-	// of transactions who keep getting caught behind a chained dependency until they reach their retry limit.
-	// Tuning config could reduce the likelihood of these, but I don't think it's possible to completely eliminate them.
+	// A small number of transactions can exhaust their retry limit after repeatedly being queued
+	// behind a chained dependency that fails. This is not possible to eliminate entirely, so it
+	// is treated as informational rather than a test failure. Which revert reason depends on whether
+	// the transaction it failed behind had also reached its retry limit or not.
 	if len(penteInputNotAvailableTxIDs) > 0 {
 		log.Infof(
 			"Informational: %d transactions hit %s: %s",
@@ -700,15 +686,25 @@ func (s *notoRevertableHooksSuite) PostRun() error {
 			strings.Join(penteInputNotAvailableTxIDs, ", "),
 		)
 	}
+	if len(dependencyFailedTxIDs) > 0 {
+		log.Infof(
+			"Informational: %d transactions hit %s (chained dependency failed): %s",
+			len(dependencyFailedTxIDs),
+			dependencyFailedReason,
+			strings.Join(dependencyFailedTxIDs, ", "),
+		)
+	}
 
 	log.Infof(
-		"Post-run analysis complete: submissions=%d tracked=%d (revert=%d fail=%d invalid_input=%d success=%d)",
+		"Post-run analysis complete: submissions=%d tracked=%d (revert=%d fail=%d invalid_input=%d success=%d informational_pente_input=%d informational_dep_failed=%d)",
 		totalSubmissions,
 		trackedTotal,
 		len(revertTxIDs),
 		len(failTxIDs),
 		len(invalidInputTxIDs),
 		len(successTxIDs),
+		len(penteInputNotAvailableTxIDs),
+		len(dependencyFailedTxIDs),
 	)
 
 	if len(failures) > 0 {

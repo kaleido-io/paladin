@@ -84,7 +84,7 @@ export const queryStates = async (
   let customFilters: any = {};
   if (refTimestamp !== undefined) {
     if (sortAscending) {
-      customFilters.graterThan = [{
+      customFilters.greaterThan = [{
         field: '.created',
         value: refTimestamp
       }];

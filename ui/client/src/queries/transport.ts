@@ -60,7 +60,7 @@ export const fetchTransportPeersWithQuery = async (
   let customFilters: any = {};
   if (refData !== undefined) {
     if (sortAscending) {
-      customFilters.graterThan = [{
+      customFilters.greaterThan = [{
         field: sortBy,
         value: refData
       }];
@@ -100,7 +100,7 @@ export const queryMessages = async (
   let customFilters: any = {};
   if (refTimestamp !== undefined) {
     if (sortAscending) {
-      customFilters.graterThan = [{
+      customFilters.greaterThan = [{
         field: sortBy,
         value: refTimestamp
       }];

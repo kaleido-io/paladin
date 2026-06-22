@@ -103,7 +103,7 @@ export const getPrivacyGroupMessages = async (
   let customFilters: any = {};
   if (refTimestamp !== undefined) {
     if (sortAscending) {
-      customFilters.graterThan = [{
+      customFilters.greaterThan = [{
         field: '.created',
         value: refTimestamp
       }];

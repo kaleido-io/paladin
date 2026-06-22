@@ -36,7 +36,7 @@ type Props = {
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const MessageLookupDialog: React.FC<Props> = ({
+export const ReliableMessageLookupDialog: React.FC<Props> = ({
   dialogOpen,
   setDialogOpen,
 }) => {

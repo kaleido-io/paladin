@@ -31,6 +31,7 @@ import { Hash } from "./Hash";
 import { customNavigate } from "../utils";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from "react-router-dom";
+import { PrivacyGroupMessageLookupDialog } from "../dialogs/PrivateGroupMessageLookup";
 
 type Props = {
   privacyGroup: IPrivacyGroup
@@ -38,7 +39,7 @@ type Props = {
 
 export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
 
-  const [_lookupPrivateGroupMessageDialogOpen, setLookupPrivateGroupMessageDialogOpen] = useState(false);
+  const [lookupPrivateGroupMessageDialogOpen, setLookupPrivateGroupMessageDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const navigate = useNavigate();
   const { privateGroupMessages: privateGroupMessagesViewStateState } = useApplicationContext();
@@ -292,7 +293,7 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
                     <TableCell align="right" sx={{ paddingTop: '8px', paddingBottom: '8px' }}>
                       <Tooltip title={t('open')} arrow>
                         <IconButton
-                          onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}/${privacyGroupMessage.id}`, mouseEvent, navigate)}>
+                          onClick={mouseEvent => customNavigate(`/ui/privacy-groups/${privacyGroup.id}/messages/${privacyGroupMessage.id}`, mouseEvent, navigate)}>
                           <OpenInNewIcon color="secondary" fontSize="medium" />
                         </IconButton>
                       </Tooltip>
@@ -326,6 +327,11 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
           <Typography>{t('privacyGroupMessagesEmptyState')}</Typography>
         </Box>
       }
+      <PrivacyGroupMessageLookupDialog
+        privactGroupId={privacyGroup.id}
+        dialogOpen={lookupPrivateGroupMessageDialogOpen}
+        setDialogOpen={setLookupPrivateGroupMessageDialogOpen}
+      />
     </>
   );
 }

@@ -28,6 +28,6 @@ export const AppRoutes = {
   ReliableMessage: '/ui/transports/messages/:id',
   State: '/ui/states/:domain/:schema/:id',
   RegistryEntry: '/ui/registry/:registry/:id',
-  PrivacyGroupMessageEntry: '/ui/privacy-groups/:privacyGroupId/:messageId',
+  PrivacyGroupMessageEntry: '/ui/privacy-groups/:privacyGroupId/messages/:messageId',
   Transports: '/ui/transports'
 };

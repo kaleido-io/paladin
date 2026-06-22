@@ -28,7 +28,7 @@ import { Hash } from "../components/Hash";
 import { queryMessages } from "../queries/transport";
 import { Filters } from "../components/Filters";
 import { FiltersButton } from "../components/FiltersButton";
-import { MessageLookupDialog } from "../dialogs/MessageLookup";
+import { ReliableMessageLookupDialog } from "../dialogs/ReliableMessageLookup";
 import SearchIcon from '@mui/icons-material/Search';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
@@ -296,7 +296,7 @@ export const ReliableMessages: React.FC = () => {
           <Typography>{t('messagesEmptyState')}</Typography>
         </Box>
       }
-      <MessageLookupDialog
+      <ReliableMessageLookupDialog
         dialogOpen={lookupMessageDialogOpen}
         setDialogOpen={setLookupMessageDialogOpen}
       />

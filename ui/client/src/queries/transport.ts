@@ -1,4 +1,4 @@
-// Copyright © 2025 Kaleido, Inc.
+// Copyright contributors to Paladin, an LFDT project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -74,7 +74,7 @@ export const fetchTransportPeersWithQuery = async (
   const requestPayload = {
     jsonrpc: "2.0",
     id: Date.now(),
-    method: RpcMethods.transport_peersWithQuery,
+    method: RpcMethods.transport_queryPeers,
     params: [{
       ...deepMerge(translatedFilters, customFilters),
       limit,

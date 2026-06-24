@@ -1,4 +1,4 @@
-// Copyright © 2026 Kaleido, Inc.
+// Copyright contributors to Paladin, an LFDT project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,7 +57,6 @@ export const RpcMethods = {
   reg_Registries: 'reg_registries',
   transport_localTransportDetails: 'transport_localTransportDetails',
   transport_nodeName: 'transport_nodeName',
-  transport_peers: 'transport_peers',
-  transport_queryReliableMessages: 'transport_queryReliableMessages',
-  transport_peersWithQuery: 'transport_peersWithQuery'
+  transport_queryPeers: 'transport_queryPeers',
+  transport_queryReliableMessages: 'transport_queryReliableMessages'
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2026 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -102,15 +102,6 @@ func (tm *transportManager) listActivePeers() nameSortedPeers {
 	}
 	sort.Sort(peers)
 	return peers
-}
-
-func (tm *transportManager) listActivePeerInfo() []*pldapi.PeerInfo {
-	peers := tm.listActivePeers()
-	peerInfo := make([]*pldapi.PeerInfo, len(peers))
-	for i, p := range peers {
-		peerInfo[i] = &p.PeerInfo
-	}
-	return peerInfo
 }
 
 func (tm *transportManager) getPeerInfo(nodeName string) *pldapi.PeerInfo {

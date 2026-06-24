@@ -1,4 +1,4 @@
-// Copyright © 2026 Kaleido, Inc.
+// Copyright contributors to Paladin, an LFDT project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,8 +34,7 @@ func (tm *transportManager) initRPC() {
 		Add("transport_nodeName", tm.rpcNodeName()).
 		Add("transport_localTransports", tm.rpcLocalTransports()).
 		Add("transport_localTransportDetails", tm.rpcLocalTransportDetails()).
-		Add("transport_peers", tm.rpcPeers()).
-		Add("transport_peersWithQuery", tm.rpcPeersWithQuery()).
+		Add("transport_queryPeers", tm.rpcQueryPeers()).
 		Add("transport_peerInfo", tm.rpcPeerInfo()).
 		Add("transport_queryReliableMessages", tm.rpcQueryReliableMessages()).
 		Add("transport_queryReliableMessageAcks", tm.rpcQueryReliableMessageAcks())
@@ -66,14 +65,7 @@ func (tm *transportManager) rpcLocalTransportDetails() rpcserver.RPCHandler {
 	})
 }
 
-func (tm *transportManager) rpcPeers() rpcserver.RPCHandler {
-	return rpcserver.RPCMethod0(func(ctx context.Context) ([]*pldapi.PeerInfo, error) {
-		// ctx = log.WithComponent(ctx, "transportmanager")
-		return tm.listActivePeerInfo(), nil
-	})
-}
-
-func (tm *transportManager) rpcPeersWithQuery() rpcserver.RPCHandler {
+func (tm *transportManager) rpcQueryPeers() rpcserver.RPCHandler {
 	return rpcserver.RPCMethod1(func(ctx context.Context, jq query.QueryJSON) ([]*pldapi.PeerInfo, error) {
 		ctx = log.WithComponent(ctx, "transportmanager")
 		return tm.QueryPeers(ctx, &jq)

@@ -33,13 +33,7 @@ title: transport_*
 
 0. `peer`: [`PeerInfo`](../types/peerinfo.md#peerinfo)
 
-## `transport_peers`
-
-### Returns
-
-0. `peers`: [`PeerInfo[]`](../types/peerinfo.md#peerinfo)
-
-## `transport_peersWithQuery`
+## `transport_queryPeers`
 
 ### Parameters
 

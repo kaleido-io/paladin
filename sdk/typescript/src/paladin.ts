@@ -1109,14 +1109,9 @@ export default class PaladinClient {
       return res.data.result;
     },
 
-    peers: async () => {
-      const res = await this.post<JsonRpcResult<any[]>>("transport_peers", []);
-      return res.data.result;
-    },
-
-    peersWithQuery: async (query: IQuery) => {
+    queryPeers: async (query: IQuery) => {
       const res = await this.post<JsonRpcResult<any[]>>(
-        "transport_peersWithQuery",
+        "transport_queryPeers",
         [query]
       );
       return res.data.result;

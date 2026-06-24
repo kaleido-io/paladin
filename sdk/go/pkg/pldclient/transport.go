@@ -1,5 +1,5 @@
 /*
- * Copyright © 2026 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,8 +28,7 @@ type Transport interface {
 	NodeName(ctx context.Context) (nodeName string, err error)
 	LocalTransports(ctx context.Context) (transportNames []string, err error)
 	LocalTransportDetails(ctx context.Context, transportName string) (transportDetailsStr string, err error)
-	Peers(ctx context.Context) (peers []*pldapi.PeerInfo, err error)
-	PeersWithQuery(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error)
+	QueryPeers(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error)
 	PeerInfo(ctx context.Context, nodeName string) (peer *pldapi.PeerInfo, err error)
 	QueryReliableMessages(ctx context.Context, query *query.QueryJSON) (reliableMessages []*pldapi.ReliableMessage, err error)
 	QueryReliableMessageAcks(ctx context.Context, query *query.QueryJSON) (reliableMessageAcks []*pldapi.ReliableMessageAck, err error)
@@ -51,11 +50,7 @@ var transportInfo = &rpcModuleInfo{
 			Inputs: []string{"transportName"},
 			Output: "transportDetailsStr",
 		},
-		"transport_peers": {
-			Inputs: []string{},
-			Output: "peers",
-		},
-		"transport_peersWithQuery": {
+		"transport_queryPeers": {
 			Inputs: []string{"query"},
 			Output: "peers",
 		},
@@ -100,13 +95,8 @@ func (t *transport) LocalTransportDetails(ctx context.Context, transportName str
 	return
 }
 
-func (t *transport) Peers(ctx context.Context) (peers []*pldapi.PeerInfo, err error) {
-	err = t.c.CallRPC(ctx, &peers, "transport_peers")
-	return
-}
-
-func (t *transport) PeersWithQuery(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error) {
-	err = t.c.CallRPC(ctx, &peers, "transport_peersWithQuery", query)
+func (t *transport) QueryPeers(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error) {
+	err = t.c.CallRPC(ctx, &peers, "transport_queryPeers", query)
 	return
 }
 

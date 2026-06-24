@@ -110,6 +110,13 @@ var stateDefinitionsMap = StateDefinitions{
 					}},
 				}},
 			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
+				}},
+			},
 			Event_Delegated: {
 				Match: statemachine.MatchFirst,
 				Handlers: []EventHandler{{
@@ -131,6 +138,13 @@ var stateDefinitionsMap = StateDefinitions{
 					Transitions: []Transition{{
 						To: State_Confirmed,
 					}},
+				}},
+			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -198,6 +212,13 @@ var stateDefinitionsMap = StateDefinitions{
 					Transitions: []Transition{{
 						To: State_Confirmed,
 					}},
+				}},
+			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -292,9 +313,11 @@ var stateDefinitionsMap = StateDefinitions{
 					// For some reason we've been asked to assemble again. We must not have moved to endorsement gathering,
 					// reverted, or parked. This could be because of a temporary issue preventing assembly (e.g. we couldn't
 					// resolve a remote verifier while it was offline). Assuming this is a new request, action it.
+					// If the request matches the currently in-flight assembly (e.g. a coordinator nudge arriving while we are
+					// still assembling the original request), do not cancel and restart.
 					Actions: []ActionRule{
 						{Action: action_AssembleRequestReceived},
-						{If: statemachine.GuardNot(guard_AssembleRequestMatchesPreviousResponse), Action: action_AssembleAndSign},
+						{If: statemachine.GuardNot(statemachine.GuardOr(guard_AssembleRequestMatchesPreviousResponse, guard_AssembleRequestMatchesInProgressAssembly)), Action: action_AssembleAndSign},
 						{If: guard_AssembleRequestMatchesPreviousResponse, Action: action_ResendAssembleSuccessResponse},
 					},
 					// No transition - we're already in Assembling
@@ -310,6 +333,13 @@ var stateDefinitionsMap = StateDefinitions{
 					Transitions: []Transition{{
 						To: State_Confirmed,
 					}},
+				}},
+			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -384,6 +414,13 @@ var stateDefinitionsMap = StateDefinitions{
 					Transitions: []Transition{{
 						To: State_Confirmed,
 					}},
+				}},
+			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -488,17 +525,10 @@ var stateDefinitionsMap = StateDefinitions{
 			Event_ConfirmedReverted: {
 				Match: statemachine.MatchFirst,
 				Handlers: []EventHandler{{
-					Actions: []ActionRule{{Action: action_RecordWillRetry}},
-					Transitions: []Transition{
-						{
-							If: guard_WillRetry,
-							To: State_Delegated,
-						},
-						{
-							If: statemachine.GuardNot(guard_WillRetry),
-							To: State_Confirmed,
-						},
-					},
+					Validator:   validator_WillRetry,
+					Transitions: []Transition{{To: State_Delegated}},
+				}, {
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -586,17 +616,10 @@ var stateDefinitionsMap = StateDefinitions{
 			Event_ConfirmedReverted: {
 				Match: statemachine.MatchFirst,
 				Handlers: []EventHandler{{
-					Actions: []ActionRule{{Action: action_RecordWillRetry}},
-					Transitions: []Transition{
-						{
-							If: guard_WillRetry,
-							To: State_Delegated,
-						},
-						{
-							If: statemachine.GuardNot(guard_WillRetry),
-							To: State_Confirmed,
-						},
-					},
+					Validator:   validator_WillRetry,
+					Transitions: []Transition{{To: State_Delegated}},
+				}, {
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -678,17 +701,10 @@ var stateDefinitionsMap = StateDefinitions{
 			Event_ConfirmedReverted: {
 				Match: statemachine.MatchFirst,
 				Handlers: []EventHandler{{
-					Actions: []ActionRule{{Action: action_RecordWillRetry}},
-					Transitions: []Transition{
-						{
-							If: guard_WillRetry,
-							To: State_Delegated,
-						},
-						{
-							If: statemachine.GuardNot(guard_WillRetry),
-							To: State_Confirmed,
-						},
-					},
+					Validator:   validator_WillRetry,
+					Transitions: []Transition{{To: State_Delegated}},
+				}, {
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {
@@ -750,6 +766,13 @@ var stateDefinitionsMap = StateDefinitions{
 					Transitions: []Transition{{
 						To: State_Confirmed,
 					}},
+				}},
+			},
+			Event_ConfirmedReverted: {
+				Match: statemachine.MatchFirst,
+				Handlers: []EventHandler{{
+					Validator:   statemachine.ValidatorNot(validator_WillRetry),
+					Transitions: []Transition{{To: State_Confirmed}},
 				}},
 			},
 			Event_Delegated: {

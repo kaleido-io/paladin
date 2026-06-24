@@ -1,4 +1,4 @@
-// Copyright © 2026 Kaleido, Inc.
+// Copyright contributors to Paladin, an LFDT project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,9 +30,10 @@ var IndexedBlockFilters filters.FieldSet = filters.FieldMap{
 var IndexedTransactionFilters filters.FieldSet = filters.FieldMap{
 	"hash":             filters.HexBytesField(`"indexed_transactions"."hash"`),
 	"blockNumber":      filters.Int64Field("block_number"),
+	"blockTimestamp":   filters.Int64Field(`"Block"."timestamp"`),
 	"transactionIndex": filters.Int64Field("transaction_index"),
 	"from":             filters.HexBytesField(`"from"`),
-	"to":               filters.HexBytesField("to"),
+	"to":               filters.HexBytesField(`"to"`),
 	"nonce":            filters.Int64Field("nonce"),
 	"contractAddress":  filters.HexBytesField("contract_address"),
 	"result":           filters.StringField("result"),

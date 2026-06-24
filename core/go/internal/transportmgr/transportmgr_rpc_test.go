@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -72,6 +72,14 @@ func TestRPCLocalDetails(t *testing.T) {
 	require.Len(t, peers, 1)
 	require.Equal(t, "node2", peers[0].Name)
 
+	filteredPeers, rpcErr := transportRPC.PeersWithQuery(ctx, query.NewQueryBuilder().
+		Equal("name", "node2").
+		Limit(100).
+		Query())
+	require.NoError(t, rpcErr)
+	require.Len(t, filteredPeers, 1)
+	require.Equal(t, "node2", filteredPeers[0].Name)
+
 	peer, rpcErr := transportRPC.PeerInfo(ctx, "node2")
 	require.NoError(t, rpcErr)
 	require.Equal(t, "node2", peer.Name)
@@ -128,6 +136,7 @@ func TestRPCReliableMessages(t *testing.T) {
 	transportRPC := pldclient.Wrap(client).Transport()
 
 	// Wait for the message to get nack'd
+	var ackTime pldtypes.Timestamp
 	for {
 		rmsgs, err := transportRPC.QueryReliableMessages(ctx, query.NewQueryBuilder().Equal("node", "node2").Limit(100).Query())
 		require.NoError(t, err)
@@ -139,9 +148,18 @@ func TestRPCReliableMessages(t *testing.T) {
 				continue
 			}
 			require.Regexp(t, "PD012016", rmsgs[0].Ack.Error)
+			ackTime = rmsgs[0].Ack.Time
 			break
 		}
 	}
+
+	rmsgs, err := transportRPC.QueryReliableMessages(ctx, query.NewQueryBuilder().
+		Equal("ack.time", ackTime).
+		Limit(100).
+		Query())
+	require.NoError(t, err)
+	require.Len(t, rmsgs, 1)
+	require.Equal(t, msgID, rmsgs[0].ID)
 
 	// Get the ack directly
 	acks, err := transportRPC.QueryReliableMessageAcks(ctx, query.NewQueryBuilder().Equal("messageId", msgID).Limit(100).Query())

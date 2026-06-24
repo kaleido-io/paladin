@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright contributors to Paladin, an LFDT project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -54,6 +54,6 @@ func TestUint256Field(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, nv)
 
-	assert.False(t, Uint256Field("test").SupportsLIKE())
+	assert.True(t, Uint256Field("test").SupportsLIKE())
 
 }

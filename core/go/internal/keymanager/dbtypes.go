@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -56,4 +56,5 @@ var KeyEntryFilters filters.FieldSet = filters.FieldMap{
 	"path":        filters.StringField("path"),
 	"wallet":      filters.StringField("wallet"),
 	"keyHandle":   filters.StringField("key_handle"),
+	"verifier":    filters.StringField("verifier"),
 }

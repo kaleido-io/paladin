@@ -1114,6 +1114,14 @@ export default class PaladinClient {
       return res.data.result;
     },
 
+    peersWithQuery: async (query: IQuery) => {
+      const res = await this.post<JsonRpcResult<any[]>>(
+        "transport_peersWithQuery",
+        [query]
+      );
+      return res.data.result;
+    },
+
     peerInfo: async (nodeName: string) => {
       const res = await this.post<JsonRpcResult<any>>(
         "transport_peerInfo",

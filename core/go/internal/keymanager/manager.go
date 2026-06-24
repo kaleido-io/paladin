@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -331,6 +331,7 @@ func (km *keyManager) QueryKeys(ctx context.Context, dbTX *gorm.DB, jq *query.Qu
 	)
 
 	q.Joins("LEFT OUTER JOIN key_mappings ON key_paths.path = key_mappings.identifier")
+	q.Joins("LEFT OUTER JOIN key_verifiers ON key_paths.path = key_verifiers.identifier")
 	q.Joins(`LEFT OUTER JOIN (SELECT parent AS "p" from key_paths AS p) AS k ON key_paths.path = k.p`)
 	q.Where("key_paths.path != ''")
 

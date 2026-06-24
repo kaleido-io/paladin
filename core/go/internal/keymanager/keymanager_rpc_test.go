@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Kaleido, Inc.
+ * Copyright contributors to Paladin, an LFDT project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -117,6 +117,12 @@ func TestRPCLocalDetails(t *testing.T) {
 	assert.Equal(t, queryEntries[0].Verifiers[0].Type, verifiers.ETH_ADDRESS)
 	assert.Equal(t, queryEntries[0].Verifiers[0].Algorithm, algorithms.ECDSA_SECP256K1)
 	assert.NotNil(t, queryEntries[0].Verifiers[0].Verifier)
+
+	// Query keys by verifier
+	err = rpc.CallRPC(ctx, &queryEntries, "keymgr_queryKeys", query.NewQueryBuilder().Equal("verifier", queryEntries[0].Verifiers[0].Verifier).Limit(10).Query())
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(queryEntries))
+	assert.Equal(t, "a.b", queryEntries[0].Path)
 
 	// Query keys with parent "a.b"
 	err = rpc.CallRPC(ctx, &queryEntries, "keymgr_queryKeys", query.NewQueryBuilder().Equal("parent", "a.b").Limit(10).Query())

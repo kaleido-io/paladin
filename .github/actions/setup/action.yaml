@@ -4,6 +4,11 @@ description: 'Install pre-requisites for building paladin'
 runs:
   using: 'composite'
   steps:
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: '22.22.1' # Working around bug https://github.com/nodejs/node/issues/62425 until we move to Node 24
+
   - name: Install protoc
     shell: bash
     run: |

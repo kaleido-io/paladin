@@ -96,6 +96,10 @@ var reliableMessageAckFilters = filters.FieldMap{
 	"error":     filters.StringField("error"),
 }
 
+var peerInfoFilters = filters.FieldMap{
+	"name": filters.StringField("name"),
+}
+
 func NewTransportManager(bgCtx context.Context, conf *pldconf.TransportManagerInlineConfig) components.TransportManager {
 	tm := &transportManager{
 		conf:                      conf,

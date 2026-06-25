@@ -67,7 +67,7 @@ func TestRPCLocalDetails(t *testing.T) {
 	_, err := tm.getPeer(ctx, "node2", false)
 	require.NoError(t, err)
 
-	peers, rpcErr := transportRPC.Peers(ctx)
+	peers, rpcErr := transportRPC.QueryPeers(ctx, query.NewQueryBuilder().Limit(100).Query())
 	require.NoError(t, rpcErr)
 	require.Len(t, peers, 1)
 	require.Equal(t, "node2", peers[0].Name)

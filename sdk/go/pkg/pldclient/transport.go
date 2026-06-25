@@ -28,7 +28,7 @@ type Transport interface {
 	NodeName(ctx context.Context) (nodeName string, err error)
 	LocalTransports(ctx context.Context) (transportNames []string, err error)
 	LocalTransportDetails(ctx context.Context, transportName string) (transportDetailsStr string, err error)
-	Peers(ctx context.Context) (peers []*pldapi.PeerInfo, err error)
+	QueryPeers(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error)
 	PeerInfo(ctx context.Context, nodeName string) (peer *pldapi.PeerInfo, err error)
 	QueryReliableMessages(ctx context.Context, query *query.QueryJSON) (reliableMessages []*pldapi.ReliableMessage, err error)
 	QueryReliableMessageAcks(ctx context.Context, query *query.QueryJSON) (reliableMessageAcks []*pldapi.ReliableMessageAck, err error)
@@ -50,8 +50,8 @@ var transportInfo = &rpcModuleInfo{
 			Inputs: []string{"transportName"},
 			Output: "transportDetailsStr",
 		},
-		"transport_peers": {
-			Inputs: []string{},
+		"transport_queryPeers": {
+			Inputs: []string{"query"},
 			Output: "peers",
 		},
 		"transport_peerInfo": {
@@ -95,8 +95,8 @@ func (t *transport) LocalTransportDetails(ctx context.Context, transportName str
 	return
 }
 
-func (t *transport) Peers(ctx context.Context) (peers []*pldapi.PeerInfo, err error) {
-	err = t.c.CallRPC(ctx, &peers, "transport_peers")
+func (t *transport) QueryPeers(ctx context.Context, query *query.QueryJSON) (peers []*pldapi.PeerInfo, err error) {
+	err = t.c.CallRPC(ctx, &peers, "transport_queryPeers", query)
 	return
 }
 

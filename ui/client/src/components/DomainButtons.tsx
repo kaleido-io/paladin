@@ -56,7 +56,7 @@ export const DomainButtons: React.FC<Props> = ({
     switch (domainName) {
       case 'noto': {
         tmpButtons.push({
-          name: 'balance',
+          name: 'checkBalance',
           action: () => setNotoCheckBalanceDialogOpen(true),
         });
         tmpButtons.push({

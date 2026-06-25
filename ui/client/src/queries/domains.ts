@@ -17,7 +17,8 @@
 import i18next from 'i18next';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
-import { IDomainContract } from '../interfaces';
+import { IDomain, IDomainContract, IFilter } from '../interfaces';
+import { translateFilters } from '../utils';
 
 export const listDomains = async (): Promise<string[]> => {
   const payload = {
@@ -35,7 +36,7 @@ export const listDomains = async (): Promise<string[]> => {
   return result.sort();
 };
 
-export const getDomainByName = async (name: string): Promise<any> => {
+export const getDomainByName = async (name: string): Promise<IDomain> => {
   const payload = {
     jsonrpc: '2.0',
     id: Date.now(),
@@ -43,7 +44,7 @@ export const getDomainByName = async (name: string): Promise<any> => {
     params: [name],
   };
 
-  return <Promise<any>>(
+  return <Promise<IDomain>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
       i18next.t('errorFetchingDomain')
@@ -55,16 +56,24 @@ export const querySmartContractsByDomain = async (
   domainAddress: string,
   sortAscending: boolean,
   rowsPerPage: number,
+  filters: IFilter[],
   refTimestamp?: string
 ): Promise<IDomainContract[]> => {
+  let translatedFilters = translateFilters(filters);
+
+  if(translatedFilters.equal !== undefined) {
+    translatedFilters.equal.push({ field: 'domainAddress', value: domainAddress });
+  } else {
+    translatedFilters.equal = [{ field: 'domainAddress', value: domainAddress }];
+  }
   const payload = {
     jsonrpc: '2.0',
     id: Date.now(),
     method: RpcMethods.domain_querySmartContracts,
     params: [
       {
+        ...translatedFilters,
         limit: rowsPerPage,
-        equal: [{ field: 'domainAddress', value: domainAddress }],
         sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
         greaterThan: refTimestamp !== undefined && sortAscending ? [
           {

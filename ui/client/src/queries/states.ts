@@ -15,10 +15,22 @@
 // limitations under the License.
 
 import i18next from "i18next";
-import { IFilter, ISchema, IState, IStateReceipt } from "../interfaces";
+import { IFilter, ISchema, IState, IStatePagingReference, IStateReceipt } from "../interfaces";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
 import { translateFilters } from "../utils";
+
+export const getStateSortValue = (state: IState, sortBy: string): any => {
+  if (sortBy === '.created') {
+    return state.created;
+  }
+  return state.data[sortBy];
+};
+
+export const buildStatePagingReference = (state: IState, sortBy: string): IStatePagingReference => ({
+  sortValue: getStateSortValue(state, sortBy),
+  id: state.id,
+});
 
 export const fetchStateReceipt = async (
   transactionId: string
@@ -76,10 +88,42 @@ export const queryStates = async (
   sortBy: string,
   sortAscending: boolean,
   filters: IFilter[],
-  refTimestamp?: string
+  pageRef?: IStatePagingReference
 ): Promise<IState[]> => {
 
   let translatedFilters = translateFilters(filters);
+  const sortDirection = sortAscending ? 'ASC' : 'DESC';
+
+  let queryParams: any = {
+    ...translatedFilters,
+    limit,
+    sort: [
+      `${sortBy} ${sortDirection}`,
+      `.id ${sortDirection}`,
+    ],
+  };
+
+  if (pageRef !== undefined) {
+    const comparison = sortAscending ? 'greaterThan' : 'lessThan';
+    queryParams.or = [
+      {
+        [comparison]: [{
+          field: sortBy,
+          value: pageRef.sortValue,
+        }],
+      },
+      {
+        equal: [{
+          field: sortBy,
+          value: pageRef.sortValue,
+        }],
+        [comparison]: [{
+          field: '.id',
+          value: pageRef.id,
+        }],
+      },
+    ];
+  }
 
   const requestPayload = {
     jsonrpc: "2.0",
@@ -88,23 +132,7 @@ export const queryStates = async (
     params: [
       domain,
       schemaId,
-      {
-        ...translatedFilters,
-        limit,
-        sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`],
-        greaterThan: refTimestamp !== undefined && sortAscending ? [
-          {
-            field: '.created',
-            value: refTimestamp
-          }
-        ] : undefined,
-        lessThan: refTimestamp !== undefined && !sortAscending ? [
-          {
-            field: '.created',
-            value: refTimestamp
-          }
-        ] : undefined
-      },
+      queryParams,
       'all'
     ]
   };

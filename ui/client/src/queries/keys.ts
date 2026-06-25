@@ -20,7 +20,13 @@ import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
 import i18next from "i18next";
 
-export const fetchKeys = async (parent: string | undefined, limit: number, sortByPathFirst: boolean, sortOrder: 'asc' | 'desc', filters: IFilter[], refEntry?: IKeyEntry): Promise<IKeyEntry[]> => {
+export const fetchKeys = async (
+  parent: string | undefined,
+  limit: number,
+  sortByPathFirst: boolean,
+  sortOrder: 'asc' | 'desc',
+  filters: IFilter[],
+  refEntry?: IKeyEntry): Promise<IKeyEntry[]> => {
 
   let translatedFilters = translateFilters(filters);
 
@@ -40,15 +46,15 @@ export const fetchKeys = async (parent: string | undefined, limit: number, sortB
     method: RpcMethods.keymgr_queryKeys,
     params: [{
       ...translatedFilters,
-      sort: [`${sortByPathFirst? 'path' : 'index'} ${sortOrder}`, `${sortByPathFirst? 'index' : 'path'} ${sortOrder}`],
+      sort: [`${sortByPathFirst ? 'path' : 'index'} ${sortOrder}`, `${sortByPathFirst ? 'index' : 'path'} ${sortOrder}`],
       limit
     }]
   };
 
   if (refEntry !== undefined) {
     const comparison = sortOrder === 'asc' ? 'greaterThan' : 'lessThan';
-    const firstSortField = sortByPathFirst? 'path' : 'index';
-    const secondSortField = sortByPathFirst? 'index' : 'path';
+    const firstSortField = sortByPathFirst ? 'path' : 'index';
+    const secondSortField = sortByPathFirst ? 'index' : 'path';
     requestPayload.params[0].or = [
       {
         [comparison]: [{

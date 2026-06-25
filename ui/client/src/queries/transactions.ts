@@ -32,15 +32,6 @@ import { translateFilters } from '../utils';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
 
-const getBlockNumberQuery = (blockNumber: number) => {
-  return [
-    {
-      field: 'blockNumber',
-      value: blockNumber,
-    }
-  ]
-};
-
 const getTransactionPagingQuery = (pageParam: ITransactionPagingReference) => {
   return [
     {
@@ -71,24 +62,24 @@ const getTransactionPagingQuery = (pageParam: ITransactionPagingReference) => {
 export const fetchIndexedTransactions = async (
   limit: number,
   withReceipt: boolean,
-  fromBlockNumber?: number,
+  filters: IFilter[],
   pageParam?: ITransactionPagingReference
 ): Promise<IEnrichedTransaction[]> => {
+  let translatedFilters = translateFilters(filters);
+
   let requestPayload: any = {
     jsonrpc: '2.0',
     id: Date.now(),
-    method: withReceipt? RpcMethods.bidx_QueryIndexedTransactionsWithReceipt : RpcMethods.bidx_QueryIndexedTransactions,
+    method: withReceipt ? RpcMethods.bidx_QueryIndexedTransactionsWithReceipt : RpcMethods.bidx_QueryIndexedTransactions,
     params: [
       {
+        ...translatedFilters,
         limit,
         sort: ['blockNumber DESC', 'transactionIndex DESC'],
-      },
-    ],
+      }
+    ]
   };
 
-  if (fromBlockNumber !== undefined) {
-    requestPayload.params[0].lessThanOrEqual = getBlockNumberQuery(fromBlockNumber);
-  }
   if (pageParam !== undefined) {
     requestPayload.params[0].or = getTransactionPagingQuery(pageParam);
   }
@@ -117,8 +108,10 @@ export const fetchIndexedTransactions = async (
 };
 
 export const fetchSubmissions = async (
-  type: 'pending' | 'failed',
+  type: 'pending' | 'failed' | 'successful',
+  limit: number,
   filters: IFilter[],
+  sortAscending?: boolean,
   pageParam?: IPaladinTransactionPagingReference
 ): Promise<IPaladinTransaction[]> => {
   let translatedFilters = translateFilters(filters);
@@ -126,29 +119,31 @@ export const fetchSubmissions = async (
   let params: any = [
     {
       ...translatedFilters,
-      limit: constants.SUBMISSIONS_QUERY_LIMIT,
-      sort: ['created DESC'],
+      limit,
+      sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
+      greaterThan: pageParam !== undefined && sortAscending ? [
+        {
+          field: 'created',
+          value: pageParam.created
+        }
+      ] : undefined,
+      lessThan: pageParam !== undefined && !sortAscending ? [
+        {
+          field: 'created',
+          value: pageParam.created
+        }
+      ] : undefined
     },
   ];
 
-  if (pageParam !== undefined) {
-    if (params[0].lessThan === undefined) {
-      params[0].lessThan = [];
-    }
-    params[0].lessThan.push({
-      field: 'created',
-      value: pageParam.created,
-    });
-  }
-
-  if (type === 'failed') {
+  if (['failed', 'successful'].includes(type)) {
     if (params[0].equal === undefined) {
       params[0].equal = [];
     }
     params[0].equal.push(
       {
         field: 'success',
-        value: false
+        value: type === 'successful'
       }
     );
   } else {
@@ -159,9 +154,9 @@ export const fetchSubmissions = async (
     jsonrpc: '2.0',
     id: Date.now(),
     method:
-      type === 'failed'
-        ? RpcMethods.ptx_QueryTransactionsFull
-        : RpcMethods.ptx_QueryPendingTransactions,
+      type === 'pending'
+        ? RpcMethods.ptx_QueryPendingTransactions
+        : RpcMethods.ptx_QueryTransactionsFull,
     params
   };
 
@@ -306,8 +301,6 @@ export const sendTransaction = async (
     method: RpcMethods.ptx_sendTransaction,
     params: [transaction],
   };
-  console.log('Sending transaction');
-
   return <Promise<string>>(
     returnResponse(
       () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),

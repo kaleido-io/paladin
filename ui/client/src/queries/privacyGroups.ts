@@ -17,18 +17,23 @@
 import i18next from 'i18next';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
-import { IPrivacyGroup } from '../interfaces';
+import { IFilter, IPrivacyGroup, IPrivacyGroupMessage } from '../interfaces';
+import { deepMerge, translateFilters } from '../utils';
 
 export const listPrivacyGroups = async (
   limit: number,
+  filters: IFilter[],
   sortAscending: boolean,
   refTimestamp?: string
 ): Promise<IPrivacyGroup[]> => {
+  let translatedFilters = translateFilters(filters);
+
   const payload = {
     jsonrpc: '2.0',
     id: Date.now(),
     method: RpcMethods.pgroup_queryGroups,
     params: [{
+      ...translatedFilters,
       limit,
       sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
       greaterThan: refTimestamp !== undefined && sortAscending ? [
@@ -83,4 +88,84 @@ export const getPrivacyGroupByAddress = async (address: string): Promise<IPrivac
       i18next.t('errorFetchingPrivacyGroup')
     )
   );
+};
+
+export const getPrivacyGroupMessages = async (
+  limit: number,
+  filters: IFilter[],
+  sortAscending: boolean,
+  privacyGroupId?: string,
+  refTimestamp?: string
+): Promise<IPrivacyGroupMessage[]> => {
+
+  let translatedFilters = translateFilters(filters);
+
+  let customFilters: any = {};
+  if (refTimestamp !== undefined) {
+    if (sortAscending) {
+      customFilters.greaterThan = [{
+        field: '.created',
+        value: refTimestamp
+      }];
+    } else {
+      customFilters.lessThan = [{
+        field: '.created',
+        value: refTimestamp
+      }];
+    }
+  };
+  if (privacyGroupId !== undefined) {
+    customFilters.equal = [{
+      field: 'group',
+      value: privacyGroupId
+    }];
+  }
+
+  const payload = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: RpcMethods.pgroup_queryMessages,
+    params: [{
+      ...deepMerge(translatedFilters, customFilters),
+      limit,
+      sort: [`sent ${sortAscending ? 'ASC' : 'DESC'}`]
+    }],
+  };
+  return <Promise<IPrivacyGroupMessage[]>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+      i18next.t('errorFetchingPrivacyGroupMessages')
+    )
+  );
+};
+
+export const getPrivacyGroupMessage = async (
+  privacyGroupId: string,
+  messageId: string
+): Promise<IPrivacyGroupMessage | null> => {
+  const payload = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: RpcMethods.pgroup_queryMessages,
+    params: [{
+      equal: [{
+        field: 'group',
+        value: privacyGroupId
+      }, {
+        field: 'id',
+        value: messageId
+      }],
+      limit: 1
+    }],
+  };
+  const response = await <Promise<IPrivacyGroupMessage[]>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+      i18next.t('errorFetchingPrivacyGroupMessage')
+    )
+  );
+  if(response.length === 1) {
+    return response[0];
+  }
+  return null;
 };

@@ -171,12 +171,6 @@ export const Transactions: React.FC = () => {
                     name: 'result',
                     type: 'enum',
                     enum: ['success', 'failed']
-                  },
-                  {
-                    label: t('time'),
-                    name: 'blockTimestamp',
-                    type: 'timestamp',
-                    isSeconds: true
                   }
                 ]}
                 filters={filters}

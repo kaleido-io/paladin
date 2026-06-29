@@ -20,7 +20,6 @@ import (
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
-	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	"github.com/LFDT-Paladin/paladin/core/internal/msgs"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
@@ -123,7 +122,7 @@ func action_AssembleAndSign(ctx context.Context, txn *originatorTransaction, _ c
 	return nil
 }
 
-func (txn *originatorTransaction) handleAssembleAndSign(ctx context.Context, txID uuid.UUID, req assembleRequestFromCoordinator, preAssembly *components.TransactionPreAssembly) {
+func (txn *originatorTransaction) handleAssembleAndSign(ctx context.Context, txID uuid.UUID, req assembleRequestFromCoordinator, preAssembly *prototk.TransactionPreAssembly) {
 	postAssembly, err := txn.engineIntegration.AssembleAndSign(ctx, txID, preAssembly, req.stateLocksJSON, req.coordinatorsBlockHeight)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -178,16 +177,15 @@ func buildAssembleResponse(_ context.Context, txn *originatorTransaction) (*engi
 	if err != nil {
 		return nil, err
 	}
-	preAssemblyBytes, err := jsonMarshalFn(txn.pt.PreAssembly)
-	if err != nil {
-		return nil, err
-	}
 	return &engineProto.AssembleResponse{
 		TransactionId:     txn.pt.ID.String(),
 		AssembleRequestId: txn.latestFulfilledAssembleRequestID.String(),
 		ContractAddress:   txn.pt.Address.HexString(),
-		PostAssembly:      postAssemblyBytes,
-		PreAssembly:       preAssemblyBytes,
+		// TODO AM: what is the difference between the post assembly send back and the post assembly that
+		// the coordinator then stores?
+		PostAssembly: postAssemblyBytes,
+		// TODO AM: do we need to send this back
+		PreAssembly: txn.pt.PreAssembly,
 	}, nil
 }
 

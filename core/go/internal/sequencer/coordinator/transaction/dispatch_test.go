@@ -48,7 +48,7 @@ func Test_buildDispatchBatch_ChainedPrivateBranch(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -75,7 +75,7 @@ func Test_buildDispatchBatch_ChainedPrivateBranch_AlwaysUsesUniqueIdempotencyKey
 				IdempotencyKey: baseIdempotencyKey,
 			},
 		}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -124,7 +124,7 @@ func Test_buildDispatchBatch_ChainedPrivateBranch_FirstAttemptUsesAttemptZero(t 
 				IdempotencyKey: baseIdempotencyKey,
 			},
 		}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -168,7 +168,7 @@ func Test_buildDispatchBatch_ChainedPrivateBranch_PrepareChainedReturnsError(t *
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -190,7 +190,7 @@ func Test_buildDispatchBatch_PrepareTransactionBranch(t *testing.T) {
 
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 			},
@@ -211,7 +211,7 @@ func Test_buildDispatchBatch_PrepareTransactionBranch_PublicPrepared(t *testing.
 
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		PreparedPublicTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 			},
@@ -227,7 +227,7 @@ func Test_buildDispatchBatch_PrepareTransactionBranch_PublicPrepared(t *testing.
 func Test_buildDispatchBatch_InvalidOutcome_SendWithNoPrepared(t *testing.T) {
 	ctx := t.Context()
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{},
 		}).
 		Build()
@@ -243,7 +243,7 @@ func Test_buildDispatchBatch_InvalidOutcome_SendWithBothPrepared(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
 		PreparedPublicTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -261,7 +261,7 @@ func Test_buildDispatchBatch_PublicBranch(t *testing.T) {
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Signer("signer@node1").
 		NodeName("node1").
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -293,7 +293,7 @@ func Test_buildDispatchBatch_PublicBranch_BuildPublicTxSubmissionError(t *testin
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Signer("signer@node1").
 		NodeName("node1").
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -320,7 +320,7 @@ func Test_buildDispatchBatch_PublicBranch_EncodeCallDataError(t *testing.T) {
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Signer("signer@node1").
 		NodeName("node1").
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -351,7 +351,7 @@ func Test_buildDispatchBatch_PublicBranch_InvalidSignerIdentity(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Signer("bad%signer@node1").
 		NodeName("node1").
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -376,7 +376,7 @@ func Test_buildDispatchBatch_PublicBranch_ValidateTransactionError(t *testing.T)
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Signer("signer@node1").
 		NodeName("node1").
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -410,7 +410,7 @@ func Test_dispatch_PrepareTransactionReturnsError(t *testing.T) {
 func Test_dispatch_BuildDispatchBatchReturnsError(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{},
 		}).
 		Build()
@@ -424,7 +424,7 @@ func Test_dispatch_StateDistributionBuilderReturnsError(t *testing.T) {
 	ctx := t.Context()
 
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				// not setting a PreAssembly.TransactionSpecification.From causes an error in NewStateDistributionBuilder.Build
@@ -445,7 +445,7 @@ func Test_dispatch_StateDistributionBuilderReturnsError(t *testing.T) {
 func Test_dispatch_BuildNullifiersReturnsError(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -467,7 +467,7 @@ func Test_dispatch_BuildNullifiersReturnsError(t *testing.T) {
 func Test_dispatch_UpsertNullifiersReturnsError(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -490,7 +490,7 @@ func Test_dispatch_UpsertNullifiersReturnsError(t *testing.T) {
 func Test_dispatch_Success_WithNullifiers(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -517,7 +517,7 @@ func Test_dispatch_Success_WithNullifiers(t *testing.T) {
 func Test_dispatch_PersistDispatchBatchReturnsError(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -541,7 +541,7 @@ func Test_dispatch_PersistDispatchBatchReturnsError(t *testing.T) {
 func Test_dispatch_PersistDispatchBatch_WithRemoteStateDistributions(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -586,7 +586,7 @@ func Test_dispatch_PersistDispatchBatch_WithRemoteStateDistributions(t *testing.
 func Test_dispatch_HandleNewTransactionsReturnsError(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -612,7 +612,7 @@ func Test_dispatch_HandleNewTransactionsReturnsError(t *testing.T) {
 func Test_dispatch_Success_PrepareTransactionBranch_DoesNotHandleNewTransactions(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 				From:   "sender@node1",
@@ -635,7 +635,7 @@ func Test_dispatch_Success_PrepareTransactionBranch_DoesNotHandleNewTransactions
 func Test_dispatch_Success_ChainedPrivate(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 				From:   "sender@node1",
@@ -660,7 +660,7 @@ func Test_dispatch_Success_ChainedPrivate(t *testing.T) {
 func Test_dispatch_Success_PrepareTransactionBranch(t *testing.T) {
 	ctx := t.Context()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 				From:   "sender@node1",
@@ -756,7 +756,7 @@ func Test_buildDispatchBatch_ChainedPrivate_PropagatesPostAssembleDepChildIDs(t 
 		Grapher(g).
 		DependencyTracker(depTracker).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -799,7 +799,7 @@ func Test_buildDispatchBatch_ChainedPrivate_PropagatesChainedDepChildIDs(t *test
 		Grapher(g).
 		DependencyTracker(depTracker).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -839,7 +839,7 @@ func Test_buildDispatchBatch_ChainedPrivate_DeduplicatesAcrossDepTypes(t *testin
 		Grapher(g).
 		DependencyTracker(depTracker).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -880,7 +880,7 @@ func Test_buildDispatchBatch_ChainedPrivate_SkipsDepWithNoChild(t *testing.T) {
 		Grapher(g).
 		DependencyTracker(depTracker).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -914,7 +914,7 @@ func Test_buildDispatchBatch_ChainedPrivate_SkipsDepNotInGrapher(t *testing.T) {
 		Grapher(g).
 		DependencyTracker(depTracker).
 		PreparedPrivateTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},

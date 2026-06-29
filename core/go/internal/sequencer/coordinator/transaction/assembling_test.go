@@ -17,7 +17,6 @@ package transaction
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -54,11 +53,7 @@ func matchSendAssembleRequestMsg(txn *coordinatorTransaction, blockHeight int64,
 		if idempotencyKey != nil && msg.AssembleRequestId != idempotencyKey.String() {
 			return false
 		}
-		var pa components.TransactionPreAssembly
-		if err := json.Unmarshal(msg.PreAssembly, &pa); err != nil {
-			return false
-		}
-		return reflect.DeepEqual(&pa, txn.pt.PreAssembly)
+		return reflect.DeepEqual(msg.PreAssembly, txn.pt.PreAssembly)
 	})
 }
 
@@ -286,33 +281,14 @@ func Test_sendAssembleRequest_ExportStatesAndLocksError(t *testing.T) {
 	require.ErrorContains(t, err, "export states and locks failed")
 }
 
-func Test_sendAssembleRequest_PreAssemblyMarshalError(t *testing.T) {
+func Test_sendAssembleRequest_StateLocksJSONMarshalError(t *testing.T) {
 	ctx := t.Context()
 	txn, _ := NewTransactionBuilderForTesting(t, State_Assembling).Build()
 
 	originalFn := jsonMarshalFn
 	defer func() { jsonMarshalFn = originalFn }()
 	jsonMarshalFn = func(_ any) ([]byte, error) {
-		return nil, errors.New("pre-assembly marshal error")
-	}
-
-	err := txn.sendAssembleRequest(ctx)
-	require.ErrorContains(t, err, "pre-assembly marshal error")
-}
-
-func Test_sendAssembleRequest_StateLocksJSONMarshalError(t *testing.T) {
-	ctx := t.Context()
-	txn, _ := NewTransactionBuilderForTesting(t, State_Assembling).Build()
-
-	callCount := 0
-	originalFn := jsonMarshalFn
-	defer func() { jsonMarshalFn = originalFn }()
-	jsonMarshalFn = func(v any) ([]byte, error) {
-		callCount++
-		if callCount == 2 {
-			return nil, errors.New("state locks marshal error")
-		}
-		return json.Marshal(v)
+		return nil, errors.New("state locks marshal error")
 	}
 
 	err := txn.sendAssembleRequest(ctx)
@@ -348,7 +324,7 @@ func Test_nudgeAssembleRequest_WithPendingRequest(t *testing.T) {
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Assembling).
 		UseMockTransportWriter().
 		WithCurrentBlockHeight(100).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		Build()
 
 	// Create a pending request first

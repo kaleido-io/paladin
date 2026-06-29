@@ -1937,3 +1937,65 @@ func TestIsBaseLedgerRevertRetryableError(t *testing.T) {
 	_, _, err := psc.IsBaseLedgerRevertRetryable(td.ctx, []byte("revert data"))
 	require.Regexp(t, "pop", err)
 }
+
+func TestPublicTxOptionsToProto_AllFields(t *testing.T) {
+	gas := pldtypes.HexUint64(12345)
+	value := pldtypes.Uint64ToUint256(1000)
+	maxFee := pldtypes.Uint64ToUint256(2000)
+	maxPrioFee := pldtypes.Uint64ToUint256(3000)
+
+	opts := pldapi.PublicTxOptions{
+		Gas:   &gas,
+		Value: value,
+		PublicTxGasPricing: pldapi.PublicTxGasPricing{
+			MaxFeePerGas:         maxFee,
+			MaxPriorityFeePerGas: maxPrioFee,
+		},
+	}
+	p := publicTxOptionsToProto(opts)
+
+	require.NotNil(t, p.Gas)
+	assert.Equal(t, gas.String(), *p.Gas)
+	require.NotNil(t, p.Value)
+	assert.Equal(t, value.String(), *p.Value)
+	require.NotNil(t, p.MaxFeePerGas)
+	assert.Equal(t, maxFee.String(), *p.MaxFeePerGas)
+	require.NotNil(t, p.MaxPriorityFeePerGas)
+	assert.Equal(t, maxPrioFee.String(), *p.MaxPriorityFeePerGas)
+}
+
+func TestPublicTxOptionsToProto_NoFields(t *testing.T) {
+	p := publicTxOptionsToProto(pldapi.PublicTxOptions{})
+	assert.Nil(t, p.Gas)
+	assert.Nil(t, p.Value)
+	assert.Nil(t, p.MaxFeePerGas)
+	assert.Nil(t, p.MaxPriorityFeePerGas)
+}
+
+func TestPublicTxOptionsFromProto_AllFields(t *testing.T) {
+	gas := "0x3039"
+	value := "0x3e8"
+	maxFee := "0x7d0"
+	maxPrioFee := "0xbb8"
+
+	p := &prototk.PublicTxOptions{
+		Gas:                  &gas,
+		Value:                &value,
+		MaxFeePerGas:         &maxFee,
+		MaxPriorityFeePerGas: &maxPrioFee,
+	}
+	opts := publicTxOptionsFromProto(p)
+
+	require.NotNil(t, opts.Gas)
+	require.NotNil(t, opts.Value)
+	require.NotNil(t, opts.MaxFeePerGas)
+	require.NotNil(t, opts.MaxPriorityFeePerGas)
+}
+
+func TestPublicTxOptionsFromProto_Nil(t *testing.T) {
+	opts := publicTxOptionsFromProto(nil)
+	assert.Nil(t, opts.Gas)
+	assert.Nil(t, opts.Value)
+	assert.Nil(t, opts.MaxFeePerGas)
+	assert.Nil(t, opts.MaxPriorityFeePerGas)
+}

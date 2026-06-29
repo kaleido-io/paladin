@@ -351,7 +351,7 @@ func TestTransaction_GetCurrentState_ReturnsState(t *testing.T) {
 func TestTransaction_HasDispatchedPublicTransaction_TrueWhenSetAndIntentIsSend(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Initial).
 		PreparedPublicTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -363,7 +363,7 @@ func TestTransaction_HasDispatchedPublicTransaction_TrueWhenSetAndIntentIsSend(t
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSend(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Initial).
 		PreparedPublicTransaction(&pldapi.TransactionInput{}).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 			},
@@ -374,7 +374,7 @@ func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSe
 
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenNil(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Initial).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_SEND_TRANSACTION,
 			},
@@ -470,4 +470,63 @@ func TestTransaction_GetOriginatorNode_ReturnsOriginatorNode(t *testing.T) {
 	// GetOriginatorNode() getter (previously 0% coverage).
 	txn, _ := NewTransactionBuilderForTesting(t, State_Initial).Build()
 	assert.Equal(t, "node1", txn.GetOriginatorNode())
+}
+
+func TestNewTransaction_ChainedDependsOn_InvalidUUIDIsSkipped(t *testing.T) {
+	ctx := t.Context()
+	// A transaction whose PreAssembly already carries an invalid UUID in ChainedDependsOn.
+	// The newTransaction initializer must log a warning and skip that entry rather than
+	// panic or propagate an error.
+	pt := &components.PrivateTransaction{
+		ID: uuid.New(),
+		PreAssembly: &prototk.TransactionPreAssembly{
+			ChainedDependsOn: []string{"not-a-valid-uuid"},
+		},
+	}
+	allComponents := componentsmocks.NewAllComponents(t)
+	domainAPI := componentsmocks.NewDomainSmartContract(t)
+	domain := componentsmocks.NewDomain(t)
+	clock := sequencercommonmocks.NewClock(t)
+
+	domainAPI.EXPECT().Domain().Return(domain)
+	domain.EXPECT().FixedSigningIdentity().Return("domain-signer")
+	domainAPI.EXPECT().ContractConfig().Return(&prototk.ContractConfig{
+		SubmitterSelection: prototk.ContractConfig_SUBMITTER_COORDINATOR,
+	})
+	clock.EXPECT().Now().Return(time.Now())
+
+	reg := prometheus.NewRegistry()
+	txn := newTransaction(
+		ctx,
+		"sender@node1",
+		"originator-node",
+		"node1",
+		pt,
+		func() string { return "coordinator-signer" },
+		sequencertransportmocks.NewTransportWriter(t),
+		clock,
+		func(ctx context.Context, event common.Event) {},
+		nil,
+		func(ctx context.Context, id uuid.UUID) (State, bool) { return State(0), false },
+		func(context.Context, ...string) {},
+		sequencercommonmocks.NewEngineIntegration(t),
+		func(_ context.Context) {},
+		func() int64 { return 0 },
+		0,
+		&syncpointsmocks.SyncPoints{},
+		allComponents,
+		domainAPI,
+		nil,
+		time.Duration(1000),
+		time.Duration(5000),
+		5,
+		0,
+		3,
+		nil,
+		statevisibilitytracker.NewStore(),
+		nil,
+		metrics.InitMetrics(ctx, reg),
+	)
+	// The transaction is created successfully; the bad dependency was silently skipped.
+	require.NotNil(t, txn)
 }

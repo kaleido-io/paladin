@@ -51,7 +51,7 @@ func TestAction_ResendAssembleSuccessResponse_Success(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txn.GetID().String(),
 		},
@@ -90,7 +90,7 @@ func TestAction_ResendAssembleSuccessResponse_TransportError(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{}
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{}
 
 	expectedError := errors.New("transport error")
 	mocks.TransportWriter.EXPECT().SendAssembleResponse(
@@ -129,7 +129,7 @@ func TestAction_ResendAssembleRevertResponse_Success(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txn.GetID().String(),
 		},
@@ -169,7 +169,7 @@ func TestAction_ResendAssembleRevertResponse_TransportError(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{}
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{}
 
 	expectedError := errors.New("transport error")
 	mocks.TransportWriter.EXPECT().SendAssembleResponse(
@@ -207,7 +207,7 @@ func TestAction_ResendAssembleParkResponse_Success(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txn.GetID().String(),
 		},
@@ -246,7 +246,7 @@ func TestAction_ResendAssembleParkResponse_TransportError(t *testing.T) {
 	}
 
 	// Set up PreAssembly
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{}
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{}
 
 	expectedError := errors.New("transport error")
 	mocks.TransportWriter.EXPECT().SendAssembleResponse(

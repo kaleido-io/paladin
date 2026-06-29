@@ -59,7 +59,7 @@ func Test_handleAssembleAndSign_EngineIntegrationError(t *testing.T) {
 	req := *txn.latestAssembleRequest
 
 	// Set up PreAssembly
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 	txn.pt.PreAssembly = preAssembly
 
 	// Mock AssembleAndSign to return an error
@@ -95,7 +95,7 @@ func Test_handleAssembleAndSign_Success_OK(t *testing.T) {
 	req := *txn.latestAssembleRequest
 
 	// Set up PreAssembly
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	// Create expected post assembly with OK result
 	expectedPostAssembly := &components.TransactionPostAssembly{
@@ -136,7 +136,7 @@ func Test_handleAssembleAndSign_Success_REVERT(t *testing.T) {
 	req := *txn.latestAssembleRequest
 
 	// Set up PreAssembly
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	// Create expected post assembly with REVERT result
 	revertReason := "transaction reverted"
@@ -179,7 +179,7 @@ func Test_handleAssembleAndSign_PARK(t *testing.T) {
 	req := *txn.latestAssembleRequest
 
 	// Set up PreAssembly
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	// Create expected post assembly with PARK result
 	expectedPostAssembly := &components.TransactionPostAssembly{
@@ -220,7 +220,7 @@ func Test_handleAssembleAndSign_CalledWithCorrectParameters(t *testing.T) {
 	req := *txn.latestAssembleRequest
 
 	// Set up PreAssembly
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txn.pt.ID.String(),
 		},
@@ -289,7 +289,7 @@ func Test_action_AssembleRequestReceived_SetsDelegateAndLatestRequest(t *testing
 	txn, _ := builder.BuildWithMocks()
 	requestID := uuid.New()
 	coordinator := "coord@node1"
-	preAssembly := []byte("pre")
+	preAssembly := &prototk.TransactionPreAssembly{RequiredVerifiers: []*prototk.ResolveVerifierRequest{{Lookup: "test@node1"}}}
 	event := &AssembleRequestReceivedEvent{
 		BaseEvent:              BaseEvent{TransactionID: txn.pt.ID},
 		RequestID:              requestID,
@@ -461,25 +461,6 @@ func Test_action_SendAssembleSuccessResponse_JSONMarshalError(t *testing.T) {
 	assert.Equal(t, "marshal error", err.Error())
 }
 
-func Test_buildAssembleResponse_PreAssemblyMarshalError(t *testing.T) {
-	ctx := context.Background()
-	txn, _ := NewTransactionBuilderForTesting(t, State_Endorsement_Gathering).BuildWithMocks()
-
-	callCount := 0
-	originalFn := jsonMarshalFn
-	jsonMarshalFn = func(v any) ([]byte, error) {
-		callCount++
-		if callCount == 2 {
-			return nil, errors.New("pre-assembly marshal error")
-		}
-		return originalFn(v)
-	}
-	defer func() { jsonMarshalFn = originalFn }()
-
-	_, err := buildAssembleResponse(ctx, txn)
-	require.Error(t, err)
-	assert.Equal(t, "pre-assembly marshal error", err.Error())
-}
 
 func Test_handleAssembleAndSign_AbandonsSilently_WhenContextExpired(t *testing.T) {
 	// When the context is already expired (deadline elapsed), handleAssembleAndSign must not
@@ -490,7 +471,7 @@ func Test_handleAssembleAndSign_AbandonsSilently_WhenContextExpired(t *testing.T
 
 	require.NotNil(t, txn.latestAssembleRequest)
 	req := *txn.latestAssembleRequest
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	// Context that is already cancelled
 	ctx, cancel := context.WithCancel(context.Background())

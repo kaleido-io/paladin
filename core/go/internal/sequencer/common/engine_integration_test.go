@@ -227,7 +227,7 @@ func TestAssembleAndSign_DoesNotMutatePreAssembly_SuccessPath(t *testing.T) {
 	contractAddr := *pldtypes.RandAddress()
 	domainName := "test-domain"
 
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 			{
 				Lookup:       "alice@node1",
@@ -296,7 +296,7 @@ func TestAssembleAndSign_DoesNotMutatePreAssembly_ResolverError(t *testing.T) {
 	ei, m := newTestEngineIntegration(t)
 
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 			{
 				Lookup:       "bob@node2",
@@ -333,7 +333,7 @@ func TestEngineIntegration_AssembleAndSign_ImportSnapshotError(t *testing.T) {
 	ei, m := newTestEngineIntegration(t)
 
 	txID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	m.domainSmartContract.On("Domain").Return(m.domain)
 	m.domainSmartContract.On("Address").Return(*pldtypes.RandAddress())
@@ -352,7 +352,7 @@ func TestEngineIntegration_AssembleAndSign_ResolveVerifierError(t *testing.T) {
 	ei, m := newTestEngineIntegration(t)
 
 	txID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 			{Lookup: "alice@node1", Algorithm: "algo1", VerifierType: "type1"},
 		},
@@ -377,7 +377,7 @@ func TestEngineIntegration_AssembleAndSign_TxNotFound(t *testing.T) {
 	ei, m := newTestEngineIntegration(t)
 
 	txID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	m.domainSmartContract.On("Domain").Return(m.domain)
 	m.domainSmartContract.On("Address").Return(*pldtypes.RandAddress())
@@ -398,7 +398,7 @@ func TestEngineIntegration_AssembleAndSign_TxLookupError(t *testing.T) {
 	ei, m := newTestEngineIntegration(t)
 
 	txID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	m.domainSmartContract.On("Domain").Return(m.domain)
 	m.domainSmartContract.On("Address").Return(*pldtypes.RandAddress())
@@ -420,7 +420,7 @@ func TestEngineIntegration_AssembleAndSign_WrongDomain(t *testing.T) {
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	m.domainSmartContract.On("Domain").Return(m.domain)
 	m.domainSmartContract.On("Address").Return(contractAddr)
@@ -450,7 +450,7 @@ func TestEngineIntegration_AssembleAndSign_AssembleTransactionError(t *testing.T
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -487,7 +487,7 @@ func TestEngineIntegration_AssembleAndSign_NilPostAssembly(t *testing.T) {
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -522,7 +522,7 @@ func TestEngineIntegration_AssembleAndSign_UnsupportedAttestationType(t *testing
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -563,7 +563,7 @@ func TestEngineIntegration_AssembleAndSign_SignAttestationLocalParty(t *testing.
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -625,7 +625,7 @@ func TestEngineIntegration_AssembleAndSign_SignAttestationRemoteParty(t *testing
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -672,7 +672,7 @@ func TestEngineIntegration_AssembleAndSign_EndorseAttestationType(t *testing.T) 
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -715,7 +715,7 @@ func TestEngineIntegration_AssembleAndSign_ResolveKeyError(t *testing.T) {
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -765,7 +765,7 @@ func TestEngineIntegration_AssembleAndSign_InvalidSigningPartyLocator(t *testing
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -816,7 +816,7 @@ func TestEngineIntegration_AssembleAndSign_DebugLogging(t *testing.T) {
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
@@ -861,7 +861,7 @@ func TestEngineIntegration_AssembleAndSign_SignError(t *testing.T) {
 
 	txID := uuid.New()
 	contractAddr := *pldtypes.RandAddress()
-	preAssembly := &components.TransactionPreAssembly{}
+	preAssembly := &prototk.TransactionPreAssembly{}
 
 	mp, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)

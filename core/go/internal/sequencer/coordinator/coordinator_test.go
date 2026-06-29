@@ -79,7 +79,7 @@ func TestCoordinator_SingleTransactionLifecycle(t *testing.T) {
 		Address(builder.GetContractAddress()).
 		Originator(originator).
 		NumberOfRequiredEndorsers(1).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From:   originator,
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,

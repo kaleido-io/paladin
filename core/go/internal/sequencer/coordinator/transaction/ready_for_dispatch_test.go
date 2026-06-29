@@ -358,7 +358,7 @@ func Test_notifyDependentsOfReadiness_DependentHandleEventError(t *testing.T) {
 
 	txn1, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Grapher(mockGrapher).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		Build()
 
 	mockGrapher.EXPECT().GetDependents(mock.Anything, txn1.pt.ID).Return([]uuid.UUID{dependentTxn.pt.ID})

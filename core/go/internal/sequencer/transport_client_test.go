@@ -168,18 +168,17 @@ func TestHandleAssembleRequest_Success(t *testing.T) {
 	// Create test data
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 			{Lookup: "verifier1@node1"},
 		},
 	}
-	preAssemblyJSON, _ := json.Marshal(preAssembly)
 
 	assembleRequest := &engineProto.AssembleRequest{
 		TransactionId:          txID.String(),
 		AssembleRequestId:      requestID.String(),
 		ContractAddress:        contractAddr.String(),
-		PreAssembly:            preAssemblyJSON,
+		PreAssembly:            preAssembly,
 		StateLocks:             []byte("{}"),
 		CoordinatorBlockHeight: 100,
 	}
@@ -230,14 +229,12 @@ func TestHandleAssembleRequest_InvalidContractAddress(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
-	preAssemblyJSON, _ := json.Marshal(preAssembly)
 
 	assembleRequest := &engineProto.AssembleRequest{
 		TransactionId:          txID.String(),
 		AssembleRequestId:      requestID.String(),
 		ContractAddress:        "invalid-address",
-		PreAssembly:            preAssemblyJSON,
+		PreAssembly:            &prototk.TransactionPreAssembly{},
 		StateLocks:             []byte("{}"),
 		CoordinatorBlockHeight: 100,
 	}
@@ -262,14 +259,12 @@ func TestHandleAssembleRequest_SequencerNotLoaded(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
-	preAssemblyJSON, _ := json.Marshal(preAssembly)
 
 	assembleRequest := &engineProto.AssembleRequest{
 		TransactionId:          txID.String(),
 		AssembleRequestId:      requestID.String(),
 		ContractAddress:        contractAddr.String(),
-		PreAssembly:            preAssemblyJSON,
+		PreAssembly:            &prototk.TransactionPreAssembly{},
 		StateLocks:             []byte("{}"),
 		CoordinatorBlockHeight: 100,
 	}
@@ -294,18 +289,16 @@ func TestHandleAssembleResponse_Success(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
 	postAssembly := &components.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}
-	preAssemblyJSON, _ := json.Marshal(preAssembly)
 	postAssemblyJSON, _ := json.Marshal(postAssembly)
 
 	assembleResponse := &engineProto.AssembleResponse{
 		TransactionId:     txID.String(),
 		AssembleRequestId: requestID.String(),
 		ContractAddress:   contractAddr.String(),
-		PreAssembly:       preAssemblyJSON,
+		PreAssembly:       &prototk.TransactionPreAssembly{},
 		PostAssembly:      postAssemblyJSON,
 	}
 	payload, _ := proto.Marshal(assembleResponse)
@@ -339,18 +332,16 @@ func TestHandleAssembleResponse_Revert(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssembly := &components.TransactionPreAssembly{}
 	postAssembly := &components.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
 	}
-	preAssemblyJSON, _ := json.Marshal(preAssembly)
 	postAssemblyJSON, _ := json.Marshal(postAssembly)
 
 	assembleResponse := &engineProto.AssembleResponse{
 		TransactionId:     txID.String(),
 		AssembleRequestId: requestID.String(),
 		ContractAddress:   contractAddr.String(),
-		PreAssembly:       preAssemblyJSON,
+		PreAssembly:       &prototk.TransactionPreAssembly{},
 		PostAssembly:      postAssemblyJSON,
 	}
 	payload, _ := proto.Marshal(assembleResponse)
@@ -414,13 +405,13 @@ func TestHandleAssembleError_Success(t *testing.T) {
 }
 
 func newDelegationRequestMessage(fromNode string, contractAddr *pldtypes.EthAddress, blockHeight int64, txs ...*components.PrivateTransaction) *components.ReceivedMessage {
-	allTxBytes := make([][]byte, 0, len(txs))
+	delegations := make([]*prototk.PrivateTransactionDelegation, 0, len(txs))
 	for _, tx := range txs {
-		b, _ := json.Marshal(tx)
-		allTxBytes = append(allTxBytes, b)
+		delegations = append(delegations, tx.ToDelegation())
 	}
 	delegationRequest := &engineProto.DelegationRequest{
-		PrivateTransactions:   allTxBytes,
+		ContractAddress:       contractAddr.HexString(),
+		Transactions:          delegations,
 		OriginatorBlockHeight: blockHeight,
 	}
 	payload, _ := proto.Marshal(delegationRequest)
@@ -435,7 +426,7 @@ func newDelegationRequestMessage(fromNode string, contractAddr *pldtypes.EthAddr
 func newTestPrivateTx(contractAddr *pldtypes.EthAddress) *components.PrivateTransaction {
 	return &components.PrivateTransaction{
 		ID: uuid.New(),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				ContractInfo: &prototk.ContractInfo{
 					ContractAddress: contractAddr.String(),
@@ -1686,25 +1677,6 @@ func TestHandleEndorsementError_SequencerNotLoaded(t *testing.T) {
 	sm.handleEndorsementError(ctx, message)
 }
 
-func TestHandleAssembleRequest_InvalidPreAssemblyJSON(t *testing.T) {
-	ctx := context.Background()
-	mocks := newTransportClientTestMocks(t)
-	sm := newSequencerManagerForTransportClientTesting(t, mocks)
-	contractAddr := pldtypes.RandAddress()
-
-	assembleRequest := &engineProto.AssembleRequest{
-		TransactionId:     uuid.New().String(),
-		AssembleRequestId: uuid.New().String(),
-		ContractAddress:   contractAddr.String(),
-		PreAssembly:       []byte("{invalid json"),
-	}
-	payload, err := proto.Marshal(assembleRequest)
-	require.NoError(t, err)
-
-	sm.handleAssembleRequest(ctx, &components.ReceivedMessage{
-		FromNode: "test-node", MessageType: transport.MessageType_AssembleRequest, Payload: payload,
-	})
-}
 
 func TestHandleAssembleResponse_Park(t *testing.T) {
 	ctx := context.Background()
@@ -1714,13 +1686,12 @@ func TestHandleAssembleResponse_Park(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssemblyJSON, _ := json.Marshal(&components.TransactionPreAssembly{})
 	postAssemblyJSON, _ := json.Marshal(&components.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_PARK,
 	})
 	assembleResponse := &engineProto.AssembleResponse{
 		TransactionId: txID.String(), AssembleRequestId: requestID.String(),
-		ContractAddress: contractAddr.String(), PreAssembly: preAssemblyJSON, PostAssembly: postAssemblyJSON,
+		ContractAddress: contractAddr.String(), PreAssembly: &prototk.TransactionPreAssembly{}, PostAssembly: postAssemblyJSON,
 	}
 	payload, _ := proto.Marshal(assembleResponse)
 
@@ -1739,13 +1710,12 @@ func TestHandleAssembleResponse_UnexpectedResult(t *testing.T) {
 
 	txID := uuid.New()
 	requestID := uuid.New()
-	preAssemblyJSON, _ := json.Marshal(&components.TransactionPreAssembly{})
 	postAssemblyJSON, _ := json.Marshal(&components.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_Result(999),
 	})
 	assembleResponse := &engineProto.AssembleResponse{
 		TransactionId: txID.String(), AssembleRequestId: requestID.String(),
-		ContractAddress: contractAddr.String(), PreAssembly: preAssemblyJSON, PostAssembly: postAssemblyJSON,
+		ContractAddress: contractAddr.String(), PreAssembly: &prototk.TransactionPreAssembly{}, PostAssembly: postAssemblyJSON,
 	}
 	payload, _ := proto.Marshal(assembleResponse)
 
@@ -2238,22 +2208,6 @@ func TestHandlePreDispatchRejection_InvalidRequestID(t *testing.T) {
 	})
 }
 
-func TestHandleAssembleResponse_PreAssemblyJSONError(t *testing.T) {
-	ctx := context.Background()
-	mocks := newTransportClientTestMocks(t)
-	sm := newSequencerManagerForTransportClientTesting(t, mocks)
-	contractAddr := pldtypes.RandAddress()
-	postAssemblyJSON, _ := json.Marshal(&components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK})
-	payload, _ := proto.Marshal(&engineProto.AssembleResponse{
-		ContractAddress: contractAddr.String(), TransactionId: uuid.New().String(), AssembleRequestId: uuid.New().String(),
-		PreAssembly: []byte("{bad"), PostAssembly: postAssemblyJSON,
-	})
-	seq := newSequencerForTransportClientTesting(contractAddr, mocks)
-	sm.sequencers[contractAddr.String()] = seq
-	sm.handleAssembleResponse(ctx, &components.ReceivedMessage{
-		MessageType: transport.MessageType_AssembleResponse, Payload: payload,
-	})
-}
 
 func TestHandleCoordinatorHeartbeatNotification_Success(t *testing.T) {
 	ctx := context.Background()
@@ -2291,10 +2245,9 @@ func TestHandleAssembleRequest_WithExpiry(t *testing.T) {
 	mocks := newTransportClientTestMocks(t)
 	sm := newSequencerManagerForTransportClientTesting(t, mocks)
 	contractAddr := pldtypes.RandAddress()
-	preAssemblyJSON, _ := json.Marshal(&components.TransactionPreAssembly{})
 	payload, _ := proto.Marshal(&engineProto.AssembleRequest{
 		TransactionId: uuid.New().String(), AssembleRequestId: uuid.New().String(),
-		ContractAddress: contractAddr.String(), PreAssembly: preAssemblyJSON, ExpiryTimeUnixMs: time.Now().Add(time.Hour).UnixMilli(),
+		ContractAddress: contractAddr.String(), PreAssembly: &prototk.TransactionPreAssembly{}, ExpiryTimeUnixMs: time.Now().Add(time.Hour).UnixMilli(),
 	})
 	seq := newSequencerForTransportClientTesting(contractAddr, mocks)
 	sm.sequencers[contractAddr.String()] = seq
@@ -2312,7 +2265,7 @@ func TestHandleAssembleResponse_InvalidContractAddress(t *testing.T) {
 	postAssemblyJSON, _ := json.Marshal(&components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK})
 	payload, _ := proto.Marshal(&engineProto.AssembleResponse{
 		ContractAddress: "invalid", TransactionId: uuid.New().String(), AssembleRequestId: uuid.New().String(),
-		PreAssembly: []byte("{}"), PostAssembly: postAssemblyJSON,
+		PostAssembly: postAssemblyJSON,
 	})
 	sm.handleAssembleResponse(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_AssembleResponse, Payload: payload})
 }
@@ -2324,7 +2277,7 @@ func TestHandleAssembleResponse_PostAssemblyJSONError(t *testing.T) {
 	contractAddr := pldtypes.RandAddress()
 	payload, _ := proto.Marshal(&engineProto.AssembleResponse{
 		ContractAddress: contractAddr.String(), TransactionId: uuid.New().String(), AssembleRequestId: uuid.New().String(),
-		PreAssembly: []byte("{}"), PostAssembly: []byte("{bad"),
+		PostAssembly: []byte("{bad"),
 	})
 	sm.handleAssembleResponse(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_AssembleResponse, Payload: payload})
 }
@@ -2337,7 +2290,7 @@ func TestHandleAssembleResponse_SequencerNotLoaded(t *testing.T) {
 	postAssemblyJSON, _ := json.Marshal(&components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK})
 	payload, _ := proto.Marshal(&engineProto.AssembleResponse{
 		ContractAddress: contractAddr.String(), TransactionId: uuid.New().String(), AssembleRequestId: uuid.New().String(),
-		PreAssembly: []byte("{}"), PostAssembly: postAssemblyJSON,
+		PostAssembly: postAssemblyJSON,
 	})
 	sm.handleAssembleResponse(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_AssembleResponse, Payload: payload})
 }
@@ -2427,26 +2380,11 @@ func TestHandleDispatchedEvent_SequencerNotLoaded(t *testing.T) {
 	sm.handleDispatchedEvent(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_Dispatched, Payload: payload})
 }
 
-func TestHandleDelegationRequest_InvalidPrivateTransactionJSON(t *testing.T) {
+func TestHandleDelegationRequest_InvalidContractAddress(t *testing.T) {
 	ctx := context.Background()
 	mocks := newTransportClientTestMocks(t)
 	sm := newSequencerManagerForTransportClientTesting(t, mocks)
-	payload, _ := proto.Marshal(&engineProto.DelegationRequest{PrivateTransactions: [][]byte{[]byte("{bad")}, OriginatorBlockHeight: 1})
-	sm.handleDelegationRequest(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_DelegationRequest, Payload: payload})
-}
-
-func TestHandleDelegationRequest_InvalidContractInPrivateTx(t *testing.T) {
-	ctx := context.Background()
-	mocks := newTransportClientTestMocks(t)
-	sm := newSequencerManagerForTransportClientTesting(t, mocks)
-	txBytes, _ := json.Marshal(&components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
-			TransactionSpecification: &prototk.TransactionSpecification{
-				ContractInfo: &prototk.ContractInfo{ContractAddress: "invalid"},
-			},
-		},
-	})
-	payload, _ := proto.Marshal(&engineProto.DelegationRequest{PrivateTransactions: [][]byte{txBytes}, OriginatorBlockHeight: 1})
+	payload, _ := proto.Marshal(&engineProto.DelegationRequest{ContractAddress: "invalid", OriginatorBlockHeight: 1})
 	sm.handleDelegationRequest(ctx, &components.ReceivedMessage{MessageType: transport.MessageType_DelegationRequest, Payload: payload})
 }
 
@@ -2461,6 +2399,63 @@ func TestHandleDelegationRequest_LoadSequencerError(t *testing.T) {
 	mocks.components.EXPECT().DomainManager().Return(mocks.domainManager).Once()
 	mocks.domainManager.EXPECT().GetSmartContractByAddress(ctx, mock.Anything, *contractAddr).Return(nil, errors.New("not found")).Once()
 	sm.handleDelegationRequest(ctx, message)
+}
+
+func TestHandleDelegationRequest_InvalidDelegationID(t *testing.T) {
+	ctx := context.Background()
+	mocks := newTransportClientTestMocks(t)
+	sm := newSequencerManagerForTransportClientTesting(t, mocks)
+	contractAddr := pldtypes.RandAddress()
+	payload, _ := proto.Marshal(&engineProto.DelegationRequest{
+		ContractAddress:       contractAddr.HexString(),
+		OriginatorBlockHeight: 100,
+		Transactions: []*prototk.PrivateTransactionDelegation{
+			{Id: "not-a-uuid"},
+		},
+	})
+	sm.handleDelegationRequest(ctx, &components.ReceivedMessage{
+		MessageType: transport.MessageType_DelegationRequest,
+		Payload:     payload,
+	})
+}
+
+func TestHandleDelegationRequest_NilPreAssembly(t *testing.T) {
+	ctx := context.Background()
+	mocks := newTransportClientTestMocks(t)
+	sm := newSequencerManagerForTransportClientTesting(t, mocks)
+	contractAddr := pldtypes.RandAddress()
+	payload, _ := proto.Marshal(&engineProto.DelegationRequest{
+		ContractAddress:       contractAddr.HexString(),
+		OriginatorBlockHeight: 100,
+		Transactions: []*prototk.PrivateTransactionDelegation{
+			{Id: uuid.New().String()},
+		},
+	})
+	sm.handleDelegationRequest(ctx, &components.ReceivedMessage{
+		MessageType: transport.MessageType_DelegationRequest,
+		Payload:     payload,
+	})
+}
+
+func TestHandleDelegationRequest_NilTransactionSpecification(t *testing.T) {
+	ctx := context.Background()
+	mocks := newTransportClientTestMocks(t)
+	sm := newSequencerManagerForTransportClientTesting(t, mocks)
+	contractAddr := pldtypes.RandAddress()
+	payload, _ := proto.Marshal(&engineProto.DelegationRequest{
+		ContractAddress:       contractAddr.HexString(),
+		OriginatorBlockHeight: 100,
+		Transactions: []*prototk.PrivateTransactionDelegation{
+			{
+				Id:          uuid.New().String(),
+				PreAssembly: &prototk.TransactionPreAssembly{}, // no TransactionSpecification
+			},
+		},
+	})
+	sm.handleDelegationRequest(ctx, &components.ReceivedMessage{
+		MessageType: transport.MessageType_DelegationRequest,
+		Payload:     payload,
+	})
 }
 
 func TestHandleDelegationResponse_MaxInFlightWithContractAddress(t *testing.T) {

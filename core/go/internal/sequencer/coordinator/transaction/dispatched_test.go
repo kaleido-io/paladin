@@ -169,7 +169,7 @@ func Test_action_ReleaseAssemblyPayload_NilsHeavyFields(t *testing.T) {
 	}
 	txn.pt.PreparedPublicTransaction = &pldapi.TransactionInput{}
 	txn.pt.PreparedMetadata = pldtypes.RawJSON(`{"meta":true}`)
-	txn.pt.PreAssembly = &components.TransactionPreAssembly{
+	txn.pt.PreAssembly = &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{},
 	}
 

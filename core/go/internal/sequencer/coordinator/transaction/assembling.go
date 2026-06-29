@@ -125,11 +125,6 @@ func (t *coordinatorTransaction) sendAssembleRequest(ctx context.Context) error 
 			log.L(ctx).Errorf("failed to export grapher state locks: %s", err)
 			return err
 		}
-		preAssemblyBytes, err := jsonMarshalFn(t.pt.PreAssembly)
-		if err != nil {
-			log.L(ctx).Errorf("failed to marshal pre-assembly: %s", err)
-			return err
-		}
 		stateLocksBytes, err := jsonMarshalFn(grapherStatesAndLocks)
 		if err != nil {
 			log.L(ctx).Errorf("failed to marshal state locks: %s", err)
@@ -140,7 +135,7 @@ func (t *coordinatorTransaction) sendAssembleRequest(ctx context.Context) error 
 			TransactionId:          t.pt.ID.String(),
 			AssembleRequestId:      idempotencyKey.String(),
 			ContractAddress:        t.pt.Address.HexString(),
-			PreAssembly:            preAssemblyBytes,
+			PreAssembly:            t.pt.PreAssembly,
 			StateLocks:             stateLocksBytes,
 			CoordinatorBlockHeight: t.getBlockHeight(),
 			ExpiryTimeUnixMs:       t.clock.Now().Add(t.stateTimeout).UnixMilli(),

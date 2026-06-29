@@ -23,6 +23,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReleasePostAssemblyData(t *testing.T) {
@@ -31,7 +32,7 @@ func TestReleasePostAssemblyData(t *testing.T) {
 		Domain:  "test-domain",
 		Address: *pldtypes.RandAddress(),
 		Signer:  "signer@node1",
-		PreAssembly: &TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{},
 		},
 		PostAssembly: &TransactionPostAssembly{
@@ -68,4 +69,53 @@ func TestReleasePostAssemblyData_NilFields(t *testing.T) {
 
 	assert.Nil(t, pt.PostAssembly)
 	assert.Nil(t, pt.PreparedPublicTransaction)
+}
+
+func TestToDelegation(t *testing.T) {
+	id := uuid.New()
+	preAssembly := &prototk.TransactionPreAssembly{
+		TransactionSpecification: &prototk.TransactionSpecification{From: "signer@node1"},
+	}
+	pt := &PrivateTransaction{
+		ID:          id,
+		Domain:      "test-domain",
+		Intent:      prototk.TransactionSpecification_SEND_TRANSACTION,
+		PreAssembly: preAssembly,
+	}
+
+	del := pt.ToDelegation()
+
+	assert.Equal(t, id.String(), del.Id)
+	assert.Equal(t, "test-domain", del.Domain)
+	assert.Equal(t, prototk.TransactionSpecification_SEND_TRANSACTION, del.Intent)
+	assert.Same(t, preAssembly, del.PreAssembly)
+}
+
+func TestNewPrivateTransactionFromDelegation_Success(t *testing.T) {
+	id := uuid.New()
+	address := *pldtypes.RandAddress()
+	preAssembly := &prototk.TransactionPreAssembly{
+		TransactionSpecification: &prototk.TransactionSpecification{},
+	}
+	del := &prototk.PrivateTransactionDelegation{
+		Id:          id.String(),
+		Domain:      "test-domain",
+		Intent:      prototk.TransactionSpecification_SEND_TRANSACTION,
+		PreAssembly: preAssembly,
+	}
+
+	pt := NewPrivateTransactionFromDelegation(del, address)
+
+	require.NotNil(t, pt)
+	assert.Equal(t, id, pt.ID)
+	assert.Equal(t, "test-domain", pt.Domain)
+	assert.Equal(t, address, pt.Address)
+	assert.Equal(t, prototk.TransactionSpecification_SEND_TRANSACTION, pt.Intent)
+	assert.Same(t, preAssembly, pt.PreAssembly)
+}
+
+func TestNewPrivateTransactionFromDelegation_InvalidID(t *testing.T) {
+	del := &prototk.PrivateTransactionDelegation{Id: "not-a-uuid"}
+	pt := NewPrivateTransactionFromDelegation(del, *pldtypes.RandAddress())
+	assert.Nil(t, pt)
 }

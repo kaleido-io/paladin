@@ -261,7 +261,7 @@ func (m *TransactionDependencyFakes) MockForAssembleAndSignRequestOK() *mock.Cal
 		"AssembleAndSign",
 		mock.Anything, //ctx context.Contex
 		m.transactionBuilder.txn.pt.ID,
-		mock.Anything, //preAssembly *components.TransactionPreAssembly
+		mock.Anything, //preAssembly *prototk.TransactionPreAssembly
 		mock.Anything, //stateLocksJSON []byte
 		mock.Anything, //blockHeight int64
 	).Return(&components.TransactionPostAssembly{
@@ -275,7 +275,7 @@ func (m *TransactionDependencyFakes) MockForAssembleAndSignRequestRevert() *mock
 		"AssembleAndSign",
 		mock.Anything, //ctx context.Contex
 		m.transactionBuilder.txn.pt.ID,
-		mock.Anything, //preAssembly *components.TransactionPreAssembly
+		mock.Anything, //preAssembly *prototk.TransactionPreAssembly
 		mock.Anything, //stateLocksJSON []byte
 		mock.Anything, //blockHeight int64
 	).Return(&components.TransactionPostAssembly{
@@ -290,7 +290,7 @@ func (m *TransactionDependencyFakes) MockForAssembleAndSignRequestPark() *mock.C
 		"AssembleAndSign",
 		mock.Anything, //ctx context.Contex
 		m.transactionBuilder.txn.pt.ID,
-		mock.Anything, //preAssembly *components.TransactionPreAssembly
+		mock.Anything, //preAssembly *prototk.TransactionPreAssembly
 		mock.Anything, //stateLocksJSON []byte
 		mock.Anything, //blockHeight int64
 	).Return(&components.TransactionPostAssembly{

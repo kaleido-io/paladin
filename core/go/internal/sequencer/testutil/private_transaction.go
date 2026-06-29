@@ -55,7 +55,7 @@ type PrivateTransactionBuilderForTesting struct {
 	endorsers                  []*identityForTesting
 	revertReason               *string
 	chainedDependencies        []uuid.UUID
-	preAssemblyOverride        *components.TransactionPreAssembly
+	preAssemblyOverride        *prototk.TransactionPreAssembly
 	postAssemblyOverride       *components.TransactionPostAssembly
 	preparedPrivateTransaction *pldapi.TransactionInput
 	preparedPublicTransaction  *pldapi.TransactionInput
@@ -218,7 +218,7 @@ func (b *PrivateTransactionBuilderForTesting) ID(id uuid.UUID) *PrivateTransacti
 }
 
 // PreAssembly sets an optional override; when set, Build() uses this instead of BuildPreAssembly().
-func (b *PrivateTransactionBuilderForTesting) PreAssembly(pa *components.TransactionPreAssembly) *PrivateTransactionBuilderForTesting {
+func (b *PrivateTransactionBuilderForTesting) PreAssembly(pa *prototk.TransactionPreAssembly) *PrivateTransactionBuilderForTesting {
 	b.preAssemblyOverride = pa
 	return b
 }
@@ -299,7 +299,11 @@ func (b *PrivateTransactionBuilderForTesting) Build() *components.PrivateTransac
 		postAssembly = b.postAssemblyOverride
 	}
 	if len(b.chainedDependencies) > 0 {
-		preAssembly.ChainedDependsOn = b.chainedDependencies
+		chainedDependsOn := make([]string, len(b.chainedDependencies))
+		for i, id := range b.chainedDependencies {
+			chainedDependsOn[i] = id.String()
+		}
+		preAssembly.ChainedDependsOn = chainedDependsOn
 	}
 	pt := &components.PrivateTransaction{
 		ID:           b.id,
@@ -337,8 +341,8 @@ func (b *PrivateTransactionBuilderForTesting) BuildSparse() *components.PrivateT
 }
 
 // Function BuildPreAssembly creates a new PreAssembly with all fields populated as per the builder's configuration using defaults unless explicitly set
-func (b *PrivateTransactionBuilderForTesting) BuildPreAssembly() *components.TransactionPreAssembly {
-	preAssembly := &components.TransactionPreAssembly{
+func (b *PrivateTransactionBuilderForTesting) BuildPreAssembly() *prototk.TransactionPreAssembly {
+	preAssembly := &prototk.TransactionPreAssembly{
 		RequiredVerifiers: make([]*prototk.ResolveVerifierRequest, b.numberOfEndorsers+1),
 	}
 

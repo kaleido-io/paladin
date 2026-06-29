@@ -404,7 +404,7 @@ func (b *TransactionBuilderForTesting) Address(address pldtypes.EthAddress) *Tra
 	return b
 }
 
-func (b *TransactionBuilderForTesting) PreAssembly(preAssembly *components.TransactionPreAssembly) *TransactionBuilderForTesting {
+func (b *TransactionBuilderForTesting) PreAssembly(preAssembly *prototk.TransactionPreAssembly) *TransactionBuilderForTesting {
 	b.privateTransactionBuilder.PreAssembly(preAssembly)
 	return b
 }
@@ -684,6 +684,6 @@ func (b *TransactionBuilderForTesting) BuildPostAssembly() *components.Transacti
 	return b.privateTransactionBuilder.BuildPostAssembly()
 }
 
-func (b *TransactionBuilderForTesting) BuildPreAssembly() *components.TransactionPreAssembly {
+func (b *TransactionBuilderForTesting) BuildPreAssembly() *prototk.TransactionPreAssembly {
 	return b.privateTransactionBuilder.BuildPreAssembly()
 }

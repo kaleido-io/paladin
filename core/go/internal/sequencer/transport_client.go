@@ -118,13 +118,7 @@ func (sMgr *sequencerManager) handleAssembleRequest(ctx context.Context, message
 		return
 	}
 
-	preAssembly := &components.TransactionPreAssembly{}
-	err = json.Unmarshal(assembleRequest.PreAssembly, preAssembly)
-	if err != nil {
-		sMgr.logPaladinMessageJsonUnmarshalError(ctx, "TransactionPreAssembly", message, err)
-		return
-	}
-	log.L(ctx).Infof("handling assemble request with %d required verifiers", len(preAssembly.RequiredVerifiers))
+	log.L(ctx).Infof("handling assemble request with %d required verifiers", len(assembleRequest.PreAssembly.GetRequiredVerifiers()))
 
 	contractAddress := sMgr.parseContractAddressString(ctx, assembleRequest.ContractAddress, message)
 	if contractAddress == nil {
@@ -173,13 +167,6 @@ func (sMgr *sequencerManager) handleAssembleResponse(ctx context.Context, messag
 	err = json.Unmarshal(assembleResponse.PostAssembly, postAssembly)
 	if err != nil {
 		sMgr.logPaladinMessageJsonUnmarshalError(ctx, "TransactionPostAssembly", message, err)
-		return
-	}
-
-	preAssembly := &components.TransactionPreAssembly{}
-	err = json.Unmarshal(assembleResponse.PreAssembly, preAssembly)
-	if err != nil {
-		sMgr.logPaladinMessageJsonUnmarshalError(ctx, "TransactionPreAssembly", message, err)
 		return
 	}
 
@@ -428,18 +415,24 @@ func (sMgr *sequencerManager) handleDelegationRequest(ctx context.Context, messa
 	transactionDelegatedEvent.DelegationID = delegationRequest.DelegationId
 	transactionDelegatedEvent.EventTime = time.Now()
 
-	var contractAddress *pldtypes.EthAddress
-	for _, txBytes := range delegationRequest.PrivateTransactions {
-		privateTransaction := &components.PrivateTransaction{}
-		if err = json.Unmarshal(txBytes, privateTransaction); err != nil {
-			sMgr.logPaladinMessageJsonUnmarshalError(ctx, "PrivateTransaction", message, err)
+	contractAddress := sMgr.parseContractAddressString(ctx, delegationRequest.ContractAddress, message)
+	if contractAddress == nil {
+		return
+	}
+
+	for _, del := range delegationRequest.Transactions {
+		if _, err := uuid.Parse(del.GetId()); err != nil {
+			sMgr.logPaladinMessageFieldMissingError(ctx, message, "delegation.id")
 			return
 		}
-		if contractAddress == nil {
-			contractAddress = sMgr.parseContractAddressString(ctx, privateTransaction.PreAssembly.TransactionSpecification.ContractInfo.ContractAddress, message)
-			if contractAddress == nil {
-				return
-			}
+		privateTransaction := components.NewPrivateTransactionFromDelegation(del, *contractAddress)
+		if privateTransaction.PreAssembly == nil {
+			sMgr.logPaladinMessageFieldMissingError(ctx, message, "delegation.pre_assembly")
+			return
+		}
+		if privateTransaction.PreAssembly.TransactionSpecification == nil {
+			sMgr.logPaladinMessageFieldMissingError(ctx, message, "delegation.pre_assembly.transaction_specification")
+			return
 		}
 		if transactionDelegatedEvent.Originator == "" {
 			transactionDelegatedEvent.Originator = privateTransaction.PreAssembly.TransactionSpecification.From
@@ -447,7 +440,7 @@ func (sMgr *sequencerManager) handleDelegationRequest(ctx context.Context, messa
 		transactionDelegatedEvent.Transactions = append(transactionDelegatedEvent.Transactions, privateTransaction)
 	}
 
-	if contractAddress == nil {
+	if len(transactionDelegatedEvent.Transactions) == 0 {
 		log.L(ctx).Warnf("delegation request from %s contained no transactions", message.FromNode)
 		return
 	}

@@ -240,7 +240,12 @@ func newTransaction(
 	// Set up chained dependencies carried from the parent coordinator's grapher.
 	// Only retain dependencies that are still known in the grapher; unknown = assumed finalized.
 	if pt.PreAssembly != nil && len(pt.PreAssembly.ChainedDependsOn) > 0 {
-		for _, depID := range pt.PreAssembly.ChainedDependsOn {
+		for _, depIDStr := range pt.PreAssembly.ChainedDependsOn {
+			depID, err := uuid.Parse(depIDStr)
+			if err != nil {
+				log.L(txCtx).Warnf("Skipping invalid chained dependency ID %q for TX %s: %v", depIDStr, pt.ID, err)
+				continue
+			}
 			state, ok := txn.getCoordinatorTransactionState(txCtx, depID)
 			if !ok {
 				// It is possible for a chained transaction to be created referencing dependencies that the original

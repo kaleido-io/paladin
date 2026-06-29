@@ -250,19 +250,16 @@ func testTransactionSubmittedMsg(txID uuid.UUID, contractAddress *pldtypes.EthAd
 	}
 }
 
-func testDelegationRequestMsg(coordinatorNode string, transactions []*components.PrivateTransaction, blockHeight uint64) (*engineProto.DelegationRequest, error) {
-	allTxBytes := make([][]byte, 0, len(transactions))
-	for _, transaction := range transactions {
-		transactionBytes, err := json.Marshal(transaction)
-		if err != nil {
-			return nil, err
-		}
-		allTxBytes = append(allTxBytes, transactionBytes)
+func testDelegationRequestMsg(coordinatorNode string, contractAddress *pldtypes.EthAddress, transactions []*components.PrivateTransaction, blockHeight uint64) (*engineProto.DelegationRequest, error) {
+	delegations := make([]*prototk.PrivateTransactionDelegation, 0, len(transactions))
+	for _, tx := range transactions {
+		delegations = append(delegations, tx.ToDelegation())
 	}
 	return &engineProto.DelegationRequest{
 		DelegateNodeId:        coordinatorNode,
 		OriginatorBlockHeight: int64(blockHeight),
-		PrivateTransactions:   allTxBytes,
+		ContractAddress:       contractAddress.HexString(),
+		Transactions:          delegations,
 	}, nil
 }
 
@@ -349,11 +346,7 @@ func testEndorsementErrorMsg(transactionId, idempotencyKey, contractAddress, err
 	}
 }
 
-func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldtypes.EthAddress, preAssembly *components.TransactionPreAssembly, stateLocks grapher.ExportableStates, blockHeight int64, expiry time.Time, blockHeightTolerance int64) (*engineProto.AssembleRequest, error) {
-	preAssemblyBytes, err := json.Marshal(preAssembly)
-	if err != nil {
-		return nil, err
-	}
+func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldtypes.EthAddress, preAssembly *prototk.TransactionPreAssembly, stateLocks grapher.ExportableStates, blockHeight int64, expiry time.Time, blockHeightTolerance int64) (*engineProto.AssembleRequest, error) {
 	stateLocksJSON, err := json.Marshal(stateLocks)
 	if err != nil {
 		return nil, err
@@ -362,7 +355,7 @@ func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldt
 		TransactionId:          txID.String(),
 		AssembleRequestId:      idempotencyId.String(),
 		ContractAddress:        contractAddress.HexString(),
-		PreAssembly:            preAssemblyBytes,
+		PreAssembly:            preAssembly,
 		StateLocks:             stateLocksJSON,
 		CoordinatorBlockHeight: blockHeight,
 		ExpiryTimeUnixMs:       expiry.UnixMilli(),
@@ -370,12 +363,8 @@ func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldt
 	}, nil
 }
 
-func testAssembleResponseMsg(txID, assembleRequestId uuid.UUID, contractAddress *pldtypes.EthAddress, postAssembly *components.TransactionPostAssembly, preAssembly *components.TransactionPreAssembly) (*engineProto.AssembleResponse, error) {
+func testAssembleResponseMsg(txID, assembleRequestId uuid.UUID, contractAddress *pldtypes.EthAddress, postAssembly *components.TransactionPostAssembly, preAssembly *prototk.TransactionPreAssembly) (*engineProto.AssembleResponse, error) {
 	postAssemblyBytes, err := json.Marshal(postAssembly)
-	if err != nil {
-		return nil, err
-	}
-	preAssemblyBytes, err := json.Marshal(preAssembly)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +373,7 @@ func testAssembleResponseMsg(txID, assembleRequestId uuid.UUID, contractAddress 
 		AssembleRequestId: assembleRequestId.String(),
 		ContractAddress:   contractAddress.HexString(),
 		PostAssembly:      postAssemblyBytes,
-		PreAssembly:       preAssemblyBytes,
+		PreAssembly:       preAssembly,
 	}, nil
 }
 
@@ -752,21 +741,22 @@ func TestSendDelegationRequest_Success(t *testing.T) {
 		contractAddress:   contractAddress,
 	}
 
-	delegationMsg, err := testDelegationRequestMsg(coordinatorNode, transactions, blockHeight)
+	delegationMsg, err := testDelegationRequestMsg(coordinatorNode, contractAddress, transactions, blockHeight)
 	require.NoError(t, err)
 	err = tw.SendDelegationRequest(ctx, coordinatorNode, delegationMsg)
 	require.NoError(t, err)
 
 	assert.Equal(t, coordinatorNode, capturedRequest.DelegateNodeId)
 	assert.Equal(t, int64(blockHeight), capturedRequest.OriginatorBlockHeight)
-	require.Len(t, capturedRequest.PrivateTransactions, 2)
+	require.Len(t, capturedRequest.Transactions, 2)
 
-	var tx1 components.PrivateTransaction
-	require.NoError(t, json.Unmarshal(capturedRequest.PrivateTransactions[0], &tx1))
+	capturedAddr := pldtypes.MustEthAddress(capturedRequest.ContractAddress)
+	tx1 := components.NewPrivateTransactionFromDelegation(capturedRequest.Transactions[0], *capturedAddr)
+	require.NotNil(t, tx1)
 	assert.Equal(t, tx1ID, tx1.ID)
 
-	var tx2 components.PrivateTransaction
-	require.NoError(t, json.Unmarshal(capturedRequest.PrivateTransactions[1], &tx2))
+	tx2 := components.NewPrivateTransactionFromDelegation(capturedRequest.Transactions[1], *capturedAddr)
+	require.NotNil(t, tx2)
 	assert.Equal(t, tx2ID, tx2.ID)
 }
 
@@ -816,11 +806,11 @@ func TestSendDelegationRequest_EmptyTransactions(t *testing.T) {
 		contractAddress:   contractAddress,
 	}
 
-	delegationMsg, err := testDelegationRequestMsg(coordinatorNode, []*components.PrivateTransaction{}, blockHeight)
+	delegationMsg, err := testDelegationRequestMsg(coordinatorNode, contractAddress, []*components.PrivateTransaction{}, blockHeight)
 	require.NoError(t, err)
 	err = tw.SendDelegationRequest(ctx, coordinatorNode, delegationMsg)
 	require.NoError(t, err)
-	assert.Empty(t, capturedRequest.PrivateTransactions)
+	assert.Empty(t, capturedRequest.Transactions)
 }
 
 func TestSendDelegationRequest_ProtoMarshalError(t *testing.T) {
@@ -1658,7 +1648,7 @@ func TestSendAssembleRequest_Success(t *testing.T) {
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
 
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txID.String(),
 		},
@@ -1720,7 +1710,7 @@ func TestSendAssembleRequest_SerialisesExpiryTimeIntoProto(t *testing.T) {
 	idempotencyId := uuid.New()
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{TransactionId: txID.String()},
 	}
 	stateLocks := grapher.ExportableStates{LockedState: []*grapher.StateLock{}}
@@ -1761,7 +1751,7 @@ func TestSendAssembleRequest_SendError(t *testing.T) {
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
 
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txID.String(),
 		},
@@ -1821,7 +1811,7 @@ func TestSendAssembleResponse_Success(t *testing.T) {
 	recipient := "recipient-node"
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txID.String(),
 		},
@@ -1882,7 +1872,7 @@ func TestSendAssembleResponse_SendError(t *testing.T) {
 	recipient := "recipient-node"
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 
-	preAssembly := &components.TransactionPreAssembly{
+	preAssembly := &prototk.TransactionPreAssembly{
 		TransactionSpecification: &prototk.TransactionSpecification{
 			TransactionId: txID.String(),
 		},

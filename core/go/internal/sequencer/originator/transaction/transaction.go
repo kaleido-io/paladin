@@ -36,7 +36,7 @@ type assembleRequestFromCoordinator struct {
 	coordinatorsBlockHeight int64
 	stateLocksJSON          []byte
 	requestID               uuid.UUID
-	preAssembly             []byte
+	preAssembly             *prototk.TransactionPreAssembly
 	expiry                  time.Time
 }
 

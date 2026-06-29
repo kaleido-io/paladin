@@ -75,7 +75,7 @@ func TestAction_SendPreDispatchResponse_Success(t *testing.T) {
 		From:          "originator@node1",
 	}
 	if txn.pt.PreAssembly == nil {
-		txn.pt.PreAssembly = &components.TransactionPreAssembly{}
+		txn.pt.PreAssembly = &prototk.TransactionPreAssembly{}
 	}
 	txn.pt.PreAssembly.TransactionSpecification = transactionSpec
 
@@ -107,7 +107,7 @@ func TestAction_SendPreDispatchResponse_TransportError(t *testing.T) {
 		From:          "originator@node1",
 	}
 	if txn.pt.PreAssembly == nil {
-		txn.pt.PreAssembly = &components.TransactionPreAssembly{}
+		txn.pt.PreAssembly = &prototk.TransactionPreAssembly{}
 	}
 	txn.pt.PreAssembly.TransactionSpecification = transactionSpec
 

@@ -1319,7 +1319,7 @@ func TestCoordinatorTransaction_ConfirmingDispatch_ToPooled_OnStateTimeout(t *te
 func TestCoordinatorTransaction_ReadyForDispatch_ToDispatched_OnDispatched(t *testing.T) {
 	ctx := context.Background()
 	txn, mocks := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
-		PreAssembly(&components.TransactionPreAssembly{
+		PreAssembly(&prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				Intent: prototk.TransactionSpecification_PREPARE_TRANSACTION,
 				From:   "sender@node1",

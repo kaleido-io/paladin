@@ -22,6 +22,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -151,7 +152,7 @@ func TestAssembleRequestReceivedEvent_Fields(t *testing.T) {
 	coordinator := "coordinator@testNode"
 	blockHeight := int64(100)
 	stateLocksJSON := []byte(`{"locks": []}`)
-	preAssembly := []byte(`{"pre": "assembly"}`)
+	preAssembly := &prototk.TransactionPreAssembly{RequiredVerifiers: []*prototk.ResolveVerifierRequest{{Lookup: "test@node1"}}}
 
 	event := &AssembleRequestReceivedEvent{
 		BaseEvent: BaseEvent{

@@ -46,7 +46,7 @@ type EngineIntegration interface {
 	// assumes that the coordinator will not assemble any transactions while it is waiting for a signed post assembly for one transaction
 	// . e.g. it might make sense to split out the assembling and gatheringSignatures into separate states on the coordinator side so that it can
 	// single thread assembly and still tolerate latency in the signing phase.
-	AssembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *components.TransactionPreAssembly, stateLocksJSON []byte, blockHeight int64) (*components.TransactionPostAssembly, error)
+	AssembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *prototk.TransactionPreAssembly, stateLocksJSON []byte, blockHeight int64) (*components.TransactionPostAssembly, error)
 }
 
 func NewEngineIntegration(ctx context.Context, allComponents components.AllComponents, nodeName string, domainSmartContract components.DomainSmartContract, domainContext components.DomainContext) EngineIntegration {
@@ -109,7 +109,7 @@ func (e *engineIntegration) CheckPendingPrivateStateData(ctx context.Context, bl
 // assemble a transaction that we are not coordinating, using the provided state locks
 // all errors are assumed to be transient and the request should be retried
 // if the domain as deemed the request as invalid then it will communicate the `revert` directive via the AssembleTransactionResponse_REVERT result without any error
-func (e *engineIntegration) AssembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *components.TransactionPreAssembly, stateLocksJSON []byte, blockHeight int64) (*components.TransactionPostAssembly, error) {
+func (e *engineIntegration) AssembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *prototk.TransactionPreAssembly, stateLocksJSON []byte, blockHeight int64) (*components.TransactionPostAssembly, error) {
 
 	log.L(ctx).Debugf("Assembling transaction %s. Creating domain context with coordinator state locks", transactionID)
 
@@ -122,8 +122,8 @@ func (e *engineIntegration) AssembleAndSign(ctx context.Context, transactionID u
 		return nil, err
 	}
 
-	resolvedVerifiers := make([]*prototk.ResolvedVerifier, 0, len(preAssembly.RequiredVerifiers))
-	for _, v := range preAssembly.RequiredVerifiers {
+	resolvedVerifiers := make([]*prototk.ResolvedVerifier, 0, len(preAssembly.GetRequiredVerifiers()))
+	for _, v := range preAssembly.GetRequiredVerifiers() {
 		log.L(ctx).Debugf("resolving required verifier %s", v.Lookup)
 		verifier, err := e.components.IdentityResolver().ResolveVerifier(
 			ctx,
@@ -153,7 +153,7 @@ func (e *engineIntegration) resolveLocalTransaction(ctx context.Context, transac
 	return locallyResolvedTx, err
 }
 
-func (e *engineIntegration) assembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *components.TransactionPreAssembly, resolvedVerifiers []*prototk.ResolvedVerifier, domainContext components.DomainContext) (*components.TransactionPostAssembly, error) {
+func (e *engineIntegration) assembleAndSign(ctx context.Context, transactionID uuid.UUID, preAssembly *prototk.TransactionPreAssembly, resolvedVerifiers []*prototk.ResolvedVerifier, domainContext components.DomainContext) (*components.TransactionPostAssembly, error) {
 	localTx, err := e.resolveLocalTransaction(ctx, transactionID)
 	if err != nil || localTx.Transaction.Domain != e.domainSmartContract.Domain().Name() || localTx.Transaction.To == nil || *localTx.Transaction.To != e.domainSmartContract.Address() {
 		if err == nil {

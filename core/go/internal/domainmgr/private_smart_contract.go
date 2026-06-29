@@ -166,12 +166,11 @@ func (dc *domainContract) InitTransaction(ctx context.Context, tx *components.Pr
 	}
 
 	// Store the response back on the TX
-	preAssembly := &components.TransactionPreAssembly{
+	tx.PreAssembly = &prototk.TransactionPreAssembly{
 		TransactionSpecification: txSpec,
 		RequiredVerifiers:        res.RequiredVerifiers,
-		PublicTxOptions:          localTx.Transaction.PublicTxOptions,
+		PublicTxOptions:          publicTxOptionsToProto(localTx.Transaction.PublicTxOptions),
 	}
-	tx.PreAssembly = preAssembly
 	return nil
 }
 
@@ -548,7 +547,7 @@ func (dc *domainContract) PrepareTransaction(dCtx components.DomainContext, read
 				From:            tx.Signer,
 				To:              contractAddress,
 				Data:            pldtypes.RawJSON(res.Transaction.ParamsJson),
-				PublicTxOptions: tx.PreAssembly.PublicTxOptions,
+				PublicTxOptions: publicTxOptionsFromProto(tx.PreAssembly.PublicTxOptions),
 			},
 			ABI: abi.ABI{&functionABI},
 		}
@@ -818,4 +817,53 @@ func (dc *domainContract) InvokeRPC(ctx context.Context, dCtx components.DomainC
 		return nil, err
 	}
 	return pldtypes.RawJSON(res.ResultJson), nil
+}
+
+func publicTxOptionsToProto(opts pldapi.PublicTxOptions) *prototk.PublicTxOptions {
+	p := &prototk.PublicTxOptions{}
+	if opts.Gas != nil {
+		s := opts.Gas.String()
+		p.Gas = &s
+	}
+	if opts.Value != nil {
+		s := opts.Value.String()
+		p.Value = &s
+	}
+	if opts.MaxFeePerGas != nil {
+		s := opts.MaxFeePerGas.String()
+		p.MaxFeePerGas = &s
+	}
+	if opts.MaxPriorityFeePerGas != nil {
+		s := opts.MaxPriorityFeePerGas.String()
+		p.MaxPriorityFeePerGas = &s
+	}
+	return p
+}
+
+func publicTxOptionsFromProto(p *prototk.PublicTxOptions) pldapi.PublicTxOptions {
+	if p == nil {
+		return pldapi.PublicTxOptions{}
+	}
+	opts := pldapi.PublicTxOptions{}
+	if p.Gas != nil {
+		if v, err := pldtypes.ParseHexUint64(context.Background(), *p.Gas); err == nil {
+			opts.Gas = &v
+		}
+	}
+	if p.Value != nil {
+		if v, err := pldtypes.ParseHexUint256(context.Background(), *p.Value); err == nil {
+			opts.Value = v
+		}
+	}
+	if p.MaxFeePerGas != nil {
+		if v, err := pldtypes.ParseHexUint256(context.Background(), *p.MaxFeePerGas); err == nil {
+			opts.MaxFeePerGas = v
+		}
+	}
+	if p.MaxPriorityFeePerGas != nil {
+		if v, err := pldtypes.ParseHexUint256(context.Background(), *p.MaxPriorityFeePerGas); err == nil {
+			opts.MaxPriorityFeePerGas = v
+		}
+	}
+	return opts
 }

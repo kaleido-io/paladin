@@ -38,7 +38,7 @@ func TestNewStateDistributionBuilder(t *testing.T) {
 func TestBuild_NilPostAssembly(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -55,7 +55,7 @@ func TestBuild_NilPostAssembly(t *testing.T) {
 func TestBuild_MismatchedOutputStates(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -77,7 +77,7 @@ func TestBuild_MismatchedOutputStates(t *testing.T) {
 func TestBuild_MismatchedInfoStates(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -99,7 +99,7 @@ func TestBuild_MismatchedInfoStates(t *testing.T) {
 func TestBuild_InvalidFromLocator(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice", // missing node
 			},
@@ -126,7 +126,7 @@ func TestBuild_LocalDistribution(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -172,7 +172,7 @@ func TestBuild_RemoteDistribution(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -215,7 +215,7 @@ func TestBuild_OriginatorAddedToDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -255,7 +255,7 @@ func TestBuild_OriginatorAlreadyInDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -295,7 +295,7 @@ func TestBuild_WithNullifierSpec(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -347,7 +347,7 @@ func TestBuild_NullifierSpecNotInDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -390,7 +390,7 @@ func TestBuild_InvalidRecipientLocator(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -428,7 +428,7 @@ func TestBuild_InfoStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -468,7 +468,7 @@ func TestBuild_MultipleOutputStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -505,7 +505,7 @@ func TestBuild_MultipleNullifierSpecsOnlyFirstMatches(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -545,7 +545,7 @@ func TestBuild_EmptyStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -576,7 +576,7 @@ func TestBuild_InfoStateProcessError(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},

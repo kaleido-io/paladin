@@ -35,16 +35,6 @@ type PreparedTransactionWithRefs struct {
 	StateRefs TransactionStateRefs `json:"stateRefs"` // the states associated with the original private transaction
 }
 
-type TransactionPreAssembly struct {
-	TransactionSpecification *prototk.TransactionSpecification `json:"transaction_specification"`
-	RequiredVerifiers        []*prototk.ResolveVerifierRequest `json:"required_verifiers"`
-	PublicTxOptions          pldapi.PublicTxOptions            `json:"public_tx_options"`
-	// Chained dependencies: ordering constraints from the parent coordinator's grapher.
-	// These are persisted on chained transaction creation so they are preserved by any receiving
-	// coordinator for in-memory ordering without blocking like application level dependencies.
-	ChainedDependsOn []uuid.UUID `json:"chainedDependsOn,omitempty"`
-}
-
 type FullState struct {
 	ID     pldtypes.HexBytes `json:"id"`
 	Schema pldtypes.Bytes32  `json:"schema"`
@@ -94,8 +84,8 @@ type PrivateTransaction struct {
 
 	// ASSEMBLY PHASE: Items that get added to the transaction as it goes on its journey through
 	// assembly, signing and endorsement (possibly going back through the journey many times)
-	PreAssembly  *TransactionPreAssembly  `json:"pre_assembly"`  // the bit of the assembly phase state that can be retained across re-assembly
-	PostAssembly *TransactionPostAssembly `json:"post_assembly"` // the bit of the assembly phase state that must be completely discarded on re-assembly
+	PreAssembly  *prototk.TransactionPreAssembly `json:"pre_assembly"`  // the bit of the assembly phase state that can be retained across re-assembly
+	PostAssembly *TransactionPostAssembly        `json:"post_assembly"` // the bit of the assembly phase state that must be completely discarded on re-assembly
 
 	// DISPATCH PHASE: Once the transaction has reached sufficient confidence of success, we move on to submission.
 	// Each private transaction may result in a public transaction which should be submitted to the
@@ -104,6 +94,36 @@ type PrivateTransaction struct {
 	PreparedPublicTransaction  *pldapi.TransactionInput `json:"-"`
 	PreparedPrivateTransaction *pldapi.TransactionInput `json:"-"`
 	PreparedMetadata           pldtypes.RawJSON         `json:"-"`
+}
+
+// ToDelegation returns the minimal wire descriptor for this transaction when delegating
+// to a coordinator. The contract address is carried at the DelegationRequest level (all
+// transactions in one request share the same contract), so it is not repeated here.
+// PostAssembly is deliberately excluded — the coordinator always triggers fresh assembly.
+func (pt *PrivateTransaction) ToDelegation() *prototk.PrivateTransactionDelegation {
+	return &prototk.PrivateTransactionDelegation{
+		Id:          pt.ID.String(),
+		Domain:      pt.Domain,
+		Intent:      pt.Intent,
+		PreAssembly: pt.PreAssembly,
+	}
+}
+
+// NewPrivateTransactionFromDelegation reconstructs a PrivateTransaction from a wire
+// delegation descriptor. The contract address is sourced from the enclosing DelegationRequest
+// (shared by all transactions) and passed in directly. Returns nil if the ID cannot be parsed.
+func NewPrivateTransactionFromDelegation(del *prototk.PrivateTransactionDelegation, address pldtypes.EthAddress) *PrivateTransaction {
+	id, err := uuid.Parse(del.GetId())
+	if err != nil {
+		return nil
+	}
+	return &PrivateTransaction{
+		ID:          id,
+		Domain:      del.GetDomain(),
+		Address:     address,
+		Intent:      del.GetIntent(),
+		PreAssembly: del.GetPreAssembly(),
+	}
 }
 
 // CleanUpPostAssemblyData releases the heavy post-assembly and prepared-dispatch

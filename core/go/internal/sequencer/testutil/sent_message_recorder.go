@@ -21,6 +21,7 @@ import (
 
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
+	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 )
@@ -283,9 +284,12 @@ func (r *SentMessageRecorder) SendTransactionConfirmed(ctx context.Context, node
 
 func (r *SentMessageRecorder) SendDelegationRequest(ctx context.Context, node string, msg *engineProto.DelegationRequest) error {
 	r.hasSentDelegationRequest = true
-	for _, txBytes := range msg.PrivateTransactions {
-		var tx components.PrivateTransaction
-		if err := json.Unmarshal(txBytes, &tx); err == nil {
+	addr, err := pldtypes.ParseEthAddress(msg.ContractAddress)
+	if err != nil || addr == nil {
+		return nil
+	}
+	for _, del := range msg.Transactions {
+		if tx := components.NewPrivateTransactionFromDelegation(del, *addr); tx != nil {
 			r.delegatedTransactionIDs = append(r.delegatedTransactionIDs, tx.ID)
 		}
 	}

@@ -406,28 +406,6 @@ func Test_sendDelegationRequest_TransportError_ReturnsError(t *testing.T) {
 	assert.Contains(t, err.Error(), "transport error")
 }
 
-func Test_sendDelegationRequest_JSONMarshalError_ReturnsError(t *testing.T) {
-	ctx := t.Context()
-	txn := testutil.NewPrivateTransactionBuilderForTesting().Build()
-	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
-	mockTxn.On("GetID").Return(txn.ID)
-	mockTxn.On("GetPrivateTransaction").Return(txn)
-	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(nil)
-	o, _ := NewOriginatorBuilderForTesting(t, State_Sending).
-		Transactions(mockTxn).
-		CurrentActiveCoordinator("coordinator@node1").
-		Build()
-
-	originalFn := jsonMarshalFn
-	defer func() { jsonMarshalFn = originalFn }()
-	jsonMarshalFn = func(_ any) ([]byte, error) {
-		return nil, fmt.Errorf("json marshal error")
-	}
-
-	err := sendDelegationRequest(ctx, o)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "json marshal error")
-}
 
 func Test_action_UpdateEndorserCandidates_DoesNotChangeCurrentActiveCoordinator(t *testing.T) {
 	ctx := context.Background()

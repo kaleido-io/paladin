@@ -243,7 +243,7 @@ func TestSequencerManager_LoadSequencer_NewSequencer(t *testing.T) {
 	// Create a mock private transaction
 	tx := &components.PrivateTransaction{
 		ID: uuid.New(),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 				{Lookup: "verifier1@node1"},
 			},
@@ -288,7 +288,7 @@ func TestSequencerManager_LoadSequencer_ExistingSequencer(t *testing.T) {
 	// Create a mock private transaction
 	tx := &components.PrivateTransaction{
 		ID: uuid.New(),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 				{Lookup: "verifier1@node1"},
 			},
@@ -327,7 +327,7 @@ func TestSequencerManager_LoadSequencer_ExistingSequencer_NoCoordinator_Success(
 	// Create a mock private transaction with required verifiers
 	tx := &components.PrivateTransaction{
 		ID: uuid.New(),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 				{Lookup: "verifier1@node1"},
 			},

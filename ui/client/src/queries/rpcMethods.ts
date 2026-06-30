@@ -34,6 +34,7 @@ export const RpcMethods = {
   pgroup_getGroupById: 'pgroup_getGroupById',
   pgroup_queryMessages: 'pgroup_queryMessages',
   pgroup_queryGroups: 'pgroup_queryGroups',
+  pgroup_createGroup: 'pgroup_createGroup',
   pstate_listSchemas: 'pstate_listSchemas',
   pstate_queryStates: 'pstate_queryStates',
   pstate_transferPrivateState: 'pstate_transferPrivateState',

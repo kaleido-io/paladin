@@ -164,8 +164,30 @@ export const getPrivacyGroupMessage = async (
       i18next.t('errorFetchingPrivacyGroupMessage')
     )
   );
-  if(response.length === 1) {
+  if (response.length === 1) {
     return response[0];
   }
   return null;
+};
+
+export const createPrivacyGroup = async (
+  name: string,
+  members: string[]
+): Promise<IPrivacyGroup> => {
+  const payload = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: RpcMethods.pgroup_createGroup,
+    params: [{
+      domain: 'pente',
+      name,
+      members
+    }],
+  };
+  return <Promise<IPrivacyGroup>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+      i18next.t('errorFetchingPrivacyGroup')
+    )
+  );
 };

@@ -32,6 +32,8 @@ import { PrivacyGroupLookupDialog } from "../dialogs/PrivacyGroupLookup";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { FiltersButton } from "../components/FiltersButton";
 import { Filters } from "../components/Filters";
+import AddIcon from '@mui/icons-material/Add';
+import { CreatePrivacyGroupDialog } from "../dialogs/CreatePrivacyGroup";
 
 export const PrivacyGroups: React.FC = () => {
   const { privacyGroups: privacyGroupsViewState } = useApplicationContext();
@@ -50,6 +52,7 @@ export const PrivacyGroups: React.FC = () => {
     setFiltersVisible,
   } = privacyGroupsViewState;
 
+  const [createPrivacyGroupDialogOpen, setCreatePrivacyGroupDialogOpen] = useState(false);
   const [lookupPrivacyGroupDialogOpen, setLookupPrivacyGroupDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [count, setCount] = useState(-1);
@@ -126,6 +129,15 @@ export const PrivacyGroups: React.FC = () => {
                 sx={{ borderRadius: '20px', minWidth: '120px' }}
                 size="small"
                 variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => setCreatePrivacyGroupDialogOpen(true)}
+              >
+                {t('create')}
+              </Button>
+              <Button
+                sx={{ borderRadius: '20px', minWidth: '120px' }}
+                size="small"
+                variant="outlined"
                 startIcon={<SearchIcon />}
                 onClick={() => setLookupPrivacyGroupDialogOpen(true)}
               >
@@ -137,7 +149,6 @@ export const PrivacyGroups: React.FC = () => {
               />
             </Box>
           </Box>
-
           <Collapse in={filtersVisible}>
             <Box sx={{ marginBottom: '20px' }}>
               <Filters
@@ -320,6 +331,10 @@ export const PrivacyGroups: React.FC = () => {
           </Box>
         </Box>
       </Fade>
+      <CreatePrivacyGroupDialog
+        dialogOpen={createPrivacyGroupDialogOpen}
+        setDialogOpen={setCreatePrivacyGroupDialogOpen}
+      />
       <PrivacyGroupLookupDialog
         dialogOpen={lookupPrivacyGroupDialogOpen}
         setDialogOpen={setLookupPrivacyGroupDialogOpen}

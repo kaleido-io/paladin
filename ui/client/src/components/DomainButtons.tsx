@@ -99,7 +99,7 @@ export const DomainButtons: React.FC<Props> = ({
         {buttons.map((button) => (
           <Button
             key={button.name}
-            sx={{ fontWeight: '400' }}
+            sx={{ fontWeight: '400', whiteSpace: 'nowrap' }}
             size="small"
             onClick={button.action}
           >

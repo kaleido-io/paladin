@@ -74,8 +74,8 @@ func (t *coordinatorTransaction) hash(ctx context.Context) (*pldtypes.Bytes32, e
 
 	hash := sha3.NewLegacyKeccak256()
 
-	if len(t.pt.PostAssembly.Signatures) != 0 {
-		for _, signature := range t.pt.PostAssembly.Signatures {
+	if len(t.pt.PostAssembly.AssembleResponse.GetSignatures()) != 0 {
+		for _, signature := range t.pt.PostAssembly.AssembleResponse.GetSignatures() {
 			hash.Write(signature.Payload)
 		}
 	}

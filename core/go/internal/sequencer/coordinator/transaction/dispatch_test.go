@@ -548,16 +548,18 @@ func Test_dispatch_PersistDispatchBatch_WithRemoteStateDistributions(t *testing.
 			},
 		}).
 		PostAssembly(&components.TransactionPostAssembly{
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"receiver@node2"},
+					},
+				},
+			},
 			OutputStates: []*components.FullState{
 				{
 					ID:     pldtypes.HexBytes(pldtypes.RandBytes(32)),
 					Schema: pldtypes.Bytes32(pldtypes.RandBytes(32)),
 					Data:   pldtypes.JSONString("{\"data\":\"hello\"}"),
-				},
-			},
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"receiver@node2"},
 				},
 			},
 		}).
@@ -723,8 +725,10 @@ func Test_mapPreparedTransaction_StateRefs(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Ready_For_Dispatch).
 		Address(*addr).
 		PostAssembly(&components.TransactionPostAssembly{
-			InputStates:  []*components.FullState{{ID: inputID}},
-			ReadStates:   []*components.FullState{{ID: readID}},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				InputStates: []*prototk.EndorsableState{{Id: inputID.String()}},
+				ReadStates:  []*prototk.EndorsableState{{Id: readID.String()}},
+			},
 			OutputStates: []*components.FullState{{ID: outputID}},
 			InfoStates:   []*components.FullState{{ID: infoID}},
 		}).

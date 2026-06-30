@@ -97,8 +97,8 @@ func Test_handleAssembleAndSign_Success_OK(t *testing.T) {
 	// Set up PreAssembly
 	preAssembly := &prototk.TransactionPreAssembly{}
 
-	// Create expected post assembly with OK result
-	expectedPostAssembly := &components.TransactionPostAssembly{
+	// Create expected assembly response with OK result
+	expectedResponse := &prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}
 
@@ -110,7 +110,7 @@ func Test_handleAssembleAndSign_Success_OK(t *testing.T) {
 		preAssembly,
 		mock.Anything,
 		mock.Anything,
-	).Return(expectedPostAssembly, nil)
+	).Return(expectedResponse, nil)
 
 	// Execute the method
 	txn.handleAssembleAndSign(ctx, txn.pt.ID, req, preAssembly)
@@ -122,7 +122,7 @@ func Test_handleAssembleAndSign_Success_OK(t *testing.T) {
 	require.True(t, ok, "Event should be AssembleAndSignSuccessEvent")
 	assert.Equal(t, txn.pt.ID, successEvent.TransactionID)
 	assert.Equal(t, req.requestID, successEvent.RequestID)
-	assert.Equal(t, expectedPostAssembly, successEvent.PostAssembly)
+	assert.Equal(t, expectedResponse, successEvent.PostAssembly.AssembleResponse)
 }
 
 func Test_handleAssembleAndSign_Success_REVERT(t *testing.T) {
@@ -138,9 +138,9 @@ func Test_handleAssembleAndSign_Success_REVERT(t *testing.T) {
 	// Set up PreAssembly
 	preAssembly := &prototk.TransactionPreAssembly{}
 
-	// Create expected post assembly with REVERT result
+	// Create expected assembly response with REVERT result
 	revertReason := "transaction reverted"
-	expectedPostAssembly := &components.TransactionPostAssembly{
+	expectedResponse := &prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
 		RevertReason:   &revertReason,
 	}
@@ -153,7 +153,7 @@ func Test_handleAssembleAndSign_Success_REVERT(t *testing.T) {
 		preAssembly,
 		mock.Anything,
 		mock.Anything,
-	).Return(expectedPostAssembly, nil)
+	).Return(expectedResponse, nil)
 
 	// Execute the method
 	txn.handleAssembleAndSign(ctx, txn.pt.ID, req, preAssembly)
@@ -165,7 +165,7 @@ func Test_handleAssembleAndSign_Success_REVERT(t *testing.T) {
 	require.True(t, ok, "Event should be AssembleRevertEvent")
 	assert.Equal(t, txn.pt.ID, revertEvent.TransactionID)
 	assert.Equal(t, req.requestID, revertEvent.RequestID)
-	assert.Equal(t, expectedPostAssembly, revertEvent.PostAssembly)
+	assert.Equal(t, expectedResponse, revertEvent.PostAssembly.AssembleResponse)
 }
 
 func Test_handleAssembleAndSign_PARK(t *testing.T) {
@@ -181,8 +181,8 @@ func Test_handleAssembleAndSign_PARK(t *testing.T) {
 	// Set up PreAssembly
 	preAssembly := &prototk.TransactionPreAssembly{}
 
-	// Create expected post assembly with PARK result
-	expectedPostAssembly := &components.TransactionPostAssembly{
+	// Create expected assembly response with PARK result
+	expectedResponse := &prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_PARK,
 	}
 
@@ -194,7 +194,7 @@ func Test_handleAssembleAndSign_PARK(t *testing.T) {
 		preAssembly,
 		mock.Anything,
 		mock.Anything,
-	).Return(expectedPostAssembly, nil)
+	).Return(expectedResponse, nil)
 
 	// Execute the method
 	txn.handleAssembleAndSign(ctx, txn.pt.ID, req, preAssembly)
@@ -206,7 +206,7 @@ func Test_handleAssembleAndSign_PARK(t *testing.T) {
 	require.True(t, ok, "Event should be AssembleParkEvent")
 	assert.Equal(t, txn.pt.ID, parkEvent.TransactionID)
 	assert.Equal(t, req.requestID, parkEvent.RequestID)
-	assert.Equal(t, expectedPostAssembly, parkEvent.PostAssembly)
+	assert.Equal(t, expectedResponse, parkEvent.PostAssembly.AssembleResponse)
 }
 
 func Test_handleAssembleAndSign_CalledWithCorrectParameters(t *testing.T) {
@@ -226,8 +226,8 @@ func Test_handleAssembleAndSign_CalledWithCorrectParameters(t *testing.T) {
 		},
 	}
 
-	// Create expected post assembly
-	expectedPostAssembly := &components.TransactionPostAssembly{
+	// Create expected assembly response
+	expectedResponse := &prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}
 
@@ -239,7 +239,7 @@ func Test_handleAssembleAndSign_CalledWithCorrectParameters(t *testing.T) {
 		preAssembly,
 		req.stateLocksJSON,
 		req.coordinatorsBlockHeight,
-	).Return(expectedPostAssembly, nil)
+	).Return(expectedResponse, nil)
 
 	// Execute the method
 	txn.handleAssembleAndSign(ctx, txn.pt.ID, req, preAssembly)
@@ -269,7 +269,7 @@ func Test_action_AssembleAndSign_SpawnsGoroutineThatQueuesEvent(t *testing.T) {
 		mock.Anything,
 		mock.Anything,
 		mock.Anything,
-	).Return(&components.TransactionPostAssembly{
+	).Return(&prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}, nil)
 
@@ -289,14 +289,12 @@ func Test_action_AssembleRequestReceived_SetsDelegateAndLatestRequest(t *testing
 	txn, _ := builder.BuildWithMocks()
 	requestID := uuid.New()
 	coordinator := "coord@node1"
-	preAssembly := &prototk.TransactionPreAssembly{RequiredVerifiers: []*prototk.ResolveVerifierRequest{{Lookup: "test@node1"}}}
 	event := &AssembleRequestReceivedEvent{
 		BaseEvent:              BaseEvent{TransactionID: txn.pt.ID},
 		RequestID:              requestID,
 		Coordinator:            coordinator,
 		CoordinatorBlockHeight: 100,
 		StateLocksJSON:         []byte("{}"),
-		PreAssembly:            preAssembly,
 	}
 	err := action_AssembleRequestReceived(ctx, txn, event)
 	require.NoError(t, err)
@@ -304,7 +302,6 @@ func Test_action_AssembleRequestReceived_SetsDelegateAndLatestRequest(t *testing
 	require.NotNil(t, txn.latestAssembleRequest)
 	assert.Equal(t, requestID, txn.latestAssembleRequest.requestID)
 	assert.Equal(t, int64(100), txn.latestAssembleRequest.coordinatorsBlockHeight)
-	assert.Equal(t, preAssembly, txn.latestAssembleRequest.preAssembly)
 }
 
 func Test_action_AssembleAndSignSuccess_SetsPostAssemblyAndRequestID(t *testing.T) {
@@ -312,7 +309,7 @@ func Test_action_AssembleAndSignSuccess_SetsPostAssemblyAndRequestID(t *testing.
 	builder := NewTransactionBuilderForTesting(t, State_Assembling)
 	txn, _ := builder.BuildWithMocks()
 	requestID := uuid.New()
-	postAssembly := &components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK}
+	postAssembly := &components.TransactionPostAssembly{AssembleResponse: &prototk.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK}}
 	event := &AssembleAndSignSuccessEvent{
 		BaseEvent:    BaseEvent{TransactionID: txn.pt.ID},
 		RequestID:    requestID,
@@ -329,7 +326,7 @@ func Test_action_AssembleRevert_SetsPostAssemblyAndRequestID(t *testing.T) {
 	builder := NewTransactionBuilderForTesting(t, State_Assembling)
 	txn, _ := builder.BuildWithMocks()
 	requestID := uuid.New()
-	postAssembly := &components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_REVERT}
+	postAssembly := &components.TransactionPostAssembly{AssembleResponse: &prototk.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_REVERT}}
 	event := &AssembleRevertEvent{
 		BaseEvent:    BaseEvent{TransactionID: txn.pt.ID},
 		RequestID:    requestID,
@@ -346,7 +343,7 @@ func Test_action_AssemblePark_SetsPostAssemblyAndRequestID(t *testing.T) {
 	builder := NewTransactionBuilderForTesting(t, State_Assembling)
 	txn, _ := builder.BuildWithMocks()
 	requestID := uuid.New()
-	postAssembly := &components.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_PARK}
+	postAssembly := &components.TransactionPostAssembly{AssembleResponse: &prototk.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_PARK}}
 	event := &AssembleParkEvent{
 		BaseEvent:    BaseEvent{TransactionID: txn.pt.ID},
 		RequestID:    requestID,
@@ -412,55 +409,6 @@ func Test_action_SendAssembleError_TransportError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err)
 }
-
-func Test_action_SendAssembleRevertResponse_JSONMarshalError(t *testing.T) {
-	ctx := context.Background()
-	txn, _ := NewTransactionBuilderForTesting(t, State_Assembling).BuildWithMocks()
-	txn.currentDelegate = "coordinator@node1"
-
-	originalFn := jsonMarshalFn
-	defer func() { jsonMarshalFn = originalFn }()
-	jsonMarshalFn = func(_ any) ([]byte, error) {
-		return nil, errors.New("marshal error")
-	}
-
-	err := action_SendAssembleRevertResponse(ctx, txn, nil)
-	require.Error(t, err)
-	assert.Equal(t, "marshal error", err.Error())
-}
-
-func Test_action_SendAssembleParkResponse_JSONMarshalError(t *testing.T) {
-	ctx := context.Background()
-	txn, _ := NewTransactionBuilderForTesting(t, State_Assembling).BuildWithMocks()
-	txn.currentDelegate = "coordinator@node1"
-
-	originalFn := jsonMarshalFn
-	defer func() { jsonMarshalFn = originalFn }()
-	jsonMarshalFn = func(_ any) ([]byte, error) {
-		return nil, errors.New("marshal error")
-	}
-
-	err := action_SendAssembleParkResponse(ctx, txn, nil)
-	require.Error(t, err)
-	assert.Equal(t, "marshal error", err.Error())
-}
-
-func Test_action_SendAssembleSuccessResponse_JSONMarshalError(t *testing.T) {
-	ctx := context.Background()
-	txn, _ := NewTransactionBuilderForTesting(t, State_Endorsement_Gathering).BuildWithMocks()
-	txn.currentDelegate = "coordinator@node1"
-
-	originalFn := jsonMarshalFn
-	defer func() { jsonMarshalFn = originalFn }()
-	jsonMarshalFn = func(_ any) ([]byte, error) {
-		return nil, errors.New("marshal error")
-	}
-
-	err := action_SendAssembleSuccessResponse(ctx, txn, nil)
-	require.Error(t, err)
-	assert.Equal(t, "marshal error", err.Error())
-}
-
 
 func Test_handleAssembleAndSign_AbandonsSilently_WhenContextExpired(t *testing.T) {
 	// When the context is already expired (deadline elapsed), handleAssembleAndSign must not
@@ -593,7 +541,7 @@ func Test_action_AssembleAndSign_NilCancelIsNoOp(t *testing.T) {
 	builder.fakeEngineIntegration.On(
 		"AssembleAndSign",
 		mock.Anything, txn.pt.ID, mock.Anything, mock.Anything, mock.Anything,
-	).Return(&components.TransactionPostAssembly{
+	).Return(&prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}, nil)
 
@@ -644,7 +592,7 @@ func Test_action_AssembleAndSign_CancelsPreviousGoroutine(t *testing.T) {
 	builder.fakeEngineIntegration.On(
 		"AssembleAndSign",
 		mock.Anything, txn.pt.ID, mock.Anything, mock.Anything, mock.Anything,
-	).Once().Return(&components.TransactionPostAssembly{
+	).Once().Return(&prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}, nil)
 
@@ -692,7 +640,7 @@ func Test_action_AssembleAndSign_SetsCurrentAssemblyRequestID(t *testing.T) {
 	builder.fakeEngineIntegration.On(
 		"AssembleAndSign",
 		mock.Anything, txn.pt.ID, mock.Anything, mock.Anything, mock.Anything,
-	).Return(&components.TransactionPostAssembly{
+	).Return(&prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}, nil)
 
@@ -728,7 +676,7 @@ func Test_action_AssembleAndSign_NudgeDoesNotCancelInFlightAssembly(t *testing.T
 	).Once().Run(func(_ mock.Arguments) {
 		close(blocked)
 		<-unblock
-	}).Return(&components.TransactionPostAssembly{
+	}).Return(&prototk.TransactionPostAssembly{
 		AssemblyResult: prototk.AssembleTransactionResponse_OK,
 	}, nil)
 

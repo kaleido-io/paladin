@@ -76,7 +76,7 @@ func TestOriginator_SingleTransactionLifecycle(t *testing.T) {
 		mock.Anything,
 		mock.Anything,
 		mock.Anything,
-	).Return(postAssembly, nil)
+	).Return(postAssembly.AssembleResponse, nil)
 	// Queue TransactionCreated and the coordinator's assemble request together
 	o.QueueEvent(ctx, &TransactionCreatedEvent{Transaction: txn})
 	// Simulate the coordinator sending an assemble request

@@ -28,6 +28,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
 	"github.com/google/uuid"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 )
 
 // The Grapher package provides 3 core functions to Paladin:
@@ -77,7 +78,7 @@ type Grapher interface {
 	GetDependencies(ctx context.Context, transactionID uuid.UUID) []uuid.UUID
 	GetDependents(ctx context.Context, transactionID uuid.UUID) []uuid.UUID
 	LockMintsOnCreate(ctx context.Context, upserts []*components.StateUpsert, states []*components.FullState, transactionID uuid.UUID)
-	LockMintsOnReadAndSpend(ctx context.Context, readStates []*components.FullState, spendStates []*components.FullState, transactionID uuid.UUID)
+	LockMintsOnReadAndSpend(ctx context.Context, readStates []*prototk.EndorsableState, spendStates []*prototk.EndorsableState, transactionID uuid.UUID)
 }
 
 type grapher struct {
@@ -372,64 +373,45 @@ func (g *grapher) GetDependents(ctx context.Context, transactionID uuid.UUID) []
 }
 
 // Caller must hold write lock.
-func (g *grapher) lockMints(states []*components.FullState, transactionID uuid.UUID, lockType pldapi.StateLockType) {
-	g.addConsumer(transactionID)
-	for _, state := range states {
-		lock := &stateLock{
-			State:       state.ID,
-			Transaction: &transactionID,
-			Type:        lockType.Enum(),
-		}
-		switch lockType {
-		case pldapi.StateLockTypeCreate:
-			g.createLocksByStateID[state.ID.String()] = lock
-		case pldapi.StateLockTypeSpend:
-			g.spendLocksByStateID[state.ID.String()] = lock
-		default:
-			g.readLocksByStateID[state.ID.String()] = lock
-		}
-		g.locksByTransaction[transactionID] = append(g.locksByTransaction[transactionID], lock)
-	}
-}
-
 func (g *grapher) LockMintsOnCreate(ctx context.Context, upserts []*components.StateUpsert, states []*components.FullState, transactionID uuid.UUID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	createLocks := make([]*components.FullState, 0, len(states))
+	g.addConsumer(transactionID)
 	for i, ps := range upserts {
 		if ps.CreatedBy != nil {
-			log.L(ctx).Debugf("LockMintsOnCreate: creating lock for potential state %s, it's full state ID is %s", ps.ID.String(), states[i].ID.String())
-			createLocks = append(createLocks, &components.FullState{
-				ID: states[i].ID,
-			})
+			stateID := states[i].ID
+			log.L(ctx).Debugf("LockMintsOnCreate: creating lock for potential state %s, it's full state ID is %s", ps.ID.String(), stateID.String())
+			lock := &stateLock{State: stateID, Transaction: &transactionID, Type: pldapi.StateLockTypeCreate.Enum()}
+			g.createLocksByStateID[stateID.String()] = lock
+			g.locksByTransaction[transactionID] = append(g.locksByTransaction[transactionID], lock)
 		}
 	}
-	g.lockMints(createLocks, transactionID, pldapi.StateLockTypeCreate)
 }
 
-func (g *grapher) LockMintsOnReadAndSpend(ctx context.Context, readStates []*components.FullState, spendStates []*components.FullState, transactionID uuid.UUID) {
+func (g *grapher) LockMintsOnReadAndSpend(ctx context.Context, readStates []*prototk.EndorsableState, spendStates []*prototk.EndorsableState, transactionID uuid.UUID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	g.lockMints(readStates, transactionID, pldapi.StateLockTypeRead)
+	g.addConsumer(transactionID)
 	for _, state := range readStates {
-		log.L(ctx).Debugf("LockMintsOnReadAndSpend: TX %s taking read lock on state %s", transactionID.String(), state.ID.String())
-		mintedBy := g.transactionByOutputState[state.ID.String()]
-
-		// We can spend something the grapher isn't aware of. If the grapher doesn't recognise this state this TX has no dependencies.
-		if mintedBy != nil {
+		stateID := state.GetId()
+		log.L(ctx).Debugf("LockMintsOnReadAndSpend: TX %s taking read lock on state %s", transactionID.String(), stateID)
+		lock := &stateLock{State: pldtypes.MustParseHexBytes(stateID), Transaction: &transactionID, Type: pldapi.StateLockTypeRead.Enum()}
+		g.readLocksByStateID[stateID] = lock
+		g.locksByTransaction[transactionID] = append(g.locksByTransaction[transactionID], lock)
+		if mintedBy := g.transactionByOutputState[stateID]; mintedBy != nil {
 			g.dependencyChain.AddPrerequisites(ctx, transactionID, mintedBy.ID)
 		}
 	}
 
-	g.lockMints(spendStates, transactionID, pldapi.StateLockTypeSpend)
 	for _, state := range spendStates {
-		log.L(ctx).Debugf("LockMintsOnReadAndSpend: TX %s taking spend lock on state %s", transactionID.String(), state.ID.String())
-		mintedBy := g.transactionByOutputState[state.ID.String()]
-
-		// We can spend something the grapher isn't aware of. If the grapher doesn't recognise this state this TX has no dependencies.
-		if mintedBy != nil {
+		stateID := state.GetId()
+		log.L(ctx).Debugf("LockMintsOnReadAndSpend: TX %s taking spend lock on state %s", transactionID.String(), stateID)
+		lock := &stateLock{State: pldtypes.MustParseHexBytes(stateID), Transaction: &transactionID, Type: pldapi.StateLockTypeSpend.Enum()}
+		g.spendLocksByStateID[stateID] = lock
+		g.locksByTransaction[transactionID] = append(g.locksByTransaction[transactionID], lock)
+		if mintedBy := g.transactionByOutputState[stateID]; mintedBy != nil {
 			g.dependencyChain.AddPrerequisites(ctx, transactionID, mintedBy.ID)
 		}
 	}

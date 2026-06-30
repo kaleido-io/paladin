@@ -163,9 +163,10 @@ func Test_action_ReleaseAssemblyPayload_NilsHeavyFields(t *testing.T) {
 	txn, _ := NewTransactionBuilderForTesting(t, State_Dispatched).Build()
 
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		InputStates:  []*components.FullState{{Data: pldtypes.RawJSON(`{}`)}},
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			Endorsements: []*prototk.AttestationResult{{Payload: []byte("sig")}},
+		},
 		OutputStates: []*components.FullState{{Data: pldtypes.RawJSON(`{}`)}},
-		Endorsements: []*prototk.AttestationResult{{Payload: []byte("sig")}},
 	}
 	txn.pt.PreparedPublicTransaction = &pldapi.TransactionInput{}
 	txn.pt.PreparedMetadata = pldtypes.RawJSON(`{"meta":true}`)

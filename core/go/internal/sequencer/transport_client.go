@@ -118,7 +118,7 @@ func (sMgr *sequencerManager) handleAssembleRequest(ctx context.Context, message
 		return
 	}
 
-	log.L(ctx).Infof("handling assemble request with %d required verifiers", len(assembleRequest.PreAssembly.GetRequiredVerifiers()))
+	log.L(ctx).Infof("handling assemble request for transaction %s", assembleRequest.TransactionId)
 
 	contractAddress := sMgr.parseContractAddressString(ctx, assembleRequest.ContractAddress, message)
 	if contractAddress == nil {
@@ -140,7 +140,6 @@ func (sMgr *sequencerManager) handleAssembleRequest(ctx context.Context, message
 	assembleRequestEvent.CoordinatorBlockHeight = assembleRequest.CoordinatorBlockHeight
 	assembleRequestEvent.BlockHeightTolerance = assembleRequest.BlockHeightTolerance
 	assembleRequestEvent.StateLocksJSON = assembleRequest.StateLocks
-	assembleRequestEvent.PreAssembly = assembleRequest.PreAssembly
 	assembleRequestEvent.EventTime = time.Now()
 	if assembleRequest.ExpiryTimeUnixMs != 0 {
 		assembleRequestEvent.Expiry = time.UnixMilli(assembleRequest.ExpiryTimeUnixMs)
@@ -163,10 +162,8 @@ func (sMgr *sequencerManager) handleAssembleResponse(ctx context.Context, messag
 		return
 	}
 
-	postAssembly := &components.TransactionPostAssembly{}
-	err = json.Unmarshal(assembleResponse.PostAssembly, postAssembly)
-	if err != nil {
-		sMgr.logPaladinMessageJsonUnmarshalError(ctx, "TransactionPostAssembly", message, err)
+	if assembleResponse.PostAssembly == nil {
+		log.L(ctx).Warnf("assemble response for transaction %s has nil post_assembly", assembleResponse.TransactionId)
 		return
 	}
 
@@ -178,12 +175,12 @@ func (sMgr *sequencerManager) handleAssembleResponse(ctx context.Context, messag
 		return
 	}
 
-	switch postAssembly.AssemblyResult {
+	switch assembleResponse.PostAssembly.GetAssemblyResult() {
 	case prototk.AssembleTransactionResponse_OK:
 		assembleResponseEvent := &coordTransaction.AssembleSuccessEvent{}
 		assembleResponseEvent.TransactionID = uuid.MustParse(assembleResponse.TransactionId)
 		assembleResponseEvent.RequestID = uuid.MustParse(assembleResponse.AssembleRequestId)
-		assembleResponseEvent.PostAssembly = postAssembly
+		assembleResponseEvent.PostAssembly = assembleResponse.PostAssembly
 		assembleResponseEvent.EventTime = time.Now()
 		seq.GetCoordinator().QueueEvent(ctx, assembleResponseEvent)
 	case prototk.AssembleTransactionResponse_PARK:
@@ -192,11 +189,11 @@ func (sMgr *sequencerManager) handleAssembleResponse(ctx context.Context, messag
 		assembleResponseEvent := &coordTransaction.AssembleRevertEvent{}
 		assembleResponseEvent.TransactionID = uuid.MustParse(assembleResponse.TransactionId)
 		assembleResponseEvent.RequestID = uuid.MustParse(assembleResponse.AssembleRequestId)
-		assembleResponseEvent.PostAssembly = postAssembly
+		assembleResponseEvent.PostAssembly = assembleResponse.PostAssembly
 		assembleResponseEvent.EventTime = time.Now()
 		seq.GetCoordinator().QueueEvent(ctx, assembleResponseEvent)
 	default:
-		log.L(ctx).Errorf("received unexpected assemble response type %s", postAssembly.AssemblyResult)
+		log.L(ctx).Errorf("received unexpected assemble response type %s", assembleResponse.PostAssembly.GetAssemblyResult())
 	}
 }
 

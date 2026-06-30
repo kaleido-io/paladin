@@ -16,19 +16,16 @@ package transaction
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
+	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	"github.com/LFDT-Paladin/paladin/core/internal/msgs"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 )
-
-// jsonMarshalFn is a package-level variable so tests can inject errors.
-var jsonMarshalFn = json.Marshal
 
 func action_AssembleRequestReceived(ctx context.Context, t *originatorTransaction, event common.Event) error {
 	e := event.(*AssembleRequestReceivedEvent)
@@ -39,7 +36,6 @@ func action_AssembleRequestReceived(ctx context.Context, t *originatorTransactio
 		coordinatorsBlockHeight: e.CoordinatorBlockHeight,
 		stateLocksJSON:          e.StateLocksJSON,
 		requestID:               e.RequestID,
-		preAssembly:             e.PreAssembly,
 		expiry:                  e.Expiry,
 	}
 	return nil
@@ -123,7 +119,7 @@ func action_AssembleAndSign(ctx context.Context, txn *originatorTransaction, _ c
 }
 
 func (txn *originatorTransaction) handleAssembleAndSign(ctx context.Context, txID uuid.UUID, req assembleRequestFromCoordinator, preAssembly *prototk.TransactionPreAssembly) {
-	postAssembly, err := txn.engineIntegration.AssembleAndSign(ctx, txID, preAssembly, req.stateLocksJSON, req.coordinatorsBlockHeight)
+	assembleResponse, err := txn.engineIntegration.AssembleAndSign(ctx, txID, preAssembly, req.stateLocksJSON, req.coordinatorsBlockHeight)
 	if err != nil {
 		if ctx.Err() != nil {
 			log.L(ctx).Debugf("abandoning assembly for transaction %s: request expired", txID)
@@ -141,7 +137,8 @@ func (txn *originatorTransaction) handleAssembleAndSign(ctx context.Context, txI
 		return
 	}
 
-	switch postAssembly.AssemblyResult {
+	postAssembly := &components.TransactionPostAssembly{AssembleResponse: assembleResponse}
+	switch assembleResponse.GetAssemblyResult() {
 	case prototk.AssembleTransactionResponse_OK:
 		log.L(ctx).Debugf("emitting AssembleAndSignSuccessEvent: %s", txID.String())
 		txn.queueEventForOriginator(ctx, &AssembleAndSignSuccessEvent{
@@ -172,45 +169,25 @@ func (txn *originatorTransaction) handleAssembleAndSign(ctx context.Context, txI
 	}
 }
 
-func buildAssembleResponse(_ context.Context, txn *originatorTransaction) (*engineProto.AssembleResponse, error) {
-	postAssemblyBytes, err := jsonMarshalFn(txn.pt.PostAssembly)
-	if err != nil {
-		return nil, err
-	}
+func buildAssembleResponse(txn *originatorTransaction) *engineProto.AssembleResponse {
 	return &engineProto.AssembleResponse{
 		TransactionId:     txn.pt.ID.String(),
 		AssembleRequestId: txn.latestFulfilledAssembleRequestID.String(),
 		ContractAddress:   txn.pt.Address.HexString(),
-		// TODO AM: what is the difference between the post assembly send back and the post assembly that
-		// the coordinator then stores?
-		PostAssembly: postAssemblyBytes,
-		// TODO AM: do we need to send this back
-		PreAssembly: txn.pt.PreAssembly,
-	}, nil
+		PostAssembly:      txn.pt.PostAssembly.AssembleResponse,
+	}
 }
 
 func action_SendAssembleRevertResponse(ctx context.Context, txn *originatorTransaction, _ common.Event) error {
-	msg, err := buildAssembleResponse(ctx, txn)
-	if err != nil {
-		return err
-	}
-	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, msg)
+	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, buildAssembleResponse(txn))
 }
 
 func action_SendAssembleParkResponse(ctx context.Context, txn *originatorTransaction, _ common.Event) error {
-	msg, err := buildAssembleResponse(ctx, txn)
-	if err != nil {
-		return err
-	}
-	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, msg)
+	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, buildAssembleResponse(txn))
 }
 
 func action_SendAssembleSuccessResponse(ctx context.Context, txn *originatorTransaction, _ common.Event) error {
-	msg, err := buildAssembleResponse(ctx, txn)
-	if err != nil {
-		return err
-	}
-	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, msg)
+	return txn.transportWriter.SendAssembleResponse(ctx, txn.currentDelegate, buildAssembleResponse(txn))
 }
 
 func action_SendAssembleError(ctx context.Context, txn *originatorTransaction, _ common.Event) error {

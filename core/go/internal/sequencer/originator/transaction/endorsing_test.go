@@ -42,10 +42,12 @@ func TestAction_ResendAssembleSuccessResponse_Success(t *testing.T) {
 
 	// Set up PostAssembly with OK result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
-		Signatures: []*prototk.AttestationResult{
-			{
-				Payload: []byte("test signature"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+			Signatures: []*prototk.AttestationResult{
+				{
+					Payload: []byte("test signature"),
+				},
 			},
 		},
 	}
@@ -86,7 +88,9 @@ func TestAction_ResendAssembleSuccessResponse_TransportError(t *testing.T) {
 
 	// Set up PostAssembly with OK result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		},
 	}
 
 	// Set up PreAssembly
@@ -124,8 +128,10 @@ func TestAction_ResendAssembleRevertResponse_Success(t *testing.T) {
 
 	// Set up PostAssembly with REVERT result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
-		RevertReason:   ptrTo("test revert reason"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
+			RevertReason:   ptrTo("test revert reason"),
+		},
 	}
 
 	// Set up PreAssembly
@@ -164,8 +170,10 @@ func TestAction_ResendAssembleRevertResponse_TransportError(t *testing.T) {
 
 	// Set up PostAssembly with REVERT result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
-		RevertReason:   ptrTo("test revert reason"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
+			RevertReason:   ptrTo("test revert reason"),
+		},
 	}
 
 	// Set up PreAssembly
@@ -203,7 +211,9 @@ func TestAction_ResendAssembleParkResponse_Success(t *testing.T) {
 
 	// Set up PostAssembly with PARK result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_PARK,
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_PARK,
+		},
 	}
 
 	// Set up PreAssembly
@@ -242,7 +252,9 @@ func TestAction_ResendAssembleParkResponse_TransportError(t *testing.T) {
 
 	// Set up PostAssembly with PARK result
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_PARK,
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_PARK,
+		},
 	}
 
 	// Set up PreAssembly
@@ -341,4 +353,3 @@ func TestGuard_AssembleRequestMatchesPreviousResponse_OneNilUUID(t *testing.T) {
 
 	assert.False(t, matches, "Should return false when one request ID is nil and the other is not")
 }
-

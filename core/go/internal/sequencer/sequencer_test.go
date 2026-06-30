@@ -1010,10 +1010,12 @@ func TestSequencerManager_BuildStateDistributions(t *testing.T) {
 			TransactionSpecification: &prototk.TransactionSpecification{From: "alice@test-node"},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{{DistributionList: []string{"alice@test-node"}}},
-			OutputStates:          []*components.FullState{{ID: stateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)}},
-			InfoStatesPotential:   []*prototk.NewState{},
-			InfoStates:            []*components.FullState{},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{{DistributionList: []string{"alice@test-node"}}},
+				InfoStatesPotential:   []*prototk.NewState{},
+			},
+			OutputStates: []*components.FullState{{ID: stateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)}},
+			InfoStates:   []*components.FullState{},
 		},
 	}
 
@@ -1560,8 +1562,8 @@ func TestSequencerManager_handleTx_ChainedDependsOn(t *testing.T) {
 	sm := newSequencerManagerForTesting(t, mocks)
 	dbTX := persistencemocks.NewDBTX(t)
 	localTx := &components.ResolvedTransaction{
-		Transaction:    &pldapi.Transaction{TransactionBase: pldapi.TransactionBase{To: contractAddr, Domain: "test-domain"}},
-		Function:       &components.ResolvedFunction{Definition: &abi.Entry{Name: "f", Type: abi.Function}},
+		Transaction:      &pldapi.Transaction{TransactionBase: pldapi.TransactionBase{To: contractAddr, Domain: "test-domain"}},
+		Function:         &components.ResolvedFunction{Definition: &abi.Entry{Name: "f", Type: abi.Function}},
 		ChainedDependsOn: []uuid.UUID{chainedID},
 	}
 	mockDomain := componentsmocks.NewDomain(t)

@@ -141,20 +141,25 @@ func (sd *stateDistributionBuilder) Build(ctx context.Context) (sds *components.
 		return nil, i18n.WrapError(ctx, err, msgs.MsgSequencerFromNotResolvedDistroTime)
 	}
 
-	if tx.PostAssembly == nil ||
-		len(tx.PostAssembly.OutputStatesPotential) != len(tx.PostAssembly.OutputStates) ||
-		len(tx.PostAssembly.InfoStatesPotential) != len(tx.PostAssembly.InfoStates) {
+	if tx.PostAssembly == nil {
+		log.L(ctx).Debugf("Invalid post assembly: %+v", tx.PostAssembly)
+		return nil, i18n.NewError(ctx, msgs.MsgSequencerInvalidTxStateStateDistro)
+	}
+	outputStatesPotential := tx.PostAssembly.AssembleResponse.GetOutputStatesPotential()
+	infoStatesPotential := tx.PostAssembly.AssembleResponse.GetInfoStatesPotential()
+	if len(outputStatesPotential) != len(tx.PostAssembly.OutputStates) ||
+		len(infoStatesPotential) != len(tx.PostAssembly.InfoStates) {
 		log.L(ctx).Debugf("Invalid post assembly: %+v", tx.PostAssembly)
 		return nil, i18n.NewError(ctx, msgs.MsgSequencerInvalidTxStateStateDistro)
 	}
 
 	for i, fullState := range tx.PostAssembly.OutputStates {
-		if err := sd.processStateForDistribution(ctx, fullState, tx.PostAssembly.OutputStatesPotential[i]); err != nil {
+		if err := sd.processStateForDistribution(ctx, fullState, outputStatesPotential[i]); err != nil {
 			return nil, err
 		}
 	}
 	for i, fullState := range tx.PostAssembly.InfoStates {
-		if err := sd.processStateForDistribution(ctx, fullState, tx.PostAssembly.InfoStatesPotential[i]); err != nil {
+		if err := sd.processStateForDistribution(ctx, fullState, infoStatesPotential[i]); err != nil {
 			return nil, err
 		}
 	}

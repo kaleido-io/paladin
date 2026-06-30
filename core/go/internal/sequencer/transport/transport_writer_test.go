@@ -346,7 +346,7 @@ func testEndorsementErrorMsg(transactionId, idempotencyKey, contractAddress, err
 	}
 }
 
-func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldtypes.EthAddress, preAssembly *prototk.TransactionPreAssembly, stateLocks grapher.ExportableStates, blockHeight int64, expiry time.Time, blockHeightTolerance int64) (*engineProto.AssembleRequest, error) {
+func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldtypes.EthAddress, stateLocks grapher.ExportableStates, blockHeight int64, expiry time.Time, blockHeightTolerance int64) (*engineProto.AssembleRequest, error) {
 	stateLocksJSON, err := json.Marshal(stateLocks)
 	if err != nil {
 		return nil, err
@@ -355,7 +355,6 @@ func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldt
 		TransactionId:          txID.String(),
 		AssembleRequestId:      idempotencyId.String(),
 		ContractAddress:        contractAddress.HexString(),
-		PreAssembly:            preAssembly,
 		StateLocks:             stateLocksJSON,
 		CoordinatorBlockHeight: blockHeight,
 		ExpiryTimeUnixMs:       expiry.UnixMilli(),
@@ -363,17 +362,12 @@ func testAssembleRequestMsg(txID, idempotencyId uuid.UUID, contractAddress *pldt
 	}, nil
 }
 
-func testAssembleResponseMsg(txID, assembleRequestId uuid.UUID, contractAddress *pldtypes.EthAddress, postAssembly *components.TransactionPostAssembly, preAssembly *prototk.TransactionPreAssembly) (*engineProto.AssembleResponse, error) {
-	postAssemblyBytes, err := json.Marshal(postAssembly)
-	if err != nil {
-		return nil, err
-	}
+func testAssembleResponseMsg(txID, assembleRequestId uuid.UUID, contractAddress *pldtypes.EthAddress, postAssembly *components.TransactionPostAssembly, _ *prototk.TransactionPreAssembly) (*engineProto.AssembleResponse, error) {
 	return &engineProto.AssembleResponse{
 		TransactionId:     txID.String(),
 		AssembleRequestId: assembleRequestId.String(),
 		ContractAddress:   contractAddress.HexString(),
-		PostAssembly:      postAssemblyBytes,
-		PreAssembly:       preAssembly,
+		PostAssembly:      postAssembly.AssembleResponse,
 	}, nil
 }
 
@@ -1648,12 +1642,6 @@ func TestSendAssembleRequest_Success(t *testing.T) {
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
 
-	preAssembly := &prototk.TransactionPreAssembly{
-		TransactionSpecification: &prototk.TransactionSpecification{
-			TransactionId: txID.String(),
-		},
-	}
-
 	stateLocks := grapher.ExportableStates{LockedState: []*grapher.StateLock{}}
 
 	mockTransportManager := componentsmocks.NewTransportManager(t)
@@ -1697,7 +1685,7 @@ func TestSendAssembleRequest_Success(t *testing.T) {
 		contractAddress:   contractAddress,
 	}
 
-	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, preAssembly, stateLocks, blockHeight, time.Time{}, 0)
+	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, stateLocks, blockHeight, time.Time{}, 0)
 	require.NoError(t, err)
 	err = tw.SendAssembleRequest(ctx, assemblingNode, assembleMsg)
 	require.NoError(t, err)
@@ -1710,9 +1698,6 @@ func TestSendAssembleRequest_SerialisesExpiryTimeIntoProto(t *testing.T) {
 	idempotencyId := uuid.New()
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
-	preAssembly := &prototk.TransactionPreAssembly{
-		TransactionSpecification: &prototk.TransactionSpecification{TransactionId: txID.String()},
-	}
 	stateLocks := grapher.ExportableStates{LockedState: []*grapher.StateLock{}}
 	expiry := time.Now().Truncate(time.Millisecond) // truncate to ms precision to match UnixMilli roundtrip
 
@@ -1736,7 +1721,7 @@ func TestSendAssembleRequest_SerialisesExpiryTimeIntoProto(t *testing.T) {
 		loopbackTransport: mockLoopbackTransport,
 		contractAddress:   contractAddress,
 	}
-	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, preAssembly, stateLocks, blockHeight, expiry, 0)
+	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, stateLocks, blockHeight, expiry, 0)
 	require.NoError(t, err)
 	err = tw.SendAssembleRequest(ctx, assemblingNode, assembleMsg)
 	require.NoError(t, err)
@@ -1750,12 +1735,6 @@ func TestSendAssembleRequest_SendError(t *testing.T) {
 	idempotencyId := uuid.New()
 	contractAddress := pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890")
 	blockHeight := int64(100)
-
-	preAssembly := &prototk.TransactionPreAssembly{
-		TransactionSpecification: &prototk.TransactionSpecification{
-			TransactionId: txID.String(),
-		},
-	}
 
 	stateLocks := grapher.ExportableStates{LockedState: []*grapher.StateLock{}}
 
@@ -1772,7 +1751,7 @@ func TestSendAssembleRequest_SendError(t *testing.T) {
 		contractAddress:   contractAddress,
 	}
 
-	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, preAssembly, stateLocks, blockHeight, time.Time{}, 0)
+	assembleMsg, err := testAssembleRequestMsg(txID, idempotencyId, contractAddress, stateLocks, blockHeight, time.Time{}, 0)
 	require.NoError(t, err)
 	err = tw.SendAssembleRequest(ctx, assemblingNode, assembleMsg)
 	require.NoError(t, err)
@@ -1818,7 +1797,9 @@ func TestSendAssembleResponse_Success(t *testing.T) {
 	}
 
 	postAssembly := &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		},
 	}
 
 	mockTransportManager := componentsmocks.NewTransportManager(t)
@@ -1879,7 +1860,9 @@ func TestSendAssembleResponse_SendError(t *testing.T) {
 	}
 
 	postAssembly := &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+		},
 	}
 
 	mockTransportManager := componentsmocks.NewTransportManager(t)

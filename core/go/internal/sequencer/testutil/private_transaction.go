@@ -403,7 +403,7 @@ func (b *PrivateTransactionBuilderForTesting) BuildEndorsement(endorserIndex int
 func (b *PrivateTransactionBuilderForTesting) BuildPostAssemblyAndHash() (*components.TransactionPostAssembly, *pldtypes.Bytes32) {
 	postAssembly := b.BuildPostAssembly()
 	hash := sha3.NewLegacyKeccak256()
-	for _, signature := range postAssembly.Signatures {
+	for _, signature := range postAssembly.AssembleResponse.GetSignatures() {
 		hash.Write(signature.Payload)
 	}
 	var h32 pldtypes.Bytes32
@@ -415,18 +415,16 @@ func (b *PrivateTransactionBuilderForTesting) BuildPostAssembly() *components.Tr
 
 	if b.revertReason != nil {
 		return &components.TransactionPostAssembly{
-			AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
-			RevertReason:   b.revertReason,
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				AssemblyResult: prototk.AssembleTransactionResponse_REVERT,
+				RevertReason:   b.revertReason,
+			},
 		}
-	}
-	postAssembly := &components.TransactionPostAssembly{
-		AssemblyResult:    prototk.AssembleTransactionResponse_OK,
-		ResolvedVerifiers: b.buildResolvedVerifiers(),
 	}
 
 	//it is normal to have one AttestationRequest for the originator to sign the pre-assembly
-	postAssembly.AttestationPlan = make([]*prototk.AttestationRequest, b.numberOfEndorsers+1)
-	postAssembly.AttestationPlan[0] = &prototk.AttestationRequest{
+	attestationPlan := make([]*prototk.AttestationRequest, b.numberOfEndorsers+1)
+	attestationPlan[0] = &prototk.AttestationRequest{
 		Name:            "sign",
 		AttestationType: prototk.AttestationType_SIGN,
 		Algorithm:       algorithms.ECDSA_SECP256K1,
@@ -437,7 +435,7 @@ func (b *PrivateTransactionBuilderForTesting) BuildPostAssembly() *components.Tr
 		},
 	}
 
-	postAssembly.Signatures = []*prototk.AttestationResult{
+	signatures := []*prototk.AttestationResult{
 		{
 			Name:            "sign",
 			AttestationType: prototk.AttestationType_SIGN,
@@ -453,7 +451,7 @@ func (b *PrivateTransactionBuilderForTesting) BuildPostAssembly() *components.Tr
 	}
 
 	for i := 0; i < b.numberOfEndorsers; i++ {
-		postAssembly.AttestationPlan[i+1] = &prototk.AttestationRequest{
+		attestationPlan[i+1] = &prototk.AttestationRequest{
 			Name:            fmt.Sprintf("endorse-%d", i),
 			AttestationType: prototk.AttestationType_ENDORSE,
 			Algorithm:       algorithms.ECDSA_SECP256K1,
@@ -465,31 +463,49 @@ func (b *PrivateTransactionBuilderForTesting) BuildPostAssembly() *components.Tr
 		}
 	}
 
+	endorsements := make([]*prototk.AttestationResult, b.numberOfEndorsements)
+	for i := 0; i < b.numberOfEndorsements; i++ {
+		endorsements[i] = b.BuildEndorsement(i)
+	}
+
+	var endorsableInputStates []*prototk.EndorsableState
+	for _, inputStateID := range b.inputStateIDs {
+		schema := pldtypes.Bytes32(pldtypes.RandBytes(32))
+		endorsableInputStates = append(endorsableInputStates, &prototk.EndorsableState{
+			Id:            inputStateID.String(),
+			SchemaId:      schema.String(),
+			StateDataJson: `{"data":"hello"}`,
+		})
+	}
+
+	var endorsableReadStates []*prototk.EndorsableState
+	for _, readStateID := range b.readStateIDs {
+		schema := pldtypes.Bytes32(pldtypes.RandBytes(32))
+		endorsableReadStates = append(endorsableReadStates, &prototk.EndorsableState{
+			Id:            readStateID.String(),
+			SchemaId:      schema.String(),
+			StateDataJson: `{"data":"hello"}`,
+		})
+	}
+
+	var outputStates []*components.FullState
 	for i := 0; i < b.numberOfOutputStates; i++ {
-		postAssembly.OutputStates = append(postAssembly.OutputStates, &components.FullState{
+		outputStates = append(outputStates, &components.FullState{
 			ID: pldtypes.HexBytes(pldtypes.RandBytes(32)),
 		})
 	}
 
-	for _, inputStateID := range b.inputStateIDs {
-		postAssembly.InputStates = append(postAssembly.InputStates, &components.FullState{
-			ID:     inputStateID,
-			Schema: pldtypes.Bytes32(pldtypes.RandBytes(32)),
-			Data:   pldtypes.JSONString("{\"data\":\"hello\"}"),
-		})
-	}
-
-	for _, readStateID := range b.readStateIDs {
-		postAssembly.ReadStates = append(postAssembly.ReadStates, &components.FullState{
-			ID:     readStateID,
-			Schema: pldtypes.Bytes32(pldtypes.RandBytes(32)),
-			Data:   pldtypes.JSONString("{\"data\":\"hello\"}"),
-		})
-	}
-
-	postAssembly.Endorsements = make([]*prototk.AttestationResult, b.numberOfEndorsements)
-	for i := 0; i < b.numberOfEndorsements; i++ {
-		postAssembly.Endorsements[i] = b.BuildEndorsement(i)
+	postAssembly := &components.TransactionPostAssembly{
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult:    prototk.AssembleTransactionResponse_OK,
+			ResolvedVerifiers: b.buildResolvedVerifiers(),
+			AttestationPlan:   attestationPlan,
+			Signatures:        signatures,
+			Endorsements:      endorsements,
+			InputStates:       endorsableInputStates,
+			ReadStates:        endorsableReadStates,
+		},
+		OutputStates: outputStates,
 	}
 	return postAssembly
 

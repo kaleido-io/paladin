@@ -476,11 +476,8 @@ func TestCoordinatorTransaction_Assembling_ToEndorsing_OnAssembleResponse(t *tes
 	txn, mocks := txnBuilder.Build()
 
 	successEvent := txnBuilder.BuildAssembleSuccessEvent()
-	outputState := successEvent.PostAssembly.OutputStates[0]
 	mocks.EngineIntegration.EXPECT().MapPotentialStates(mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-	mocks.EngineIntegration.EXPECT().WriteStatesForTransaction(mock.Anything, mock.Anything).Run(func(ctx context.Context, pt *components.PrivateTransaction) {
-		assert.Equal(t, outputState.ID, pt.PostAssembly.OutputStates[0].ID)
-	}).Return(nil)
+	mocks.EngineIntegration.EXPECT().WriteStatesForTransaction(mock.Anything, mock.Anything).Return(nil)
 
 	err := txn.HandleEvent(ctx, successEvent)
 	require.NoError(t, err)
@@ -497,7 +494,7 @@ func TestCoordinatorTransaction_Assembling_NoTransition_OnAssembleResponse_IfRes
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: txn.GetID(),
 		},
-		PostAssembly: txnBuilder.BuildPostAssembly(),
+		PostAssembly: txnBuilder.BuildPostAssembly().AssembleResponse,
 		RequestID:    uuid.New(), //generate a new random request ID so that it won't match the pending request
 	})
 	assert.NoError(t, err)
@@ -647,7 +644,7 @@ func TestCoordinatorTransaction_Assembling_NoTransition_OnAssembleRevertResponse
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: txn.GetID(),
 		},
-		PostAssembly: txnBuilder.BuildPostAssembly(),
+		PostAssembly: txnBuilder.BuildPostAssembly().AssembleResponse,
 		RequestID:    uuid.New(), //generate a new random request ID so that it won't match the pending request,
 	})
 	require.NoError(t, err)
@@ -782,14 +779,16 @@ func TestCoordinatorTransaction_Endorsement_Gathering_Threshold1of3_TransitionsA
 	const attName = "group-endorse"
 	const verifierType = "ETH_ADDRESS"
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AttestationPlan: []*prototk.AttestationRequest{{
-			Name:            attName,
-			AttestationType: prototk.AttestationType_ENDORSE,
-			VerifierType:    verifierType,
-			Parties:         []string{"p1@n1", "p2@n2", "p3@n3"},
-			Threshold:       &threshold,
-		}},
-		Endorsements: []*prototk.AttestationResult{},
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AttestationPlan: []*prototk.AttestationRequest{{
+				Name:            attName,
+				AttestationType: prototk.AttestationType_ENDORSE,
+				VerifierType:    verifierType,
+				Parties:         []string{"p1@n1", "p2@n2", "p3@n3"},
+				Threshold:       &threshold,
+			}},
+			Endorsements: []*prototk.AttestationResult{},
+		},
 	}
 
 	// Initialise pendingEndorsementRequests manually so applyEndorsement can match the key.
@@ -932,7 +931,7 @@ func TestCoordinatorTransaction_Endorsement_Gathering_StaysInState_OnEndorseErro
 	txn.endorseToleranceByRequirement = map[string]int{"endorse-multisig": 1}
 
 	threshold2 := int32(2)
-	txn.pt.PostAssembly.AttestationPlan = []*prototk.AttestationRequest{
+	txn.pt.PostAssembly.AssembleResponse.AttestationPlan = []*prototk.AttestationRequest{
 		{
 			Name:            "endorse-multisig",
 			AttestationType: prototk.AttestationType_ENDORSE,
@@ -978,7 +977,7 @@ func TestCoordinatorTransaction_Endorsement_Gathering_ToPooled_OnEndorseError_To
 	txn.endorseToleranceByRequirement = map[string]int{"endorse-multisig": 1}
 
 	threshold2b := int32(2)
-	txn.pt.PostAssembly.AttestationPlan = []*prototk.AttestationRequest{
+	txn.pt.PostAssembly.AssembleResponse.AttestationPlan = []*prototk.AttestationRequest{
 		{
 			Name:            "endorse-multisig",
 			AttestationType: prototk.AttestationType_ENDORSE,
@@ -1038,7 +1037,7 @@ func TestCoordinatorTransaction_Endorsement_Gathering_StaysInState_OnEndorseRequ
 	txn.endorseToleranceByRequirement = map[string]int{"endorse-multisig": 1}
 
 	threshold2 := int32(2)
-	txn.pt.PostAssembly.AttestationPlan = []*prototk.AttestationRequest{
+	txn.pt.PostAssembly.AssembleResponse.AttestationPlan = []*prototk.AttestationRequest{
 		{
 			Name:            "endorse-multisig",
 			AttestationType: prototk.AttestationType_ENDORSE,

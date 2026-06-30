@@ -21,7 +21,6 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
-	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 )
 
@@ -103,7 +102,6 @@ type AssembleRequestReceivedEvent struct {
 	CoordinatorBlockHeight int64
 	BlockHeightTolerance   int64
 	StateLocksJSON         []byte
-	PreAssembly            *prototk.TransactionPreAssembly
 	Expiry                 time.Time
 }
 

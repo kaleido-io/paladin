@@ -143,7 +143,6 @@ message AssembleRequest {
     string transaction_id = 1;
     string assemble_request_id = 2;
     string contract_address = 3;
-    io.kaleido.paladin.toolkit.TransactionPreAssembly pre_assembly = 5;
     bytes state_locks = 6;
     int64 coordinator_block_height = 7;
     int64 expiry_time_unix_ms = 8;
@@ -154,8 +153,7 @@ message AssembleResponse {
     string transaction_id = 1;
     string assemble_request_id = 2;
     string contract_address = 3;
-    bytes post_assembly = 4;
-    io.kaleido.paladin.toolkit.TransactionPreAssembly pre_assembly = 5;
+    io.kaleido.paladin.toolkit.TransactionPostAssembly post_assembly = 4;
 }
 
 message AssembleError {

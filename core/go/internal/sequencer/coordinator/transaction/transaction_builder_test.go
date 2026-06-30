@@ -611,7 +611,7 @@ func (b *TransactionBuilderForTesting) BuildAssembleSuccessEvent() *AssembleSucc
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: b.txn.pt.ID,
 		},
-		PostAssembly: b.BuildPostAssembly(),
+		PostAssembly: b.BuildPostAssembly().AssembleResponse,
 		RequestID:    b.txn.pendingAssembleRequest.IdempotencyKey(),
 	}
 }
@@ -621,7 +621,7 @@ func (b *TransactionBuilderForTesting) BuildAssembleRevertEvent() *AssembleRever
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: b.txn.pt.ID,
 		},
-		PostAssembly: b.BuildPostAssembly(),
+		PostAssembly: b.BuildPostAssembly().AssembleResponse,
 		RequestID:    b.txn.pendingAssembleRequest.IdempotencyKey(),
 	}
 }

@@ -44,3 +44,18 @@ message PrivateTransactionDelegation {
   TransactionSpecification.Intent intent = 3;
   TransactionPreAssembly pre_assembly = 4;
 }
+
+message TransactionPostAssembly {
+  AssembleTransactionResponse.Result assembly_result = 1;
+  BlockContext block_context = 2;
+  repeated NewState output_states_potential = 3;  // raw domain output, no IDs yet
+  repeated NewState info_states_potential = 4;    // raw domain info, no IDs yet
+  repeated EndorsableState input_states = 5;
+  repeated EndorsableState read_states = 6;
+  repeated AttestationRequest attestation_plan = 7;
+  repeated AttestationResult signatures = 8;
+  repeated AttestationResult endorsements = 9;
+  optional string domain_data = 10;
+  optional string revert_reason = 11;
+  repeated ResolvedVerifier resolved_verifiers = 12;
+}

@@ -17,7 +17,6 @@ package testutil
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
@@ -203,16 +202,13 @@ func (r *SentMessageRecorder) SendHeartbeat(ctx context.Context, node string, ms
 }
 
 func (r *SentMessageRecorder) SendAssembleResponse(ctx context.Context, node string, msg *engineProto.AssembleResponse) error {
-	var postAssembly components.TransactionPostAssembly
-	if err := json.Unmarshal(msg.PostAssembly, &postAssembly); err == nil {
-		switch postAssembly.AssemblyResult {
-		case prototk.AssembleTransactionResponse_OK:
-			r.hasSentAssembleSuccessResponse = true
-		case prototk.AssembleTransactionResponse_REVERT:
-			r.hasSentAssembleRevertResponse = true
-		case prototk.AssembleTransactionResponse_PARK:
-			r.hasSentAssembleParkResponse = true
-		}
+	switch msg.GetPostAssembly().GetAssemblyResult() {
+	case prototk.AssembleTransactionResponse_OK:
+		r.hasSentAssembleSuccessResponse = true
+	case prototk.AssembleTransactionResponse_REVERT:
+		r.hasSentAssembleRevertResponse = true
+	case prototk.AssembleTransactionResponse_PARK:
+		r.hasSentAssembleParkResponse = true
 	}
 	return nil
 }

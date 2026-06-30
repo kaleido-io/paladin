@@ -115,8 +115,8 @@ func (tb *testbed) ResolveKey(ctx context.Context, fqLookup, algorithm, verifier
 }
 
 func (tb *testbed) gatherSignatures(ctx context.Context, tx *testbedTransaction) error {
-	tx.ptx.PostAssembly.Signatures = []*prototk.AttestationResult{}
-	for _, ar := range tx.ptx.PostAssembly.AttestationPlan {
+	tx.ptx.PostAssembly.AssembleResponse.Signatures = []*prototk.AttestationResult{}
+	for _, ar := range tx.ptx.PostAssembly.AssembleResponse.GetAttestationPlan() {
 		if ar.AttestationType == prototk.AttestationType_SIGN {
 			for _, partyName := range ar.Parties {
 				resolvedKey, err := tb.ResolveKey(ctx, partyName, ar.Algorithm, ar.VerifierType)
@@ -127,7 +127,7 @@ func (tb *testbed) gatherSignatures(ctx context.Context, tx *testbedTransaction)
 				if err != nil {
 					return fmt.Errorf("failed to sign for party %s (verifier=%s,algorithm=%s): %s", partyName, resolvedKey.Verifier.Verifier, ar.Algorithm, err)
 				}
-				tx.ptx.PostAssembly.Signatures = append(tx.ptx.PostAssembly.Signatures, &prototk.AttestationResult{
+				tx.ptx.PostAssembly.AssembleResponse.Signatures = append(tx.ptx.PostAssembly.AssembleResponse.Signatures, &prototk.AttestationResult{
 					Name:            ar.Name,
 					AttestationType: ar.AttestationType,
 					Verifier: &prototk.ResolvedVerifier{
@@ -166,23 +166,11 @@ func (tb *testbed) writeNullifiersToContext(dCtx components.DomainContext, tx *c
 
 }
 
-func toEndorsableList(states []*components.FullState) []*prototk.EndorsableState {
-	endorsableList := make([]*prototk.EndorsableState, len(states))
-	for i, input := range states {
-		endorsableList[i] = &prototk.EndorsableState{
-			Id:            input.ID.String(),
-			SchemaId:      input.Schema.String(),
-			StateDataJson: string(input.Data),
-		}
-	}
-	return endorsableList
-}
-
 func (tb *testbed) gatherEndorsements(dCtx components.DomainContext, tx *testbedTransaction) error {
 
 	keyMgr := tb.c.KeyManager()
 	attestations := []*prototk.AttestationResult{}
-	for _, ar := range tx.ptx.PostAssembly.AttestationPlan {
+	for _, ar := range tx.ptx.PostAssembly.AssembleResponse.GetAttestationPlan() {
 		if ar.AttestationType == prototk.AttestationType_ENDORSE {
 			for _, partyName := range ar.Parties {
 				// Look up the endorser
@@ -191,14 +179,14 @@ func (tb *testbed) gatherEndorsements(dCtx components.DomainContext, tx *testbed
 					return fmt.Errorf("failed to resolve (local in testbed case) endorser for %s (algorithm=%s): %s", partyName, ar.Algorithm, err)
 				}
 				// Invoke the domain
-			endorseRes, err := tx.psc.EndorseTransaction(dCtx, tb.c.Persistence().NOTX(), &components.PrivateTransactionEndorseRequest{
-				TransactionSpecification: tx.ptx.PreAssembly.TransactionSpecification,
-				Verifiers:                tx.ptx.PostAssembly.ResolvedVerifiers,
-					Signatures:               tx.ptx.PostAssembly.Signatures,
-					InputStates:              toEndorsableList(tx.ptx.PostAssembly.InputStates),
-					ReadStates:               toEndorsableList(tx.ptx.PostAssembly.ReadStates),
-					OutputStates:             toEndorsableList(tx.ptx.PostAssembly.OutputStates),
-					InfoStates:               toEndorsableList(tx.ptx.PostAssembly.InfoStates),
+				endorseRes, err := tx.psc.EndorseTransaction(dCtx, tb.c.Persistence().NOTX(), &components.PrivateTransactionEndorseRequest{
+					TransactionSpecification: tx.ptx.PreAssembly.TransactionSpecification,
+					Verifiers:                tx.ptx.PostAssembly.AssembleResponse.GetResolvedVerifiers(),
+					Signatures:               tx.ptx.PostAssembly.AssembleResponse.GetSignatures(),
+					InputStates:              tx.ptx.PostAssembly.AssembleResponse.GetInputStates(),
+					ReadStates:               tx.ptx.PostAssembly.AssembleResponse.GetReadStates(),
+					OutputStates:             tx.ptx.PostAssembly.EndorsableOutputStates(),
+					InfoStates:               tx.ptx.PostAssembly.EndorsableInfoStates(),
 					Endorsement:              ar,
 					Endorser: &prototk.ResolvedVerifier{
 						Lookup:       partyName,
@@ -236,7 +224,7 @@ func (tb *testbed) gatherEndorsements(dCtx components.DomainContext, tx *testbed
 			}
 		}
 	}
-	tx.ptx.PostAssembly.Endorsements = attestations
+	tx.ptx.PostAssembly.AssembleResponse.Endorsements = attestations
 	return nil
 }
 

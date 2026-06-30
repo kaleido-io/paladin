@@ -206,10 +206,12 @@ func TestValidator_PreDispatchRequestMatchesAssembledDelegation_Success(t *testi
 	coordinator := "coordinator@node1"
 	txn.currentDelegate = coordinator
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
-		Signatures: []*prototk.AttestationResult{
-			{
-				Payload: []byte("test signature"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+			Signatures: []*prototk.AttestationResult{
+				{
+					Payload: []byte("test signature"),
+				},
 			},
 		},
 	}
@@ -247,10 +249,12 @@ func TestValidator_PreDispatchRequestFromCurrentDelegate_WrongCoordinator(t *tes
 	differentCoordinator := "coordinator@node2"
 	txn.currentDelegate = coordinator
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
-		Signatures: []*prototk.AttestationResult{
-			{
-				Payload: []byte("test signature"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+			Signatures: []*prototk.AttestationResult{
+				{
+					Payload: []byte("test signature"),
+				},
 			},
 		},
 	}
@@ -285,10 +289,12 @@ func TestValidator_PreDispatchRequestMatchesAssembledDelegation_WrongHash(t *tes
 	coordinator := "coordinator@node1"
 	txn.currentDelegate = coordinator
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AssemblyResult: prototk.AssembleTransactionResponse_OK,
-		Signatures: []*prototk.AttestationResult{
-			{
-				Payload: []byte("test signature"),
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AssemblyResult: prototk.AssembleTransactionResponse_OK,
+			Signatures: []*prototk.AttestationResult{
+				{
+					Payload: []byte("test signature"),
+				},
 			},
 		},
 	}

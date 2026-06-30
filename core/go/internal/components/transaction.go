@@ -35,16 +35,6 @@ type PreparedTransactionWithRefs struct {
 	StateRefs TransactionStateRefs `json:"stateRefs"` // the states associated with the original private transaction
 }
 
-type TransactionPreAssembly struct {
-	TransactionSpecification *prototk.TransactionSpecification `json:"transaction_specification"`
-	RequiredVerifiers        []*prototk.ResolveVerifierRequest `json:"required_verifiers"`
-	PublicTxOptions          pldapi.PublicTxOptions            `json:"public_tx_options"`
-	// Chained dependencies: ordering constraints from the parent coordinator's grapher.
-	// These are persisted on chained transaction creation so they are preserved by any receiving
-	// coordinator for in-memory ordering without blocking like application level dependencies.
-	ChainedDependsOn []uuid.UUID `json:"chainedDependsOn,omitempty"`
-}
-
 type FullState struct {
 	ID     pldtypes.HexBytes `json:"id"`
 	Schema pldtypes.Bytes32  `json:"schema"`
@@ -63,20 +53,60 @@ type EthDeployTransaction struct {
 	Inputs         *abi.ComponentValue
 }
 
+// TransactionPostAssembly holds the proto assembly response alongside the go representations
+// of the same states. This approaches minimises CPU time spent converting between the two representations
+// at the expense of memory usage, since the same private state data is stored multiple times.
 type TransactionPostAssembly struct {
-	AssemblyResult        prototk.AssembleTransactionResponse_Result `json:"assembly_result"`
-	OutputStatesPotential []*prototk.NewState                        `json:"output_states_potential"` // the raw result of assembly, before sequence allocation
-	InfoStatesPotential   []*prototk.NewState                        `json:"info_states_potential"`   // the raw result of assembly, before sequence allocation
-	InputStates           []*FullState                               `json:"input_states"`
-	ReadStates            []*FullState                               `json:"read_states"`
-	OutputStates          []*FullState                               `json:"output_states"`
-	InfoStates            []*FullState                               `json:"info_states"`
-	AttestationPlan       []*prototk.AttestationRequest              `json:"attestation_plan"`
-	Signatures            []*prototk.AttestationResult               `json:"signatures"`
-	Endorsements          []*prototk.AttestationResult               `json:"endorsements"`
-	DomainData            *string                                    `json:"domain_data"`
-	RevertReason          *string                                    `json:"revert_reason"`
-	ResolvedVerifiers     []*prototk.ResolvedVerifier                `json:"resolved_verifiers"`
+	// Immutable proto: the wire format received/sent in AssembleResponse.
+	AssembleResponse *prototk.TransactionPostAssembly
+
+	// TODO AM - pretty sure this is going to tie into protos for snapshots
+	// Go-typed state slices for states that need full FullState (HexBytes ID + schema + data).
+	// InputStates and ReadStates are not stored here; consumers use AssembleResponse.GetInputStates()
+	// and AssembleResponse.GetReadStates() directly since EndorsableState is sufficient for all uses.
+	OutputStates []*FullState // resolved from OutputStatesPotential in AssemblyResponse
+	InfoStates   []*FullState // resolved from InfoStatesPotential in AssemblyResponse
+
+	// Endorsements accumulated during the EndorsementGathering phase by the coordinator.
+	// Seeded from AssemblyResponse.Endorsements so any pre-assembly endorsements included
+	// by the originator are also counted.
+	CollectedEndorsements []*prototk.AttestationResult
+
+	// Lazy EndorsableState caches for OutputStates/InfoStates — computed on first call to the
+	// accessor methods below, avoiding repeated conversion at endorsement/prepare time.
+	outputStatesEndorsable []*prototk.EndorsableState
+	infoStatesEndorsable   []*prototk.EndorsableState
+}
+
+// EndorsableOutputStates returns OutputStates as []*prototk.EndorsableState, converting and
+// caching on first call. Input/ReadStates are accessed directly from AssemblyResponse (already EndorsableState).
+func (pa *TransactionPostAssembly) EndorsableOutputStates() []*prototk.EndorsableState {
+	if pa.outputStatesEndorsable == nil {
+		pa.outputStatesEndorsable = FullStatesToEndorsable(pa.OutputStates)
+	}
+	return pa.outputStatesEndorsable
+}
+
+// EndorsableInfoStates returns InfoStates as []*prototk.EndorsableState, converting and
+// caching on first call.
+func (pa *TransactionPostAssembly) EndorsableInfoStates() []*prototk.EndorsableState {
+	if pa.infoStatesEndorsable == nil {
+		pa.infoStatesEndorsable = FullStatesToEndorsable(pa.InfoStates)
+	}
+	return pa.infoStatesEndorsable
+}
+
+// FullStatesToEndorsable converts []*FullState to []*prototk.EndorsableState.
+func FullStatesToEndorsable(states []*FullState) []*prototk.EndorsableState {
+	endorsable := make([]*prototk.EndorsableState, len(states))
+	for i, s := range states {
+		endorsable[i] = &prototk.EndorsableState{
+			Id:            s.ID.String(),
+			SchemaId:      s.Schema.String(),
+			StateDataJson: string(s.Data),
+		}
+	}
+	return endorsable
 }
 
 // PrivateTransaction is the critical exchange object between the engine and the domain manager,
@@ -94,8 +124,8 @@ type PrivateTransaction struct {
 
 	// ASSEMBLY PHASE: Items that get added to the transaction as it goes on its journey through
 	// assembly, signing and endorsement (possibly going back through the journey many times)
-	PreAssembly  *TransactionPreAssembly  `json:"pre_assembly"`  // the bit of the assembly phase state that can be retained across re-assembly
-	PostAssembly *TransactionPostAssembly `json:"post_assembly"` // the bit of the assembly phase state that must be completely discarded on re-assembly
+	PreAssembly  *prototk.TransactionPreAssembly `json:"pre_assembly"`  // the bit of the assembly phase state that can be retained across re-assembly
+	PostAssembly *TransactionPostAssembly        `json:"post_assembly"` // the bit of the assembly phase state that must be completely discarded on re-assembly
 
 	// DISPATCH PHASE: Once the transaction has reached sufficient confidence of success, we move on to submission.
 	// Each private transaction may result in a public transaction which should be submitted to the
@@ -104,6 +134,33 @@ type PrivateTransaction struct {
 	PreparedPublicTransaction  *pldapi.TransactionInput `json:"-"`
 	PreparedPrivateTransaction *pldapi.TransactionInput `json:"-"`
 	PreparedMetadata           pldtypes.RawJSON         `json:"-"`
+}
+
+// ToDelegation returns the minimal wire descriptor for this transaction when delegating
+// to a coordinator
+func (pt *PrivateTransaction) ToDelegation() *prototk.PrivateTransactionDelegation {
+	return &prototk.PrivateTransactionDelegation{
+		Id:          pt.ID.String(),
+		Domain:      pt.Domain,
+		Intent:      pt.Intent,
+		PreAssembly: pt.PreAssembly,
+	}
+}
+
+// NewPrivateTransactionFromDelegation reconstructs a PrivateTransaction from a wire
+// delegation descriptor
+func NewPrivateTransactionFromDelegation(del *prototk.PrivateTransactionDelegation, address pldtypes.EthAddress) *PrivateTransaction {
+	id, err := uuid.Parse(del.GetId())
+	if err != nil {
+		return nil
+	}
+	return &PrivateTransaction{
+		ID:          id,
+		Domain:      del.GetDomain(),
+		Address:     address,
+		Intent:      del.GetIntent(),
+		PreAssembly: del.GetPreAssembly(),
+	}
 }
 
 // CleanUpPostAssemblyData releases the heavy post-assembly and prepared-dispatch
@@ -138,6 +195,7 @@ type PrivateContractDeploy struct {
 }
 
 type PrivateTransactionEndorseRequest struct {
+	BlockContext             *prototk.BlockContext
 	TransactionSpecification *prototk.TransactionSpecification
 	Verifiers                []*prototk.ResolvedVerifier
 	Signatures               []*prototk.AttestationResult

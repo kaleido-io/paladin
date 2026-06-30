@@ -18,6 +18,7 @@ syntax = "proto3";
 package io.kaleido.paladin.kata.engine;
 option go_package = "pkg/proto/engine";
 import "to_domain.proto";
+import "private_tx.proto";
 
 message NonceAssigned {
     string id = 1;
@@ -81,6 +82,7 @@ message EndorsementRequest {
     int64 expiry_time_unix_ms = 13;
     int64 coordinator_block_height = 14;
     int64 block_height_tolerance = 15;
+    io.kaleido.paladin.toolkit.BlockContext block_context = 16;
 }
 
 message EndorsementResponse {
@@ -109,7 +111,8 @@ message DelegationRequest {
     string delegate_node_id = 1;
     string delegation_id = 2; //this is used to correlate the acknowledgement back to the delegation. unlike the transport message id / correlation id, this is not unique across retries
     int64 originator_block_height = 3; // the originator's block height upon which this delegation was calculated
-    repeated bytes private_transactions = 4; // json serialized copies of all in-memory private transaction objects, batched into a single message
+    repeated io.kaleido.paladin.toolkit.PrivateTransactionDelegation transactions = 4; // typed delegation descriptors, one per delegated transaction
+    string contract_address = 5; // hex EthAddress — all transactions in this request share the same contract
 }
 
 message DelegationResponse {
@@ -140,7 +143,6 @@ message AssembleRequest {
     string transaction_id = 1;
     string assemble_request_id = 2;
     string contract_address = 3;
-    bytes pre_assembly = 5;
     bytes state_locks = 6;
     int64 coordinator_block_height = 7;
     int64 expiry_time_unix_ms = 8;
@@ -151,8 +153,7 @@ message AssembleResponse {
     string transaction_id = 1;
     string assemble_request_id = 2;
     string contract_address = 3;
-    bytes post_assembly = 4;
-    bytes pre_assembly = 5;
+    io.kaleido.paladin.toolkit.TransactionPostAssembly post_assembly = 4;
 }
 
 message AssembleError {

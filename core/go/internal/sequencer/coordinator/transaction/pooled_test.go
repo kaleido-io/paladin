@@ -19,10 +19,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/LFDT-Paladin/paladin/core/internal/components"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/syncpoints"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -198,7 +198,7 @@ func Test_action_NotifyDependentsOfReset_WithDependents(t *testing.T) {
 	mainTxn, _ := NewTransactionBuilderForTesting(t, State_Pooled).
 		TransactionID(mainTxnID).
 		Grapher(grapher).DependencyTracker(depTracker).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		CoordinatorTransactions(map[uuid.UUID]CoordinatorTransaction{
 			dependentTxn.pt.ID: dependentTxn,
 		}).
@@ -215,7 +215,7 @@ func Test_action_NotifyDependentsOfReset_WithDependents(t *testing.T) {
 func Test_action_NotifyDependentsOfReset_InitialTransitionHasNoDependents(t *testing.T) {
 	ctx := t.Context()
 	txn, _ := NewTransactionBuilderForTesting(t, State_Pooled).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		Build()
 
 	err := action_NotifyDependentsOfReset(ctx, txn, nil)
@@ -233,7 +233,7 @@ func Test_notifyDependentsOfRepool_WithChainedDependency(t *testing.T) {
 
 	txn, _ := NewTransactionBuilderForTesting(t, State_Pooled).
 		Grapher(grapher).DependencyTracker(depTracker).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		CoordinatorTransactions(map[uuid.UUID]CoordinatorTransaction{
 			dependentTxn.pt.ID: dependentTxn,
 		}).
@@ -256,7 +256,7 @@ func Test_notifyDependentsOfReset_QueuesWithoutExistenceCheck(t *testing.T) {
 	mainTxn, _ := NewTransactionBuilderForTesting(t, State_Pooled).
 		TransactionID(mainTxnID).
 		Grapher(grapher).DependencyTracker(depTracker).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		CoordinatorTransactions(map[uuid.UUID]CoordinatorTransaction{
 			mockDependentID: nil,
 		}).
@@ -280,7 +280,7 @@ func Test_action_NotifyDependentsOfReset_QueuesWithoutExistenceCheck(t *testing.
 	mainTxn, _ := NewTransactionBuilderForTesting(t, State_Pooled).
 		TransactionID(mainTxnID).
 		Grapher(grapher).DependencyTracker(depTracker).
-		PreAssembly(&components.TransactionPreAssembly{}).
+		PreAssembly(&prototk.TransactionPreAssembly{}).
 		CoordinatorTransactions(map[uuid.UUID]CoordinatorTransaction{
 			mockDependentID: nil,
 		}).

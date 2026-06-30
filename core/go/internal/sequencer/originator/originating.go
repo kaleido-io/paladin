@@ -28,6 +28,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/originator/transaction"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 )
 
@@ -118,7 +119,16 @@ func sendDelegationRequest(ctx context.Context, o *originator) error {
 
 	log.L(ctx).Debugf("sending delegation request for %d transactions", len(o.transactionsOrdered))
 
-	return o.transportWriter.SendDelegationRequest(ctx, o.currentActiveCoordinator, transactionsToDelegate, uint64(o.currentBlockHeight))
+	delegations := make([]*prototk.PrivateTransactionDelegation, 0, len(transactionsToDelegate))
+	for _, tx := range transactionsToDelegate {
+		delegations = append(delegations, tx.ToDelegation())
+	}
+	return o.transportWriter.SendDelegationRequest(ctx, o.currentActiveCoordinator, &engineProto.DelegationRequest{
+		DelegateNodeId:        o.currentActiveCoordinator,
+		OriginatorBlockHeight: int64(o.currentBlockHeight),
+		ContractAddress:       o.contractAddress.HexString(),
+		Transactions:          delegations,
+	})
 }
 
 func action_SendDelegationRequest(ctx context.Context, o *originator, _ common.Event) error {

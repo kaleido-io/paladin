@@ -46,7 +46,7 @@ func TestOriginator_SingleTransactionLifecycle(t *testing.T) {
 	o, mocks := builder.Build()
 	mocks.EngineIntegration.On("GetBlockHeight", mock.Anything).Return(int64(0))
 	mocks.EngineIntegration.On("CheckPendingPrivateStateData", mock.Anything, mock.Anything).Return(true, nil)
-	require.NoError(t, o.Start(ctx))
+	o.Start(ctx)
 	defer func() {
 		cancel()
 		o.WaitForDone(t.Context())
@@ -76,7 +76,7 @@ func TestOriginator_SingleTransactionLifecycle(t *testing.T) {
 		mock.Anything,
 		mock.Anything,
 		mock.Anything,
-	).Return(postAssembly, nil)
+	).Return(postAssembly.AssembleResponse, nil)
 	// Queue TransactionCreated and the coordinator's assemble request together
 	o.QueueEvent(ctx, &TransactionCreatedEvent{Transaction: txn})
 	// Simulate the coordinator sending an assemble request
@@ -294,13 +294,13 @@ func TestOriginator_Start_Idempotent(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	o, mocks := NewOriginatorBuilderForTesting(t, State_Idle).Build()
 	mocks.EngineIntegration.On("GetBlockHeight", mock.Anything).Return(int64(0))
-	require.NoError(t, o.Start(ctx))
+	o.Start(ctx)
 	defer func() {
 		cancel()
 		o.WaitForDone(t.Context())
 	}()
 	// Second call should be a no-op (idempotent).
-	require.NoError(t, o.Start(ctx))
+	o.Start(ctx)
 }
 
 func TestOriginator_WaitForDone_NotStarted_ReturnsImmediately(t *testing.T) {

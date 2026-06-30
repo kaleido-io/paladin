@@ -25,12 +25,21 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/coordinator/statevisibilitytracker"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
+	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const testBlockHeightTolerance uint64 = 5
+
+func endorsable(ids ...pldtypes.HexBytes) []*prototk.EndorsableState {
+	result := make([]*prototk.EndorsableState, len(ids))
+	for i, id := range ids {
+		result[i] = &prototk.EndorsableState{Id: id.String()}
+	}
+	return result
+}
 
 func testGrapher(t *testing.T) Grapher {
 	t.Helper()
@@ -133,7 +142,7 @@ func TestLockMintsOnSpend_DependsOnMinter(t *testing.T) {
 	state := &components.FullState{ID: stateID, Schema: pldtypes.MustParseBytes32("0x" + strings.Repeat("ff", 32)), Data: pldtypes.RawJSON(`{}`)}
 
 	require.NoError(t, g.AddMinter(ctx, []*components.FullState{state}, minterID))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerID)
 
 	assert.Equal(t, []uuid.UUID{minterID}, g.GetDependencies(ctx, consumerID))
 }
@@ -147,7 +156,7 @@ func TestLockMintsOnRead_DependsOnMinter(t *testing.T) {
 	state := &components.FullState{ID: stateID, Schema: pldtypes.MustParseBytes32("0x" + strings.Repeat("22", 32)), Data: pldtypes.RawJSON(`{}`)}
 
 	require.NoError(t, g.AddMinter(ctx, []*components.FullState{state}, minterID))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{state}, []*components.FullState{}, readerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(state.ID), endorsable(), readerID)
 
 	assert.Equal(t, []uuid.UUID{minterID}, g.GetDependencies(ctx, readerID))
 }
@@ -169,7 +178,7 @@ func TestGetDependents_ConsumerWithNoReadPrereqs_ReturnsEmptySlice(t *testing.T)
 	g := testGrapher(t)
 	consumerID := uuid.New()
 	unknown := pldtypes.MustParseHexBytes("0x" + strings.Repeat("b1", 32))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: unknown}}, []*components.FullState{}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(unknown), endorsable(), consumerID)
 
 	assert.Empty(t, g.GetDependents(ctx, consumerID))
 }
@@ -179,7 +188,7 @@ func TestGetDependents_ConsumerWithNoSpendPrereqs_ReturnsEmptySlice(t *testing.T
 	g := testGrapher(t)
 	consumerID := uuid.New()
 	unknown := pldtypes.MustParseHexBytes("0x" + strings.Repeat("b1", 32))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{{ID: unknown}}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(unknown), consumerID)
 
 	assert.Empty(t, g.GetDependents(ctx, consumerID))
 }
@@ -209,7 +218,7 @@ func TestLockMintsOnSpend_UnknownReadState_NoDependency(t *testing.T) {
 	unknown := pldtypes.MustParseHexBytes("0x" + strings.Repeat("33", 32))
 	state := &components.FullState{ID: unknown}
 
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{state}, []*components.FullState{}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(state.ID), endorsable(), consumerID)
 	assert.Empty(t, g.GetDependencies(ctx, consumerID))
 }
 
@@ -220,7 +229,7 @@ func TestLockMintsOnSpend_UnknownSpendState_NoDependency(t *testing.T) {
 	unknown := pldtypes.MustParseHexBytes("0x" + strings.Repeat("33", 32))
 	state := &components.FullState{ID: unknown}
 
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerID)
 	assert.Empty(t, g.GetDependencies(ctx, consumerID))
 }
 
@@ -231,7 +240,7 @@ func TestLockMintsOnSpend_MultipleStates_AppendsSpendLocks(t *testing.T) {
 	s1 := pldtypes.MustParseHexBytes("0x" + strings.Repeat("de", 32))
 	s2 := pldtypes.MustParseHexBytes("0x" + strings.Repeat("ef", 32))
 
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{{ID: s1}, {ID: s2}}, txID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(s1, s2), txID)
 
 	locks := g.locksByTransaction[txID]
 	require.Len(t, locks, 2)
@@ -312,7 +321,7 @@ func TestExportStatesAndLocks_OutputAndLocks(t *testing.T) {
 		StateUpsert:  components.StateUpsert{ID: stateID, Schema: state.Schema, Data: state.Data},
 		AllowedNodes: []string{"test-node"},
 	})
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{state}, []*components.FullState{}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(state.ID), endorsable(), consumerID)
 
 	data, err := g.ExportStatesAndLocks(ctx, "test-node")
 	require.NoError(t, err)
@@ -340,8 +349,8 @@ func TestExportStatesAndLocks_LocksReturnedUnfiltered(t *testing.T) {
 	s2 := pldtypes.MustParseHexBytes("0x" + strings.Repeat("d2", 32))
 
 	// Two transactions create locks on different states
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: s1}}, []*components.FullState{}, txID1)
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{{ID: s2}}, txID2)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(s1), endorsable(), txID1)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(s2), txID2)
 
 	// Both nodes should see all locks regardless of any AllowedNodes on states
 	forNode1, err := g.ExportStatesAndLocks(ctx, "node1")
@@ -371,7 +380,7 @@ func TestForgetTransactionAndLocks_RemoveAllDependencyLinks_SkipsMissingDependen
 	state := &components.FullState{ID: stateID, Schema: pldtypes.MustParseBytes32("0x" + strings.Repeat("a1", 32)), Data: pldtypes.RawJSON(`{}`)}
 
 	require.NoError(t, g.AddMinter(ctx, []*components.FullState{state}, minterID))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, realDependent)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), realDependent)
 
 	g.mu.Lock()
 	g.addConsumer(ghostDependent)
@@ -414,7 +423,7 @@ func TestForgetTransactionAndLocks_ClearsPrereqOnMinterWhenConsumerForgotten(t *
 	state := &components.FullState{ID: stateID, Schema: pldtypes.MustParseBytes32("0x" + strings.Repeat("f1", 32)), Data: pldtypes.RawJSON(`{}`)}
 
 	require.NoError(t, g.AddMinter(ctx, []*components.FullState{state}, minterID))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerID)
 
 	require.Contains(t, g.GetDependents(ctx, minterID), consumerID)
 
@@ -434,7 +443,7 @@ func TestForgetTransactionAndLocks_ClearsMinterConsumerAndLocks(t *testing.T) {
 
 	require.NoError(t, g.AddMinter(ctx, []*components.FullState{state}, minterID))
 	g.LockMintsOnCreate(ctx, []*components.StateUpsert{{ID: stateID, CreatedBy: &createdBy}}, []*components.FullState{{ID: stateID}}, minterID)
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerID)
 	g.ForgetTransactionAndLocks(ctx, minterID)
 
 	// Transaction-indexed maps cleared
@@ -453,7 +462,7 @@ func TestForgetTransactionAndLocks_ClearsLocksForTransaction(t *testing.T) {
 	txID := uuid.New()
 	s := pldtypes.MustParseHexBytes("0x" + strings.Repeat("ab", 32))
 	// Read lock → lands in readLocksByStateID
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: s}}, []*components.FullState{}, txID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(s), endorsable(), txID)
 	require.Contains(t, g.locksByTransaction, txID)
 	require.Contains(t, g.readLocksByStateID, s.String())
 	g.ForgetTransactionAndLocks(ctx, txID)
@@ -468,7 +477,7 @@ func TestForgetTransactionAndLocks_AlreadyConfirmedTransaction_NoOp(t *testing.T
 	g := testGrapher(t)
 	txID := uuid.New()
 	s := pldtypes.MustParseHexBytes("0x" + strings.Repeat("cd", 32))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: s}}, []*components.FullState{}, txID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(s), endorsable(), txID)
 	g.ForgetTransaction(ctx, txID, 100)
 	// Second call (from cleanUpTransaction) must be a no-op
 	g.ForgetTransactionAndLocks(ctx, txID)
@@ -556,7 +565,7 @@ func TestForgetTransaction_CreateAndSpendLocksStampedIndependently(t *testing.T)
 		minterTx,
 	)
 	// Consumer assembles: spend lock recorded in spendLocksByStateID.
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerTx)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerTx)
 
 	// Minter confirms first at block 10.
 	g.ForgetTransaction(ctx, minterTx, 10)
@@ -635,7 +644,27 @@ func TestForgetLocks_RemovesExpiredLocks(t *testing.T) {
 	g := testGrapher(t)
 	txID := uuid.New()
 	s := pldtypes.MustParseHexBytes("0x" + strings.Repeat("56", 32))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: s}}, []*components.FullState{}, txID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(s), endorsable(), txID)
+	g.ForgetTransaction(ctx, txID, 100)
+
+	// tolerance = 5, confirmedAt = 100, expires at >= 105
+	g.ForgetLocks(ctx, 104) // not yet expired
+	data, err := g.ExportStatesAndLocks(ctx, "test-node")
+	require.NoError(t, err)
+	assert.Len(t, data.LockedState, 1)
+
+	g.ForgetLocks(ctx, 105) // exactly at expiry
+	data, err = g.ExportStatesAndLocks(ctx, "test-node")
+	require.NoError(t, err)
+	assert.Empty(t, data.LockedState)
+}
+
+func TestForgetLocks_RemovesExpiredSpendLocks(t *testing.T) {
+	ctx := t.Context()
+	g := testGrapher(t)
+	txID := uuid.New()
+	s := pldtypes.MustParseHexBytes("0x" + strings.Repeat("57", 32))
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(s), txID)
 	g.ForgetTransaction(ctx, txID, 100)
 
 	// tolerance = 5, confirmedAt = 100, expires at >= 105
@@ -655,7 +684,7 @@ func TestForgetLocks_DoesNotRemoveTransactionOwnedLocks(t *testing.T) {
 	g := testGrapher(t)
 	txID := uuid.New()
 	s := pldtypes.MustParseHexBytes("0x" + strings.Repeat("78", 32))
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{{ID: s}}, []*components.FullState{}, txID)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(s), endorsable(), txID)
 
 	// Should not touch transaction-owned locks
 	g.ForgetLocks(ctx, 99999)
@@ -876,7 +905,7 @@ func TestExportStatesAndLocks_SpendLockSuppressesPrivateStateData(t *testing.T) 
 	assert.True(t, data.OutputState[0].ID.Equals(stateID))
 
 	// Spender assembles: spend lock added for the same state.
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, spenderTx)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), spenderTx)
 
 	// After spend lock: private state data must be suppressed for node1 — state is consumed.
 	data, err = g.ExportStatesAndLocks(ctx, "node1")
@@ -950,7 +979,7 @@ func TestCreateLockSurvivesSpendLockRevert(t *testing.T) {
 	assert.Empty(t, g.spendLocksByStateID, "no spend lock yet")
 
 	// Step 2: consumerTx optimistically spends stateID — this must NOT displace the create lock.
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, consumerTx)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), consumerTx)
 
 	require.Contains(t, g.createLocksByStateID, stateID.String(), "create lock must still exist after spend lock added")
 	require.Contains(t, g.spendLocksByStateID, stateID.String(), "spend lock must be recorded for consumerTx")
@@ -991,12 +1020,12 @@ func TestReadLockSurvivesSpendLockRevert(t *testing.T) {
 	state := &components.FullState{ID: stateID}
 
 	// txB reads stateID → read lock in readLocksByStateID.
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{state}, []*components.FullState{}, readerTx)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(state.ID), endorsable(), readerTx)
 	require.Contains(t, g.readLocksByStateID, stateID.String(), "read lock must be recorded for readerTx")
 	assert.Empty(t, g.spendLocksByStateID, "no spend lock yet")
 
 	// txC spends stateID → spend lock in spendLocksByStateID, must NOT displace the read lock.
-	g.LockMintsOnReadAndSpend(ctx, []*components.FullState{}, []*components.FullState{state}, spenderTx)
+	g.LockMintsOnReadAndSpend(ctx, endorsable(), endorsable(state.ID), spenderTx)
 	require.Contains(t, g.readLocksByStateID, stateID.String(), "read lock must still exist after spend lock added")
 	require.Contains(t, g.spendLocksByStateID, stateID.String(), "spend lock must be recorded for spenderTx")
 

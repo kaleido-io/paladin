@@ -38,7 +38,7 @@ func TestNewStateDistributionBuilder(t *testing.T) {
 func TestBuild_NilPostAssembly(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
@@ -55,16 +55,18 @@ func TestBuild_NilPostAssembly(t *testing.T) {
 func TestBuild_MismatchedOutputStates(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{{}, {}},
-			OutputStates:          []*components.FullState{{}},
-			InfoStatesPotential:   []*prototk.NewState{},
-			InfoStates:            []*components.FullState{},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{{}, {}},
+				InfoStatesPotential:   []*prototk.NewState{},
+			},
+			OutputStates: []*components.FullState{{}},
+			InfoStates:   []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -77,16 +79,18 @@ func TestBuild_MismatchedOutputStates(t *testing.T) {
 func TestBuild_MismatchedInfoStates(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{},
-			OutputStates:          []*components.FullState{},
-			InfoStatesPotential:   []*prototk.NewState{{}, {}},
-			InfoStates:            []*components.FullState{{}},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{},
+				InfoStatesPotential:   []*prototk.NewState{{}, {}},
+			},
+			OutputStates: []*components.FullState{},
+			InfoStates:   []*components.FullState{{}},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -99,16 +103,18 @@ func TestBuild_MismatchedInfoStates(t *testing.T) {
 func TestBuild_InvalidFromLocator(t *testing.T) {
 	ctx := context.Background()
 	tx := &components.PrivateTransaction{
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice", // missing node
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{},
-			OutputStates:          []*components.FullState{},
-			InfoStatesPotential:   []*prototk.NewState{},
-			InfoStates:            []*components.FullState{},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{},
+				InfoStatesPotential:   []*prototk.NewState{},
+			},
+			OutputStates: []*components.FullState{},
+			InfoStates:   []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -126,16 +132,19 @@ func TestBuild_LocalDistribution(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"alice@node1"},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"alice@node1"},
+					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -144,8 +153,7 @@ func TestBuild_LocalDistribution(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{"key":"value"}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -172,16 +180,19 @@ func TestBuild_RemoteDistribution(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"bob@node2"},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"bob@node2"},
+					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -190,8 +201,7 @@ func TestBuild_RemoteDistribution(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{"key":"value"}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -215,16 +225,19 @@ func TestBuild_OriginatorAddedToDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"bob@node2"}, // originator not included
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"bob@node2"}, // originator not included
+					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -233,8 +246,7 @@ func TestBuild_OriginatorAddedToDistributionList(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -255,16 +267,19 @@ func TestBuild_OriginatorAlreadyInDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"alice@node1", "bob@node2"},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"alice@node1", "bob@node2"},
+					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -273,8 +288,7 @@ func TestBuild_OriginatorAlreadyInDistributionList(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -295,24 +309,27 @@ func TestBuild_WithNullifierSpec(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"alice@node1"},
-					NullifierSpecs: []*prototk.NullifierSpec{
-						{
-							Party:        "alice@node1",
-							Algorithm:    "snark",
-							VerifierType: "groth16",
-							PayloadType:  "json",
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"alice@node1"},
+						NullifierSpecs: []*prototk.NullifierSpec{
+							{
+								Party:        "alice@node1",
+								Algorithm:    "snark",
+								VerifierType: "groth16",
+								PayloadType:  "json",
+							},
 						},
 					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -321,8 +338,7 @@ func TestBuild_WithNullifierSpec(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -347,22 +363,25 @@ func TestBuild_NullifierSpecNotInDistributionList(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"alice@node1"},
-					NullifierSpecs: []*prototk.NullifierSpec{
-						{
-							Party:     "charlie@node3", // not in distribution list
-							Algorithm: "snark",
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"alice@node1"},
+						NullifierSpecs: []*prototk.NullifierSpec{
+							{
+								Party:     "charlie@node3", // not in distribution list
+								Algorithm: "snark",
+							},
 						},
 					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -371,8 +390,7 @@ func TestBuild_NullifierSpecNotInDistributionList(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -390,16 +408,19 @@ func TestBuild_InvalidRecipientLocator(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"bob"}, // missing node
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"bob"}, // missing node
+					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{
@@ -408,8 +429,7 @@ func TestBuild_InvalidRecipientLocator(t *testing.T) {
 					Data:   pldtypes.RawJSON(`{}`),
 				},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -428,20 +448,22 @@ func TestBuild_InfoStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{DistributionList: []string{"alice@node1"}},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{DistributionList: []string{"alice@node1"}},
+				},
+				InfoStatesPotential: []*prototk.NewState{
+					{DistributionList: []string{"bob@node2"}},
+				},
 			},
 			OutputStates: []*components.FullState{
 				{ID: outputStateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
-			},
-			InfoStatesPotential: []*prototk.NewState{
-				{DistributionList: []string{"bob@node2"}},
 			},
 			InfoStates: []*components.FullState{
 				{ID: infoStateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
@@ -468,22 +490,24 @@ func TestBuild_MultipleOutputStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{DistributionList: []string{"alice@node1"}},
-				{DistributionList: []string{"bob@node2"}},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{DistributionList: []string{"alice@node1"}},
+					{DistributionList: []string{"bob@node2"}},
+				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{ID: stateID1, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
 				{ID: stateID2, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -505,26 +529,28 @@ func TestBuild_MultipleNullifierSpecsOnlyFirstMatches(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{
-					DistributionList: []string{"alice@node1", "bob@node2"},
-					NullifierSpecs: []*prototk.NullifierSpec{
-						{Party: "alice@node1", Algorithm: "alg1"},
-						{Party: "bob@node2", Algorithm: "alg2"},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{
+						DistributionList: []string{"alice@node1", "bob@node2"},
+						NullifierSpecs: []*prototk.NullifierSpec{
+							{Party: "alice@node1", Algorithm: "alg1"},
+							{Party: "bob@node2", Algorithm: "alg2"},
+						},
 					},
 				},
+				InfoStatesPotential: []*prototk.NewState{},
 			},
 			OutputStates: []*components.FullState{
 				{ID: stateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
 			},
-			InfoStatesPotential: []*prototk.NewState{},
-			InfoStates:          []*components.FullState{},
+			InfoStates: []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -545,16 +571,18 @@ func TestBuild_EmptyStates(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{},
-			OutputStates:          []*components.FullState{},
-			InfoStatesPotential:   []*prototk.NewState{},
-			InfoStates:            []*components.FullState{},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{},
+				InfoStatesPotential:   []*prototk.NewState{},
+			},
+			OutputStates: []*components.FullState{},
+			InfoStates:   []*components.FullState{},
 		},
 	}
 	builder := NewStateDistributionBuilder("node1", tx)
@@ -576,20 +604,22 @@ func TestBuild_InfoStateProcessError(t *testing.T) {
 	tx := &components.PrivateTransaction{
 		Domain:  "test-domain",
 		Address: *pldtypes.MustEthAddress("0x1234567890123456789012345678901234567890"),
-		PreAssembly: &components.TransactionPreAssembly{
+		PreAssembly: &prototk.TransactionPreAssembly{
 			TransactionSpecification: &prototk.TransactionSpecification{
 				From: "alice@node1",
 			},
 		},
 		PostAssembly: &components.TransactionPostAssembly{
-			OutputStatesPotential: []*prototk.NewState{
-				{DistributionList: []string{"alice@node1"}},
+			AssembleResponse: &prototk.TransactionPostAssembly{
+				OutputStatesPotential: []*prototk.NewState{
+					{DistributionList: []string{"alice@node1"}},
+				},
+				InfoStatesPotential: []*prototk.NewState{
+					{DistributionList: []string{"bob"}}, // missing node - triggers error in processStateForDistribution
+				},
 			},
 			OutputStates: []*components.FullState{
 				{ID: outputStateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},
-			},
-			InfoStatesPotential: []*prototk.NewState{
-				{DistributionList: []string{"bob"}}, // missing node - triggers error in processStateForDistribution
 			},
 			InfoStates: []*components.FullState{
 				{ID: infoStateID, Schema: schemaID, Data: pldtypes.RawJSON(`{}`)},

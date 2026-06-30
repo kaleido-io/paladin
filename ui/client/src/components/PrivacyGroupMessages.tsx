@@ -32,6 +32,8 @@ import { customNavigate } from "../utils";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from "react-router-dom";
 import { PrivacyGroupMessageLookupDialog } from "../dialogs/PrivateGroupMessageLookup";
+import SendIcon from '@mui/icons-material/Send';
+import { SendPrivacyGroupMessageDialog } from "../dialogs/SendPrivacyGroupMessage";
 
 type Props = {
   privacyGroup: IPrivacyGroup
@@ -39,6 +41,7 @@ type Props = {
 
 export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
 
+  const [sendMessageDialogOpen, setSendMessageDialogOpen] = useState(false);
   const [lookupPrivateGroupMessageDialogOpen, setLookupPrivateGroupMessageDialogOpen] = useState(false);
   const [count, setCount] = useState(-1);
   const navigate = useNavigate();
@@ -113,6 +116,15 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <Typography variant="h6">{t('privacyGroupMessages')}</Typography>
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right', gap: '10px' }}>
+          <Button
+            sx={{ borderRadius: '20px', minWidth: '120px' }}
+            size="small"
+            variant="outlined"
+            startIcon={<SendIcon />}
+            onClick={() => setSendMessageDialogOpen(true)}
+          >
+            {t('send')}
+          </Button>
           <Button
             sx={{ borderRadius: '20px', minWidth: '120px' }}
             size="small"
@@ -278,13 +290,13 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
                     <TableCell>
                       <Hash Icon={<Tag size="18px" />} hideTitle title={t('id')} hash={privacyGroupMessage.id} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       {privacyGroupMessage.node}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       {privacyGroupMessage.domain}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       {privacyGroupMessage.topic}
                     </TableCell>
                     <TableCell>
@@ -327,6 +339,11 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
           <Typography>{t('privacyGroupMessagesEmptyState')}</Typography>
         </Box>
       }
+      <SendPrivacyGroupMessageDialog
+        privacyGroup={privacyGroup}
+        dialogOpen={sendMessageDialogOpen}
+        setDialogOpen={setSendMessageDialogOpen}
+      />
       <PrivacyGroupMessageLookupDialog
         privacyGroupId={privacyGroup.id}
         dialogOpen={lookupPrivateGroupMessageDialogOpen}

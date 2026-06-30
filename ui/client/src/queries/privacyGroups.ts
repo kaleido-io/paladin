@@ -191,3 +191,31 @@ export const createPrivacyGroup = async (
     )
   );
 };
+
+export const sendPrivacyGroupMessage = async (
+  group: string,
+  topic: string,
+  data: any,
+  correlationId?: string
+): Promise<string> => {
+  const payload = {
+    jsonrpc: '2.0',
+    id: Date.now(),
+    method: RpcMethods.pgroup_sendMessage,
+    params: [{
+      domain: 'pente',
+      group,
+      topic,
+      data,
+      correlationId
+    }],
+  };
+  return <Promise<string>>(
+    returnResponse(
+      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+      i18next.t('errorFetchingPrivacyGroup')
+    )
+  );
+};
+
+

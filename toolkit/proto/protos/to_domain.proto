@@ -90,6 +90,7 @@ message AssembleTransactionRequest {
   string state_query_context = 1; // handle to supply to state queries performed during this call
   TransactionSpecification transaction = 2; // The transaction to assemble
   repeated ResolvedVerifier resolved_verifiers = 3; // A list of transaction signatures/proofs that have been resolved, so the transaction can be assembled
+  optional BlockContext block_context = 4; // The base ledger block context at the time of assembly
 }
 
 message AssembleTransactionResponse {
@@ -139,7 +140,7 @@ message EndorseTransactionRequest {
   repeated EndorsableState outputs = 8; // Output states for the transaction
   repeated EndorsableState info = 9; // Info states for the transaction, that are important information in/out of the business transaction, but are never recorded in an on-chain map, or returned from FindAvailableStates
   repeated AttestationResult signatures = 10; // All SIGN attestation results (required from submitting node before endorsement)
-  
+  optional BlockContext block_context = 11; // The base ledger block context at the time the transaction was assembled
 }
 
 message EndorseTransactionResponse {
@@ -185,6 +186,7 @@ message ExecCallRequest {
   string state_query_context = 1; // handle to supply to state queries performed during this call
   repeated ResolvedVerifier resolved_verifiers = 2; // The verifiers requested during init
   TransactionSpecification transaction = 3; // The transaction to exec
+  optional BlockContext block_context = 4; // The base ledger block context at the time of the call
 }
 
 message ExecCallResponse {
@@ -342,6 +344,11 @@ message DeployTransactionSpecification {
   string constructor_params_json = 3; // The parameters supplied in the invocation in normalized JSON format, after validation against the ABI the caller supplied
 }
 
+message BlockContext {
+  int64 block_number = 1;    // Base ledger block number at which this operation is performed
+  int64 block_timestamp = 2; // Timestamp for the provided base ledger block number
+}
+
 message TransactionSpecification {
   enum Intent {
     SEND_TRANSACTION = 0; // This transaction should be sent to the base ledger once ready
@@ -354,9 +361,7 @@ message TransactionSpecification {
   string function_signature = 4; // The calculated signature of the function ABI the caller is attempting to invoke
   string function_abi_json = 5; // The function ABI (asserted by the caller) they wish to inovoke on the smart contract
   string function_params_json = 6; // The parameters supplied in the invocation in normalized JSON format, after validation against the ABI the caller supplied
-  int64 base_block = 7; // The block number on the base ledger, upon which this transaction is being assembled
-  Intent intent = 8; // The sender's intended outcome (a submitted transaction or only a call)
-  int64 base_block_timestamp = 9; // The timestamp for the provided block number on the base ledger, upon which this transaction is being assembled
+  Intent intent = 7; // The sender's intended outcome (a submitted transaction or only a call)
 }
 
 message PrivacyGroupEVMTX {

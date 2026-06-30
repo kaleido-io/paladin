@@ -560,6 +560,7 @@ func (sMgr *sequencerManager) handleEndorsementRequest(ctx context.Context, mess
 	}
 
 	privateEndorsementRequest := &components.PrivateTransactionEndorseRequest{
+		BlockContext:             endorsementRequest.BlockContext,
 		TransactionSpecification: endorsementRequest.TransactionSpecification,
 		Verifiers:                endorsementRequest.Verifiers,
 		Signatures:               endorsementRequest.Signatures,

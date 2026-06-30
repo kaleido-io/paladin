@@ -82,6 +82,7 @@ message EndorsementRequest {
     int64 expiry_time_unix_ms = 13;
     int64 coordinator_block_height = 14;
     int64 block_height_tolerance = 15;
+    io.kaleido.paladin.toolkit.BlockContext block_context = 16;
 }
 
 message EndorsementResponse {

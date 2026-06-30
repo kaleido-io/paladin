@@ -218,6 +218,7 @@ func (t *coordinatorTransaction) requestEndorsement(ctx context.Context, idempot
 		AttestationRequest:       attRequest,
 		Party:                    party,
 		TransactionSpecification: t.pt.PreAssembly.TransactionSpecification,
+		BlockContext:             t.pt.PostAssembly.BlockContext,
 		Verifiers:                t.pt.PostAssembly.ResolvedVerifiers,
 		Signatures:               t.pt.PostAssembly.Signatures,
 		InputStates:              toEndorsableList(t.pt.PostAssembly.InputStates),

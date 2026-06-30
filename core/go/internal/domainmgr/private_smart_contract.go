@@ -98,17 +98,23 @@ func (d *domain) initSmartContract(ctx context.Context, dbTX persistence.DBTX, d
 	return pscValid, dc, nil
 }
 
+func (dc *domainContract) buildBlockContext(ctx context.Context) (*prototk.BlockContext, error) {
+	b, err := dc.dm.blockIndexer.GetLatestConfirmedBlockMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &prototk.BlockContext{
+		BlockNumber:    b.Number,
+		BlockTimestamp: b.Timestamp,
+	}, nil
+}
+
 func (dc *domainContract) buildTransactionSpecification(ctx context.Context, localTx *components.ResolvedTransaction, intent prototk.TransactionSpecification_Intent) (*prototk.TransactionSpecification, error) {
 
 	if localTx.Transaction == nil || localTx.Transaction.Data == nil || localTx.Function == nil ||
 		localTx.Transaction.Domain != dc.Domain().Name() || *localTx.Transaction.To != dc.info.Address {
 		log.L(ctx).Errorf("Invalid tx for domain %s/%s: %+v", dc.Domain().Name(), dc.info.Address, localTx.Transaction)
 		return nil, i18n.NewError(ctx, msgs.MsgDomainTxnInputDefinitionInvalid)
-	}
-
-	latestConfirmedBlock, err := dc.dm.blockIndexer.GetLatestConfirmedBlockMetadata(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	var abiJSON []byte
@@ -135,9 +141,7 @@ func (dc *domainContract) buildTransactionSpecification(ctx context.Context, loc
 		FunctionAbiJson:    string(abiJSON),
 		FunctionParamsJson: string(paramsJSON),
 		FunctionSignature:  fnDef.SolString(), // we use the proprietary "Solidity inspired" form that is very specific, including param names and nested struct defs
-		BaseBlock:          latestConfirmedBlock.Number,
 		Intent:             intent,
-		BaseBlockTimestamp: latestConfirmedBlock.Timestamp,
 	}, nil
 }
 
@@ -228,6 +232,11 @@ func (dc *domainContract) AssembleTransaction(dCtx components.DomainContext, rea
 	c := dc.d.newInFlightDomainRequest(readTX, dCtx, true)
 	defer c.close()
 
+	blockCtx, err := dc.buildBlockContext(dCtx.Ctx())
+	if err != nil {
+		return err
+	}
+
 	// Now we have the required verifiers, we can ask the domain to do the heavy lifting
 	// and assemble the transaction (using the state store interface we provide)
 	log.L(dCtx.Ctx()).Infof("Assembling transaction=%s domain=%s contract-address=%s", tx.ID, dc.d.name, preAssembly.TransactionSpecification.ContractInfo.ContractAddress)
@@ -235,6 +244,7 @@ func (dc *domainContract) AssembleTransaction(dCtx components.DomainContext, rea
 		StateQueryContext: c.id,
 		Transaction:       preAssembly.TransactionSpecification,
 		ResolvedVerifiers: resolvedVerifiers,
+		BlockContext:      blockCtx,
 	})
 	if err != nil {
 		return err
@@ -276,6 +286,7 @@ func (dc *domainContract) AssembleTransaction(dCtx components.DomainContext, rea
 
 	// We need to pass the assembly result back - it needs to be assigned to a sequence
 	// before anything interesting can happen with the result here
+	postAssembly.BlockContext = blockCtx
 	postAssembly.RevertReason = res.RevertReason
 	postAssembly.AssemblyResult = res.AssemblyResult
 	postAssembly.AttestationPlan = res.AttestationPlan
@@ -452,6 +463,7 @@ func (dc *domainContract) EndorseTransaction(dCtx components.DomainContext, read
 	res, err := dc.api.EndorseTransaction(dCtx.Ctx(), &prototk.EndorseTransactionRequest{
 		StateQueryContext:   c.id,
 		Transaction:         req.TransactionSpecification,
+		BlockContext:        req.BlockContext,
 		ResolvedVerifiers:   req.Verifiers,
 		Inputs:              req.InputStates,
 		Reads:               req.ReadStates,
@@ -590,6 +602,11 @@ func (dc *domainContract) ExecCall(dCtx components.DomainContext, readTX persist
 		return nil, err
 	}
 
+	blockCtx, err := dc.buildBlockContext(dCtx.Ctx())
+	if err != nil {
+		return nil, err
+	}
+
 	// We expect queries to the state store during this call
 	c := dc.d.newInFlightDomainRequest(readTX, dCtx, true)
 	defer c.close()
@@ -599,6 +616,7 @@ func (dc *domainContract) ExecCall(dCtx components.DomainContext, readTX persist
 		StateQueryContext: c.id,
 		ResolvedVerifiers: verifiers,
 		Transaction:       txSpec,
+		BlockContext:      blockCtx,
 	})
 	if err != nil {
 		return nil, err

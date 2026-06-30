@@ -55,6 +55,7 @@ type EthDeployTransaction struct {
 
 type TransactionPostAssembly struct {
 	AssemblyResult        prototk.AssembleTransactionResponse_Result `json:"assembly_result"`
+	BlockContext          *prototk.BlockContext                      `json:"block_context"`           // Base ledger block at which this assembly was performed
 	OutputStatesPotential []*prototk.NewState                        `json:"output_states_potential"` // the raw result of assembly, before sequence allocation
 	InfoStatesPotential   []*prototk.NewState                        `json:"info_states_potential"`   // the raw result of assembly, before sequence allocation
 	InputStates           []*FullState                               `json:"input_states"`
@@ -97,9 +98,7 @@ type PrivateTransaction struct {
 }
 
 // ToDelegation returns the minimal wire descriptor for this transaction when delegating
-// to a coordinator. The contract address is carried at the DelegationRequest level (all
-// transactions in one request share the same contract), so it is not repeated here.
-// PostAssembly is deliberately excluded — the coordinator always triggers fresh assembly.
+// to a coordinator
 func (pt *PrivateTransaction) ToDelegation() *prototk.PrivateTransactionDelegation {
 	return &prototk.PrivateTransactionDelegation{
 		Id:          pt.ID.String(),
@@ -110,8 +109,7 @@ func (pt *PrivateTransaction) ToDelegation() *prototk.PrivateTransactionDelegati
 }
 
 // NewPrivateTransactionFromDelegation reconstructs a PrivateTransaction from a wire
-// delegation descriptor. The contract address is sourced from the enclosing DelegationRequest
-// (shared by all transactions) and passed in directly. Returns nil if the ID cannot be parsed.
+// delegation descriptor
 func NewPrivateTransactionFromDelegation(del *prototk.PrivateTransactionDelegation, address pldtypes.EthAddress) *PrivateTransaction {
 	id, err := uuid.Parse(del.GetId())
 	if err != nil {
@@ -158,6 +156,7 @@ type PrivateContractDeploy struct {
 }
 
 type PrivateTransactionEndorseRequest struct {
+	BlockContext             *prototk.BlockContext
 	TransactionSpecification *prototk.TransactionSpecification
 	Verifiers                []*prototk.ResolvedVerifier
 	Signatures               []*prototk.AttestationResult

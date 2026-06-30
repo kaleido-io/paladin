@@ -134,7 +134,6 @@ func doDomainInitTransactionOK(t *testing.T, td *testDomainContext, resFn ...fun
 
 	td.tp.Functions.InitTransaction = func(ctx context.Context, itr *prototk.InitTransactionRequest) (*prototk.InitTransactionResponse, error) {
 		assert.Equal(t, pldtypes.Bytes32UUIDFirst16(*localTx.Transaction.ID).String(), itr.Transaction.TransactionId)
-		assert.Equal(t, int64(12345), itr.Transaction.BaseBlock)
 		res := &prototk.InitTransactionResponse{
 			RequiredVerifiers: []*prototk.ResolveVerifierRequest{
 				{
@@ -164,6 +163,8 @@ func doDomainInitTransactionOK(t *testing.T, td *testDomainContext, resFn ...fun
 func doDomainInitAssembleTransactionOK(t *testing.T, td *testDomainContext) (*domainContract, *components.PrivateTransaction) {
 	psc, tx, localTx := doDomainInitTransactionOK(t, td)
 	td.tp.Functions.AssembleTransaction = func(ctx context.Context, atr *prototk.AssembleTransactionRequest) (*prototk.AssembleTransactionResponse, error) {
+		require.NotNil(t, atr.BlockContext)
+		assert.Equal(t, int64(12345), atr.BlockContext.BlockNumber)
 		return &prototk.AssembleTransactionResponse{
 			AssemblyResult: prototk.AssembleTransactionResponse_OK,
 			AssembledTransaction: &prototk.AssembledTransaction{
@@ -592,20 +593,18 @@ func TestDomainInitTransactionMissingInput(t *testing.T) {
 
 }
 
-func TestDomainInitTransactionConfirmedBlockFail(t *testing.T) {
+func TestDomainAssembleTransactionBlockContextFail(t *testing.T) {
 	td, done := newTestDomain(t, false, goodDomainConf(), mockSchemas(), func(mc *mockComponents) {
-		mc.blockIndexer.On("GetLatestConfirmedBlockMetadata", mock.Anything).Return((*blockindexer.ConfirmedBlockMetadata)(nil), fmt.Errorf("pop"))
+		mc.blockIndexer.On("GetLatestConfirmedBlockMetadata", mock.Anything).Return((*blockindexer.ConfirmedBlockMetadata)(nil), fmt.Errorf("pop")).Once()
 	})
 	defer done()
 	assert.Nil(t, td.d.initError.Load())
 
-	psc := goodPSC(t, td)
-	localTx := goodPrivateTXWithInputs(psc)
+	psc, tx, localTx := doDomainInitTransactionOK(t, td)
 
-	ptx := &components.PrivateTransaction{}
-	err := psc.InitTransaction(td.ctx, ptx, localTx)
+	err := psc.AssembleTransaction(td.mdc, td.c.dbTX, tx, localTx, []*prototk.ResolvedVerifier{})
 	assert.Regexp(t, "pop", err)
-	assert.Nil(t, ptx.PreAssembly)
+	assert.Nil(t, tx.PostAssembly)
 
 }
 
@@ -1520,6 +1519,20 @@ func TestExecCallFail(t *testing.T) {
 		return &prototk.ExecCallResponse{}, fmt.Errorf("pop")
 	}
 
+	txi := goodPrivateCallWithInputsAndOutputs(psc)
+
+	_, err := psc.ExecCall(td.c.dCtx, td.c.dbTX, txi, []*prototk.ResolvedVerifier{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestExecCallBlockContextFail(t *testing.T) {
+	td, done := newTestDomain(t, false, goodDomainConf(), mockSchemas(), func(mc *mockComponents) {
+		mc.blockIndexer.On("GetLatestConfirmedBlockMetadata", mock.Anything).Return((*blockindexer.ConfirmedBlockMetadata)(nil), fmt.Errorf("pop")).Once()
+	})
+	defer done()
+	assert.Nil(t, td.d.initError.Load())
+
+	psc := goodPSC(t, td)
 	txi := goodPrivateCallWithInputsAndOutputs(psc)
 
 	_, err := psc.ExecCall(td.c.dCtx, td.c.dbTX, txi, []*prototk.ResolvedVerifier{})

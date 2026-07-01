@@ -57,8 +57,9 @@ export interface IPrivacyGroupEVMCall extends IPrivacyGroupEVMTX {
   dataFormat?: string;
 }
 
-export interface IPrivacyGroupMessageListener {
+export interface IPrivacyGroupMessageListenerInput {
   name: string;
+  started?: boolean;
   filters?: {
     sequenceAbove?: number;
     domain?: string;
@@ -68,6 +69,10 @@ export interface IPrivacyGroupMessageListener {
   options?: {
     excludeLocal?: boolean;
   };
+}
+
+export interface IPrivacyGroupMessageListener extends IPrivacyGroupMessageListenerInput {
+  created: string;
 }
 
 export interface IPrivacyGroupMessageInput {

@@ -130,7 +130,7 @@ func TestE2EMessageListenerDelivery(t *testing.T) {
 	require.Len(t, groupIDs, 2)
 
 	// Create listener (started) that includes local
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener1",
 		Filters: pldapi.PrivacyGroupMessageListenerFilters{
 			Domain: "domain1",
@@ -140,7 +140,7 @@ func TestE2EMessageListenerDelivery(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// Create another listener (started) that doesn't include local
-	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener2",
 		Options: pldapi.PrivacyGroupMessageListenerOptions{
 			ExcludeLocal: true, // we won't get notified for all the messages we send locally
@@ -244,12 +244,12 @@ func TestLoadListenersMultiPage(t *testing.T) {
 	mc.registryManager.On("GetNodeTransports", mock.Anything, "node2").
 		Return([]*components.RegistryNodeTransportEntry{ /* contents not checked */ }, nil).Maybe()
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{Name: "listener1",
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{Name: "listener1",
 		Started: confutil.P(false),
 	})
 	require.NoError(t, err)
 
-	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{Name: "listener2"})
+	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{Name: "listener2"})
 	require.NoError(t, err)
 
 	gm.messagesInit()
@@ -333,7 +333,7 @@ func TestCreateBadListener(t *testing.T) {
 	ctx, gm, _, done := newTestGroupManager(t, false, &pldconf.GroupManagerConfig{}, mockEmptyMessageListeners)
 	defer done()
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "badly-behaved",
 		Filters: pldapi.PrivacyGroupMessageListenerFilters{
 			Topic: "((((wrong",
@@ -348,7 +348,7 @@ func TestCreateListenerFail(t *testing.T) {
 
 	mc.db.Mock.ExpectExec("INSERT.*message_listeners").WillReturnError(fmt.Errorf("pop"))
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "test1",
 	})
 	require.Regexp(t, "pop", err)
@@ -386,7 +386,7 @@ func TestStartMessageListenerFail(t *testing.T) {
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 	mdb.ExpectExec("UPDATE.*message_listeners").WillReturnError(fmt.Errorf("pop"))
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "test1",
 		Started: confutil.P(false),
 	})
@@ -412,7 +412,7 @@ func TestDeleteMessageListenerFail(t *testing.T) {
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 	mdb.ExpectExec("DELETE.*message_listeners").WillReturnError(fmt.Errorf("pop"))
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "test1",
 		Started: confutil.P(false),
 	})
@@ -452,7 +452,7 @@ func TestAddReceiverNoBlock(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -476,7 +476,7 @@ func TestNotifyNewMessagesNoBlock(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -494,7 +494,7 @@ func TestClosedRetryingLoadingCheckpoint(t *testing.T) {
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 	mdb.ExpectQuery("SELECT.*message_listener_checkpoints").WillReturnError(fmt.Errorf("pop"))
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -533,7 +533,7 @@ func TestClosedRetryingBatchDeliver(t *testing.T) {
 	mdb.ExpectQuery("SELECT.*message_listener_checkpoints").WillReturnRows(sqlmock.NewRows([]string{}))
 	mockMessages(1, mc)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -564,7 +564,7 @@ func TestClosedRetryingWritingCheckpoint(t *testing.T) {
 	mdb.ExpectExec("INSERT.*message_listener_checkpoints").WillReturnError(fmt.Errorf("pop"))
 	mdb.ExpectRollback()
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -592,7 +592,7 @@ func TestClosedRetryingQueryMessages(t *testing.T) {
 	mdb.ExpectQuery("SELECT.*message_listener_checkpoints").WillReturnRows(sqlmock.NewRows([]string{}))
 	mdb.ExpectQuery("SELECT.*transaction_receipts").WillReturnError(fmt.Errorf("pop"))
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -611,7 +611,7 @@ func TestDeliverBatchCancelledCtxNoReceiver(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -631,7 +631,7 @@ func TestDeliverBatchCancelledCtxNotifyReceiver(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -709,7 +709,7 @@ func TestProcessPersistedMessagePostFilter(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 		Filters: pldapi.PrivacyGroupMessageListenerFilters{
@@ -736,13 +736,13 @@ func TestCreateMessageListenerDup(t *testing.T) {
 	mdb := mc.db.Mock
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
 	require.NoError(t, err)
 
-	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err = gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})
@@ -758,7 +758,7 @@ func TestLoadCheckpoint(t *testing.T) {
 	mdb.ExpectExec("INSERT.*message_listeners").WillReturnResult(driver.ResultNoRows)
 	mdb.ExpectExec("UPDATE.*message_listeners").WillReturnResult(driver.ResultNoRows)
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(true),
 	})

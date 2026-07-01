@@ -21,6 +21,7 @@ import {
   IPrivacyGroupInput,
   IPrivacyGroupMessageInput,
   IPrivacyGroupMessageListener,
+  IPrivacyGroupMessageListenerInput,
   IQuery,
   IRegistryEntry,
   IRegistryEntryWithProperties,
@@ -1026,10 +1027,10 @@ export default class PaladinClient {
       return res.data.result;
     },
 
-    createMessageListener: async (listener: IPrivacyGroupMessageListener) => {
+    createMessageListener: async (spec: IPrivacyGroupMessageListenerInput) => {
       const res = await this.post<JsonRpcResult<boolean>>(
         "pgroup_createMessageListener",
-        [listener]
+        [spec]
       );
       return res.data.result;
     },

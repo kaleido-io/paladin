@@ -358,7 +358,7 @@ var (
 	PrivacyGroupMessageListenerCreated   = pdm("PrivacyGroupMessageListener.created", "Time the listener was created")
 	PrivacyGroupMessageListenerStarted   = pdm("PrivacyGroupMessageListener.started", "If the listener is started - can be set to false to disable delivery server-side")
 	PrivacyGroupMessageListenerFilters   = pdm("PrivacyGroupMessageListener.filters", "Filters to apply to messages")
-	PrivacyGroupMessageListenerOptions   = pdm("PrivacyGroupMessageListener.options", "Options for the receipt listener")
+	PrivacyGroupMessageListenerOptions   = pdm("PrivacyGroupMessageListener.options", "Options for the message listener")
 	MessageListenerFiltersSequenceAbove  = pdm("MessageListenerFilters.sequenceAbove", "Only deliver message above a certain sequence (rather than from the earliest message)")
 	MessageListenerFiltersDomain         = pdm("MessageListenerFilters.domain", "Only deliver messages for an individual domain")
 	MessageListenerFiltersGroup          = pdm("MessageListenerFilters.group", "Only deliver messages for an individual group ID")

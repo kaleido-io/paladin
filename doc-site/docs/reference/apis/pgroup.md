@@ -25,7 +25,7 @@ title: pgroup_*
 
 ### Parameters
 
-0. `listener`: [`PrivacyGroupMessageListener`](../types/privacygroupmessagelistener.md#privacygroupmessagelistener)
+0. `spec`: [`PrivacyGroupMessageListenerInput`](../types/privacygroupmessagelistenerinput.md#privacygroupmessagelistenerinput)
 
 ### Returns
 

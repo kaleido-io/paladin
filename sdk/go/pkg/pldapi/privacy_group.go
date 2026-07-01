@@ -98,12 +98,16 @@ type PrivacyGroupEVMCall struct {
 	DataFormat pldtypes.JSONFormatOptions `docstruct:"TransactionCall" json:"dataFormat"` // formatting options for the result data
 }
 
-type PrivacyGroupMessageListener struct {
+type PrivacyGroupMessageListenerInput struct {
 	Name    string                             `docstruct:"PrivacyGroupMessageListener" json:"name"`
-	Created pldtypes.Timestamp                 `docstruct:"PrivacyGroupMessageListener" json:"created"`
-	Started *bool                              `docstruct:"PrivacyGroupMessageListener" json:"started"`
-	Filters PrivacyGroupMessageListenerFilters `docstruct:"PrivacyGroupMessageListener" json:"filters"`
-	Options PrivacyGroupMessageListenerOptions `docstruct:"PrivacyGroupMessageListener" json:"options"`
+	Started *bool                              `docstruct:"PrivacyGroupMessageListener" json:"started,omitempty"`
+	Filters PrivacyGroupMessageListenerFilters `docstruct:"PrivacyGroupMessageListener" json:"filters,omitempty"`
+	Options PrivacyGroupMessageListenerOptions `docstruct:"PrivacyGroupMessageListener" json:"options,omitempty"`
+}
+
+type PrivacyGroupMessageListener struct {
+	Created pldtypes.Timestamp `docstruct:"PrivacyGroupMessageListener" json:"created"`
+	PrivacyGroupMessageListenerInput
 }
 
 type PrivacyGroupMessageBatch struct {

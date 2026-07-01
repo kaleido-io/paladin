@@ -325,14 +325,14 @@ func TestRCPMessageListenersCRUDRealDB(t *testing.T) {
 	pgroupRPC := pldclient.Wrap(client).PrivacyGroups()
 
 	// Create listener in default (started)
-	boolRes, err := pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	boolRes, err := pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener1",
 	})
 	require.NoError(t, err)
 	require.True(t, boolRes)
 
 	// Duplpicate
-	_, err = pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	_, err = pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener1",
 	})
 	require.Regexp(t, "PD012507.*listener1", err)
@@ -357,7 +357,7 @@ func TestRCPMessageListenersCRUDRealDB(t *testing.T) {
 	require.Nil(t, l)
 
 	// Create listener stopped
-	boolRes, err = pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	boolRes, err = pgroupRPC.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name:    "listener1",
 		Started: confutil.P(false),
 	})

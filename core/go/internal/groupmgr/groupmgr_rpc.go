@@ -147,10 +147,10 @@ func (gm *groupManager) rpcQueryMessages() rpcserver.RPCHandler {
 
 func (gm *groupManager) rpcCreateMessageListener() rpcserver.RPCHandler {
 	return rpcserver.RPCMethod1(func(ctx context.Context,
-		listener *pldapi.PrivacyGroupMessageListener,
+		spec pldapi.PrivacyGroupMessageListenerInput,
 	) (bool, error) {
 		ctx = log.WithComponent(ctx, "groupmanager")
-		err := gm.CreateMessageListener(ctx, listener)
+		err := gm.CreateMessageListener(ctx, &spec)
 		gm.metrics.IncRpc("createMessageListener")
 		return err == nil, err
 	})

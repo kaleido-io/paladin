@@ -63,7 +63,7 @@ type GroupManager interface {
 	QueryMessages(ctx context.Context, dbTX persistence.DBTX, jq *query.QueryJSON) ([]*pldapi.PrivacyGroupMessage, error)
 	GetMessageByID(ctx context.Context, dbTX persistence.DBTX, id uuid.UUID, failNotFound bool) (*pldapi.PrivacyGroupMessage, error)
 
-	CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListener) error
+	CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListenerInput) error
 	AddMessageReceiver(ctx context.Context, name string, r PrivacyGroupMessageReceiver) (PrivacyGroupMessageReceiverCloser, error)
 	GetMessageListener(ctx context.Context, name string) *pldapi.PrivacyGroupMessageListener
 }

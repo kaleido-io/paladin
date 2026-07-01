@@ -40,7 +40,7 @@ type PrivacyGroups interface {
 	GetMessageById(ctx context.Context, id uuid.UUID) (msg *pldapi.PrivacyGroupMessage, err error)
 	QueryMessages(ctx context.Context, q *query.QueryJSON) (msgs []*pldapi.PrivacyGroupMessage, err error)
 
-	CreateMessageListener(ctx context.Context, listener *pldapi.PrivacyGroupMessageListener) (success bool, err error)
+	CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListenerInput) (success bool, err error)
 	QueryMessageListeners(ctx context.Context, jq *query.QueryJSON) (listeners []*pldapi.PrivacyGroupMessageListener, err error)
 	GetMessageListener(ctx context.Context, listenerName string) (listener *pldapi.PrivacyGroupMessageListener, err error)
 	StartMessageListener(ctx context.Context, listenerName string) (success bool, err error)
@@ -103,7 +103,7 @@ var privacyGroupsInfo = &rpcModuleInfo{
 			Output: "msgs",
 		},
 		"pgroup_createMessageListener": {
-			Inputs: []string{"listener"},
+			Inputs: []string{"spec"},
 			Output: "success",
 		},
 		"pgroup_queryMessageListeners": {
@@ -195,8 +195,8 @@ func (r *pgroup) QueryMessages(ctx context.Context, jq *query.QueryJSON) (msgs [
 	return
 }
 
-func (r *pgroup) CreateMessageListener(ctx context.Context, listener *pldapi.PrivacyGroupMessageListener) (success bool, err error) {
-	err = r.c.CallRPC(ctx, &success, "pgroup_createMessageListener", listener)
+func (r *pgroup) CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListenerInput) (success bool, err error) {
+	err = r.c.CallRPC(ctx, &success, "pgroup_createMessageListener", spec)
 	return
 }
 

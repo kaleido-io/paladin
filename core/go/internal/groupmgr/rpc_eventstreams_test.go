@@ -99,7 +99,7 @@ func TestRPCEventListenerE2E(t *testing.T) {
 	)
 	groupID := groupIDs[0]
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener1",
 		Options: pldapi.PrivacyGroupMessageListenerOptions{
 			ExcludeLocal: false,
@@ -304,7 +304,7 @@ func TestRPCEventListenerE2ENack(t *testing.T) {
 	)
 	groupID := groupIDs[0]
 
-	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListener{
+	err := gm.CreateMessageListener(ctx, &pldapi.PrivacyGroupMessageListenerInput{
 		Name: "listener1",
 		Options: pldapi.PrivacyGroupMessageListenerOptions{
 			ExcludeLocal: false,

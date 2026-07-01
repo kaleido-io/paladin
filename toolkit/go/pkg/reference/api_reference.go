@@ -128,6 +128,7 @@ var allTypes = []interface{}{
 	pldapi.PrivacyGroupEVMCall{},
 	pldapi.PrivacyGroupEVMTXInput{},
 	pldapi.PrivacyGroupInput{},
+	pldapi.PrivacyGroupMessageListenerInput{},
 	pldapi.PrivacyGroupMessageListener{},
 	pldapi.PrivacyGroupMessage{},
 	pldapi.PrivacyGroupMessageInput{},

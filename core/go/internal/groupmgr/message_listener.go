@@ -121,7 +121,7 @@ func (pm *persistedMessage) mapToAPI() *pldapi.PrivacyGroupMessage {
 	}
 }
 
-func (gm *groupManager) CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListener) error {
+func (gm *groupManager) CreateMessageListener(ctx context.Context, spec *pldapi.PrivacyGroupMessageListenerInput) error {
 	ctx = log.WithComponent(ctx, log.Component("groupmanager"))
 	log.L(ctx).Infof("Creating message listener '%s'", spec.Name)
 	if _, err := gm.validateListenerSpec(ctx, spec); err != nil {
@@ -354,7 +354,7 @@ func (gm *groupManager) stopMessageListeners() {
 	}
 }
 
-func (gm *groupManager) validateListenerSpec(ctx context.Context, spec *pldapi.PrivacyGroupMessageListener) (topicMatch *regexp.Regexp, err error) {
+func (gm *groupManager) validateListenerSpec(ctx context.Context, spec *pldapi.PrivacyGroupMessageListenerInput) (topicMatch *regexp.Regexp, err error) {
 	if err := pldtypes.ValidateSafeCharsStartEndAlphaNum(ctx, spec.Name, pldtypes.DefaultNameMaxLen, "name"); err != nil {
 		return nil, err
 	}
@@ -425,9 +425,11 @@ func (l *messageListener) checkMatch(r *persistedMessage) bool {
 
 func (gm *groupManager) mapListener(ctx context.Context, pl *persistedMessageListener) (*regexp.Regexp, *pldapi.PrivacyGroupMessageListener, error) {
 	spec := &pldapi.PrivacyGroupMessageListener{
-		Name:    pl.Name,
-		Started: pl.Started,
 		Created: pl.Created,
+		PrivacyGroupMessageListenerInput: pldapi.PrivacyGroupMessageListenerInput{
+			Name:    pl.Name,
+			Started: pl.Started,
+		},
 	}
 	if err := json.Unmarshal(pl.Filters, &spec.Filters); err != nil {
 		return nil, nil, i18n.WrapError(ctx, err, msgs.MsgPGroupsBadMessageListenerFilter, pl.Name)
@@ -435,7 +437,7 @@ func (gm *groupManager) mapListener(ctx context.Context, pl *persistedMessageLis
 	if err := json.Unmarshal(pl.Options, &spec.Options); err != nil {
 		return nil, nil, i18n.WrapError(ctx, err, msgs.MsgPGroupsBadMessageListenerOptions, pl.Name)
 	}
-	topicMatch, err := gm.validateListenerSpec(ctx, spec)
+	topicMatch, err := gm.validateListenerSpec(ctx, &spec.PrivacyGroupMessageListenerInput)
 	if err != nil {
 		return nil, nil, err
 	}

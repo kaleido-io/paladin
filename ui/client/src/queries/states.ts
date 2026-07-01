@@ -15,10 +15,10 @@
 // limitations under the License.
 
 import i18next from "i18next";
-import { IFilter, ISchema, IState, IStatePagingReference, IStateReceipt } from "../interfaces";
+import { IFilter, IPagedResult, ISchema, IState, IStatePagingReference, IStateReceipt } from "../interfaces";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
-import { translateFilters } from "../utils";
+import { toPagedResult, translateFilters } from "../utils";
 
 export const getStateSortValue = (state: IState, sortBy: string): any => {
   if (sortBy === '.created') {
@@ -89,14 +89,14 @@ export const queryStates = async (
   sortAscending: boolean,
   filters: IFilter[],
   pageRef?: IStatePagingReference
-): Promise<IState[]> => {
+): Promise<IPagedResult<IState>> => {
 
   let translatedFilters = translateFilters(filters);
   const sortDirection = sortAscending ? 'ASC' : 'DESC';
 
   let queryParams: any = {
     ...translatedFilters,
-    limit,
+    limit: limit + 1,
     sort: [
       `${sortBy} ${sortDirection}`,
       `.id ${sortDirection}`,
@@ -136,12 +136,11 @@ export const queryStates = async (
       'all'
     ]
   };
-  return <Promise<IState[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
-      i18next.t("errorFetchingSchemas"), []
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+    i18next.t("errorFetchingSchemas"), []
   );
+  return toPagedResult(results, limit);
 };
 
 export const getState = async (

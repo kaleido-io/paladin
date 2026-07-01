@@ -62,19 +62,20 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
   } = privateGroupMessagesViewStateState;
   const { t } = useTranslation();
 
-  const { data: privacyGroupMessages, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['privacy-group-messages', rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps],
     queryFn: () => getPrivacyGroupMessages(rowsPerPage, filters, sortAscending, privacyGroup.id, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const privacyGroupMessages = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (privacyGroupMessages !== undefined && count === -1 && !isPlaceholderData) {
-      if (privacyGroupMessages.length < rowsPerPage) {
-        setCount(rowsPerPage * page + privacyGroupMessages.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [privacyGroupMessages, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -89,7 +90,7 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
     if (newPage === 0) {
       setRefTimestamps([]);
     } else if (newPage > page) {
-      if (privacyGroupMessages !== undefined) {
+      if (privacyGroupMessages !== undefined && !isPlaceholderData && privacyGroupMessages.length > 0) {
         const refEntriesCopy = [...refTimestamps];
         refEntriesCopy.push(privacyGroupMessages[privacyGroupMessages.length - 1].sent);
         setRefTimestamps(refEntriesCopy);
@@ -320,6 +321,9 @@ export const PrivacyGroupMessages: React.FC<Props> = ({ privacyGroup }) => {
               actions: {
                 lastButton: {
                   disabled: true
+                },
+                nextButton: {
+                  disabled: !hasMore || isFetching || isPlaceholderData
                 }
               }
             }}

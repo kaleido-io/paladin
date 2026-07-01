@@ -48,19 +48,20 @@ export const Transports: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: peers, error, refetch, isPlaceholderData } = useQuery({
+  const { data, error, refetch, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['transports', page, rowsPerPage, sortAscending, filters, refNames],
     queryFn: () => fetchTransportPeersWithQuery(rowsPerPage, sortAscending, filters, refNames[refNames.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const peers = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (peers !== undefined && count === -1 && !isPlaceholderData) {
-      if (peers.length < rowsPerPage) {
-        setCount(rowsPerPage * page + peers.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [peers, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -75,7 +76,7 @@ export const Transports: React.FC = () => {
     if (newPage === 0) {
       setRefNames([]);
     } else if (newPage > page) {
-      if (peers !== undefined) {
+      if (peers !== undefined && !isPlaceholderData && peers.length > 0) {
         const refEntriesCopy = [...refNames];
         refEntriesCopy.push(peers[peers.length - 1].name);
         setRefNames(refEntriesCopy);
@@ -303,6 +304,9 @@ export const Transports: React.FC = () => {
                   actions: {
                     lastButton: {
                       disabled: true
+                    },
+                    nextButton: {
+                      disabled: !hasMore || isFetching || isPlaceholderData
                     }
                   }
                 }}

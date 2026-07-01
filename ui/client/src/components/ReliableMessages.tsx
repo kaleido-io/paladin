@@ -56,19 +56,20 @@ export const ReliableMessages: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data: messages, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['messages', page, rowsPerPage, sortBy, sortAscending, filters, refTimestamps],
     queryFn: () => queryMessages(rowsPerPage, sortBy, sortAscending, filters, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const messages = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (messages !== undefined && count === -1 && !isPlaceholderData) {
-      if (messages.length < rowsPerPage) {
-        setCount(rowsPerPage * page + messages.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [messages, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   if (error) {
     return (<Alert sx={{ margin: '30px' }} severity="error" variant="filled">
@@ -83,7 +84,7 @@ export const ReliableMessages: React.FC = () => {
     if (newPage === 0) {
       setRefTimestamps([]);
     } else if (newPage > page) {
-      if (messages !== undefined) {
+      if (messages !== undefined && !isPlaceholderData && messages.length > 0) {
         const refEntriesCopy = [...refTimestamps];
         refEntriesCopy.push(messages[messages.length - 1].created);
         setRefTimestamps(refEntriesCopy);
@@ -277,6 +278,9 @@ export const ReliableMessages: React.FC = () => {
               actions: {
                 lastButton: {
                   disabled: true
+                },
+                nextButton: {
+                  disabled: !hasMore || isFetching || isPlaceholderData
                 }
               }
             }}

@@ -25,10 +25,11 @@ import {
   IPaladinTransactionPagingReference,
   ITransaction,
   ITransactionInput,
+  IPagedResult,
   ITransactionPagingReference,
   ITransactionReceipt,
 } from '../interfaces';
-import { translateFilters } from '../utils';
+import { toPagedResult, translateFilters } from '../utils';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
 
@@ -64,7 +65,7 @@ export const fetchIndexedTransactions = async (
   withReceipt: boolean,
   filters: IFilter[],
   pageParam?: ITransactionPagingReference
-): Promise<IEnrichedTransaction[]> => {
+): Promise<IPagedResult<IEnrichedTransaction>> => {
   let translatedFilters = translateFilters(filters);
 
   let requestPayload: any = {
@@ -74,7 +75,7 @@ export const fetchIndexedTransactions = async (
     params: [
       {
         ...translatedFilters,
-        limit,
+        limit: limit + 1,
         sort: ['blockNumber DESC', 'transactionIndex DESC'],
       }
     ]
@@ -89,12 +90,14 @@ export const fetchIndexedTransactions = async (
     i18next.t('errorFetchingTransactions')
   );
 
-  const receiptsResult = await fetchTransactionReceipts(transactions);
-  const events = await fetchTransactionEvents(transactions);
+  const { items: pageTransactions, hasMore } = toPagedResult(transactions, limit);
+
+  const receiptsResult = await fetchTransactionReceipts(pageTransactions);
+  const events = await fetchTransactionEvents(pageTransactions);
 
   let enrichedTransactions: IEnrichedTransaction[] = [];
 
-  for (const transaction of transactions) {
+  for (const transaction of pageTransactions) {
     enrichedTransactions.push({
       ...transaction,
       receipts: receiptsResult.filter(
@@ -104,7 +107,7 @@ export const fetchIndexedTransactions = async (
     });
   }
 
-  return enrichedTransactions;
+  return { items: enrichedTransactions, hasMore };
 };
 
 export const fetchSubmissions = async (
@@ -113,13 +116,13 @@ export const fetchSubmissions = async (
   filters: IFilter[],
   sortAscending?: boolean,
   pageParam?: IPaladinTransactionPagingReference
-): Promise<IPaladinTransaction[]> => {
+): Promise<IPagedResult<IPaladinTransaction>> => {
   let translatedFilters = translateFilters(filters);
 
   let params: any = [
     {
       ...translatedFilters,
-      limit,
+      limit: limit + 1,
       sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
       greaterThan: pageParam !== undefined && sortAscending ? [
         {
@@ -160,12 +163,11 @@ export const fetchSubmissions = async (
     params
   };
 
-  return <Promise<IPaladinTransaction[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
-      i18next.t('errorFetchingSubmissions')
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+    i18next.t('errorFetchingSubmissions')
   );
+  return toPagedResult(results, limit);
 };
 
 export const fetchTransactionReceipt = async (

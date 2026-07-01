@@ -58,19 +58,20 @@ export const PrivacyGroups: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: privacyGroups, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['privacyGroups', page, rowsPerPage, filters, sortAscending],
     queryFn: () => listPrivacyGroups(rowsPerPage, filters, sortAscending, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const privacyGroups = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (privacyGroups !== undefined && count === -1 && !isPlaceholderData) {
-      if (privacyGroups.length < rowsPerPage) {
-        setCount(rowsPerPage * page + privacyGroups.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [privacyGroups, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   if (error) {
     return (
@@ -87,7 +88,7 @@ export const PrivacyGroups: React.FC = () => {
     if (newPage === 0) {
       setRefTimestamps([]);
     } else if (newPage > page) {
-      if (privacyGroups !== undefined) {
+      if (privacyGroups !== undefined && !isPlaceholderData && privacyGroups.length > 0) {
         const refEntriesCopy = [...refTimestamps];
         refEntriesCopy.push(privacyGroups[privacyGroups.length - 1].created);
         setRefTimestamps(refEntriesCopy);
@@ -309,6 +310,9 @@ export const PrivacyGroups: React.FC = () => {
                     actions: {
                       lastButton: {
                         disabled: true
+                      },
+                      nextButton: {
+                        disabled: !hasMore || isFetching || isPlaceholderData
                       }
                     }
                   }}

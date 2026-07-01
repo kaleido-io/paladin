@@ -56,19 +56,20 @@ export const Submissions: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: transactions, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['submissions', rowsPerPage, section, filters, sortAscending, refEntries, rowsPerPage, page],
     queryFn: () => fetchSubmissions(section, rowsPerPage, filters, sortAscending, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const transactions = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (transactions !== undefined && count === -1 && !isPlaceholderData) {
-      if (transactions.length < rowsPerPage) {
-        setCount(rowsPerPage * page + transactions.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [transactions, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -77,7 +78,7 @@ export const Submissions: React.FC = () => {
     if (newPage === 0) {
       setRefEntries([]);
     } else if (newPage > page) {
-      if (transactions !== undefined) {
+      if (transactions !== undefined && !isPlaceholderData && transactions.length > 0) {
         const refEntriesCopy = [...refEntries];
         refEntriesCopy.push(transactions[transactions.length - 1]);
         setRefEntries(refEntriesCopy);
@@ -305,6 +306,9 @@ export const Submissions: React.FC = () => {
                     actions: {
                       lastButton: {
                         disabled: true
+                      },
+                      nextButton: {
+                        disabled: !hasMore || isFetching || isPlaceholderData
                       }
                     }
                   }}

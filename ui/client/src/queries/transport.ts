@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IFilter, IMessage, ITransportPeer } from "../interfaces";
-import { deepMerge, translateFilters } from "../utils";
+import { IFilter, IMessage, IPagedResult, ITransportPeer } from "../interfaces";
+import { deepMerge, toPagedResult, translateFilters } from "../utils";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
 import i18next from "i18next";
@@ -54,7 +54,7 @@ export const fetchTransportPeersWithQuery = async (
   sortAscending: boolean,
   filters: IFilter[],
   refData?: string
-): Promise<ITransportPeer[]> => {
+): Promise<IPagedResult<ITransportPeer>> => {
   let translatedFilters = translateFilters(filters);
   let customFilters: any = {};
   if (refData !== undefined) {
@@ -76,16 +76,15 @@ export const fetchTransportPeersWithQuery = async (
     method: RpcMethods.transport_queryPeers,
     params: [{
       ...deepMerge(translatedFilters, customFilters),
-      limit,
+      limit: limit + 1,
       sort: [`name ${sortAscending ? 'ASC' : 'DESC'}`]
     }]
   };
-  return <Promise<ITransportPeer[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
-      i18next.t("errorFetchingTransportPeers")
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+    i18next.t("errorFetchingTransportPeers")
   );
+  return toPagedResult(results, limit);
 };
 
 export const queryMessages = async (
@@ -94,7 +93,7 @@ export const queryMessages = async (
   sortAscending: boolean,
   filters: IFilter[],
   refTimestamp?: string
-): Promise<IMessage[]> => {
+): Promise<IPagedResult<IMessage>> => {
   let translatedFilters = translateFilters(filters);
   let customFilters: any = {};
   if (refTimestamp !== undefined) {
@@ -116,16 +115,15 @@ export const queryMessages = async (
     method: RpcMethods.transport_queryReliableMessages,
     params: [{
       ...deepMerge(translatedFilters, customFilters),
-      limit,
+      limit: limit + 1,
       sort: [`${sortBy} ${sortAscending ? 'ASC' : 'DESC'}`]
     }]
   };
-  return <Promise<IMessage[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
-      i18next.t("errorFetchingMessages")
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+    i18next.t("errorFetchingMessages")
   );
+  return toPagedResult(results, limit);
 };
 
 export const getMessage = async (

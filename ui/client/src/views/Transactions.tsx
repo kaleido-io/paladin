@@ -47,19 +47,20 @@ export const Transactions: React.FC = () => {
   const [count, setCount] = useState(-1);
   const { t } = useTranslation();
 
-  const { data: enrichedTransactions, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['transactions', refEntries, rowsPerPage, showTxsWithReceipt, filters, page],
     queryFn: () => fetchIndexedTransactions(rowsPerPage, showTxsWithReceipt, filters, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const enrichedTransactions = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (enrichedTransactions !== undefined && count === -1 && !isPlaceholderData) {
-      if (enrichedTransactions.length < rowsPerPage) {
-        setCount(rowsPerPage * page + enrichedTransactions.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [enrichedTransactions, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   useEffect(() => {
     setPage(0);
@@ -78,7 +79,7 @@ export const Transactions: React.FC = () => {
     if (newPage === 0) {
       setRefEntries([]);
     } else if (newPage > page) {
-      if (enrichedTransactions !== undefined) {
+      if (enrichedTransactions !== undefined && !isPlaceholderData && enrichedTransactions.length > 0) {
         const refEntriesCopy = [...refEntries];
         refEntriesCopy.push(enrichedTransactions[enrichedTransactions.length - 1]);
         setRefEntries(refEntriesCopy);
@@ -201,6 +202,9 @@ export const Transactions: React.FC = () => {
                 actions: {
                   lastButton: {
                     disabled: true
+                  },
+                  nextButton: {
+                    disabled: !hasMore || isFetching || isPlaceholderData
                   }
                 }
               }}

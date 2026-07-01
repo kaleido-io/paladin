@@ -25,7 +25,6 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { IKeyEntry, IVerifier } from "../interfaces";
 import { useSearchParams } from "react-router-dom";
 import { Captions, Signature } from "lucide-react";
-import { constants } from "../components/config";
 import SearchIcon from '@mui/icons-material/Search';
 import { ReverseKeyLookupDialog } from "../dialogs/ReverseKeyLookup";
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -67,11 +66,14 @@ export const Keys: React.FC = () => {
     setParent(searchParams.get('path') ?? '');
   }, [searchParams]);
 
-  const { data: keys, error, isPlaceholderData } = useQuery({
+  const { data, error, isPlaceholderData, isFetching } = useQuery({
     queryKey: ["keys", parent, sortByPathFirst, sortAscending, refEntries, rowsPerPage, filters, mode],
     queryFn: () => fetchKeys(mode === 'explorer' ? parent : undefined, rowsPerPage, sortByPathFirst, sortAscending ? 'asc' : 'desc', filters, refEntries[refEntries.length - 1]),
     placeholderData: keepPreviousData
   });
+
+  const keys = data?.items;
+  const hasMore = data?.hasMore ?? false;
 
   useEffect(() => {
     if (count !== -1 && (page !== 0 && page * rowsPerPage === count)) {
@@ -80,12 +82,10 @@ export const Keys: React.FC = () => {
   }, [count, rowsPerPage, page]);
 
   useEffect(() => {
-    if (keys !== undefined && count === -1 && !isPlaceholderData) {
-      if (keys.length < rowsPerPage) {
-        setCount(rowsPerPage * page + keys.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [keys, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   useEffect(() => {
     setPage(0);
@@ -193,7 +193,7 @@ export const Keys: React.FC = () => {
     if (newPage === 0) {
       setRefEntries([]);
     } else if (newPage > page) {
-      if (keys !== undefined) {
+      if (keys !== undefined && !isPlaceholderData && keys.length > 0) {
         const refEntriesCopy = [...refEntries];
         refEntriesCopy.push(keys[keys.length - 1]);
         setRefEntries(refEntriesCopy);
@@ -406,6 +406,9 @@ export const Keys: React.FC = () => {
                   actions: {
                     lastButton: {
                       disabled: true
+                    },
+                    nextButton: {
+                      disabled: !hasMore || isFetching || isPlaceholderData
                     }
                   }
                 }}

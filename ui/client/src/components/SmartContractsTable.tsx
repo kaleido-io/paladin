@@ -77,21 +77,24 @@ export const SmartContractsTable: React.FC<Props> = ({
   const navigate = useNavigate();
 
   const {
-    data: contracts,
-    error
+    data,
+    error,
+    isPlaceholderData,
+    isFetching
   } = useQuery({
     queryKey: ['contracts', domainAddress, sortAscending, page, rowsPerPage, filters],
     queryFn: () => querySmartContractsByDomain(domainAddress, sortAscending, rowsPerPage, filters, refTimestamps[refTimestamps.length - 1]),
     placeholderData: keepPreviousData
   });
 
+  const contracts = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (contracts !== undefined && count === -1) {
-      if (contracts.length < rowsPerPage) {
-        setCount(rowsPerPage * page + contracts.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [contracts, rowsPerPage, page, count]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -100,7 +103,7 @@ export const SmartContractsTable: React.FC<Props> = ({
     if (newPage === 0) {
       setRefTimestamps([]);
     } else if (newPage > page) {
-      if (contracts !== undefined) {
+      if (contracts !== undefined && !isPlaceholderData && contracts.length > 0) {
         const refEntriesCopy = [...refTimestamps];
         refEntriesCopy.push(contracts[contracts.length - 1].created);
         setRefTimestamps(refEntriesCopy);
@@ -275,6 +278,9 @@ export const SmartContractsTable: React.FC<Props> = ({
               actions: {
                 lastButton: {
                   disabled: true
+                },
+                nextButton: {
+                  disabled: !hasMore || isFetching || isPlaceholderData
                 }
               }
             }}

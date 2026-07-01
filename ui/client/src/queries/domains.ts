@@ -17,8 +17,8 @@
 import i18next from 'i18next';
 import { generatePostReq, returnResponse } from './common';
 import { RpcEndpoint, RpcMethods } from './rpcMethods';
-import { IDomain, IDomainContract, IFilter } from '../interfaces';
-import { translateFilters } from '../utils';
+import { IDomain, IDomainContract, IFilter, IPagedResult } from '../interfaces';
+import { toPagedResult, translateFilters } from '../utils';
 
 export const listDomains = async (): Promise<string[]> => {
   const payload = {
@@ -58,7 +58,7 @@ export const querySmartContractsByDomain = async (
   rowsPerPage: number,
   filters: IFilter[],
   refTimestamp?: string
-): Promise<IDomainContract[]> => {
+): Promise<IPagedResult<IDomainContract>> => {
   let translatedFilters = translateFilters(filters);
 
   if(translatedFilters.equal !== undefined) {
@@ -73,7 +73,7 @@ export const querySmartContractsByDomain = async (
     params: [
       {
         ...translatedFilters,
-        limit: rowsPerPage,
+        limit: rowsPerPage + 1,
         sort: [`created ${sortAscending ? 'ASC' : 'DESC'}`],
         greaterThan: refTimestamp !== undefined && sortAscending ? [
           {
@@ -90,12 +90,11 @@ export const querySmartContractsByDomain = async (
       },
     ],
   };
-  return <Promise<any>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
-      i18next.t('errorFetchingSmartContracts')
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(payload))),
+    i18next.t('errorFetchingSmartContracts')
   );
+  return toPagedResult(results, rowsPerPage);
 };
 
 export const fetchDomainReceipt = async (

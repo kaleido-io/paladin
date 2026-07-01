@@ -15,11 +15,10 @@
 // limitations under the License.
 
 import i18next from "i18next";
-import { constants } from "../components/config";
-import { IFilter, IRegistryEntry } from "../interfaces";
+import { IFilter, IPagedResult, IRegistryEntry } from "../interfaces";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
-import { deepMerge, translateFilters } from "../utils";
+import { deepMerge, toPagedResult, translateFilters } from "../utils";
 
 export const fetchRegistries = async (): Promise<string[]> => {
   const requestPayload = {
@@ -40,10 +39,11 @@ export const fetchRegistryEntries = async (
   registryName: string,
   filters: IFilter[],
   tab: 'active' | 'inactive' | 'any',
+  limit: number,
   pageParam?: string,
   sortAscending?: boolean,
   excludeRoot?: boolean
-): Promise<IRegistryEntry[]> => {
+): Promise<IPagedResult<IRegistryEntry>> => {
   const translatedFilters = translateFilters(filters);
   let customFilters: any = {};
   if(excludeRoot === true) {
@@ -61,7 +61,7 @@ export const fetchRegistryEntries = async (
       registryName,
       {
         ...deepMerge(translatedFilters, customFilters),
-        limit: constants.REGISTRY_ENTRIES_QUERY_LIMIT,
+        limit: limit + 1,
         sort: [`.name ${sortAscending ? 'ASC' : 'DESC'}`]
       },
       tab
@@ -75,12 +75,11 @@ export const fetchRegistryEntries = async (
       }
     ];
   }
-  return <Promise<IRegistryEntry[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
-      i18next.t("errorFetchingRegistryEntries")
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+    i18next.t("errorFetchingRegistryEntries")
   );
+  return toPagedResult(results, limit);
 };
 
 export const fetchRegistryEntry = async (

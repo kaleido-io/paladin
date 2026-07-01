@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IFilter, IKeyEntry, IKeyMappingAndVerifier } from "../interfaces";
-import { translateFilters } from "../utils";
+import { IFilter, IKeyEntry, IKeyMappingAndVerifier, IPagedResult } from "../interfaces";
+import { toPagedResult, translateFilters } from "../utils";
 import { generatePostReq, returnResponse } from "./common";
 import { RpcEndpoint, RpcMethods } from "./rpcMethods";
 import i18next from "i18next";
@@ -26,7 +26,7 @@ export const fetchKeys = async (
   sortByPathFirst: boolean,
   sortOrder: 'asc' | 'desc',
   filters: IFilter[],
-  refEntry?: IKeyEntry): Promise<IKeyEntry[]> => {
+  refEntry?: IKeyEntry): Promise<IPagedResult<IKeyEntry>> => {
 
   let translatedFilters = translateFilters(filters);
 
@@ -47,7 +47,7 @@ export const fetchKeys = async (
     params: [{
       ...translatedFilters,
       sort: [`${sortByPathFirst ? 'path' : 'index'} ${sortOrder}`, `${sortByPathFirst ? 'index' : 'path'} ${sortOrder}`],
-      limit
+      limit: limit + 1
     }]
   };
 
@@ -75,12 +75,11 @@ export const fetchKeys = async (
     ];
   }
 
-  return <Promise<IKeyEntry[]>>(
-    returnResponse(
-      () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
-      i18next.t("errorFetchingKeys")
-    )
+  const results = await returnResponse(
+    () => fetch(RpcEndpoint, generatePostReq(JSON.stringify(requestPayload))),
+    i18next.t("errorFetchingKeys")
   );
+  return toPagedResult(results, limit);
 };
 
 export const reverseKeyLookup = async (algorithm: string, verifierType: string, verifier: string): Promise<IKeyMappingAndVerifier> => {

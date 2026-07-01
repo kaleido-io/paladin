@@ -67,20 +67,21 @@ export const Registry: React.FC = () => {
     }
   }, [registries]);
 
-  const { data: registryEntries, error: registryError, isPlaceholderData } = useQuery({
-    queryKey: ['registry', filters, activeFilter, refNames, sortAscending],
-    queryFn: () => fetchRegistryEntries(selectedRegistry!, filters, activeFilter, refNames[refNames.length - 1], sortAscending),
+  const { data, error: registryError, isPlaceholderData, isFetching } = useQuery({
+    queryKey: ['registry', filters, activeFilter, refNames, sortAscending, rowsPerPage],
+    queryFn: () => fetchRegistryEntries(selectedRegistry!, filters, activeFilter, rowsPerPage, refNames[refNames.length - 1], sortAscending),
     enabled: selectedRegistry !== undefined,
     placeholderData: keepPreviousData
   });
 
+  const registryEntries = data?.items;
+  const hasMore = data?.hasMore ?? false;
+
   useEffect(() => {
-    if (registryEntries !== undefined && count === -1 && !isPlaceholderData) {
-      if (registryEntries.length < rowsPerPage) {
-        setCount(rowsPerPage * page + registryEntries.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [registryEntries, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   if (registriesError !== null || registryError !== null) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{registriesError?.message ?? registryError?.message}</Alert>
@@ -93,7 +94,7 @@ export const Registry: React.FC = () => {
     if (newPage === 0) {
       setRefNames([]);
     } else if (newPage > page) {
-      if (registryEntries !== undefined) {
+      if (registryEntries !== undefined && !isPlaceholderData && registryEntries.length > 0) {
         const refEntriesCopy = [...refNames];
         refEntriesCopy.push(registryEntries[registryEntries.length - 1].name);
         setRefNames(refEntriesCopy);
@@ -296,6 +297,9 @@ export const Registry: React.FC = () => {
                   actions: {
                     lastButton: {
                       disabled: true
+                    },
+                    nextButton: {
+                      disabled: !hasMore || isFetching || isPlaceholderData
                     }
                   }
                 }}

@@ -75,12 +75,15 @@ export const States: React.FC = () => {
     enabled: selectedDomain !== undefined
   });
 
-  const { data: states, error: statesError, isPlaceholderData } = useQuery({
+  const { data, error: statesError, isPlaceholderData, isFetching } = useQuery({
     queryKey: ['states', selectedDomain, selectedSchemaId, page, rowsPerPage, sortBy, sortAscending, filters, refEntries],
     queryFn: () => queryStates(selectedDomain!, selectedSchemaId!, rowsPerPage, sortBy, sortAscending, filters, refEntries[refEntries.length - 1]),
     enabled: selectedSchemaId !== undefined,
     placeholderData: keepPreviousData
   });
+
+  const states = data?.items;
+  const hasMore = data?.hasMore ?? false;
 
   useEffect(() => {
     if (selectedDomain === undefined && domains !== undefined && domains.length > 0) {
@@ -95,12 +98,10 @@ export const States: React.FC = () => {
   }, [selectedDomain, schemas]);
 
   useEffect(() => {
-    if (states !== undefined && count === -1 && !isPlaceholderData) {
-      if (states.length < rowsPerPage) {
-        setCount(rowsPerPage * page + states.length);
-      }
+    if (data !== undefined && count === -1 && !isPlaceholderData && !data.hasMore) {
+      setCount(rowsPerPage * page + data.items.length);
     }
-  }, [states, rowsPerPage, page]);
+  }, [data, rowsPerPage, page, isPlaceholderData]);
 
   useEffect(() => {
     setRefEntries([]);
@@ -147,7 +148,7 @@ export const States: React.FC = () => {
     if (newPage === 0) {
       setRefEntries([]);
     } else if (newPage > page) {
-      if (states !== undefined) {
+      if (states !== undefined && !isPlaceholderData && states.length > 0) {
         const refEntriesCopy = [...refEntries];
         refEntriesCopy.push(buildStatePagingReference(states[states.length - 1], sortBy));
         setRefEntries(refEntriesCopy);
@@ -480,6 +481,9 @@ export const States: React.FC = () => {
                   actions: {
                     lastButton: {
                       disabled: true
+                    },
+                    nextButton: {
+                      disabled: !hasMore || isFetching || isPlaceholderData
                     }
                   }
                 }}

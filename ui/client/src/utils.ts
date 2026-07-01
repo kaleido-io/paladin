@@ -16,7 +16,15 @@
 
 import { NavigateOptions, To } from 'react-router-dom';
 import React from 'react';
-import { IFilter } from './interfaces';
+import { IFilter, IPagedResult } from './interfaces';
+
+export const toPagedResult = <T>(results: T[], limit: number): IPagedResult<T> => {
+  const hasMore = results.length > limit;
+  return {
+    items: hasMore ? results.slice(0, limit) : results,
+    hasMore,
+  };
+};
 
 export const CONSTANTS = {
   NAVIGATION_DRAWER_WIDTH: 240

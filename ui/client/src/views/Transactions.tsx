@@ -61,6 +61,12 @@ export const Transactions: React.FC = () => {
     }
   }, [enrichedTransactions, rowsPerPage, page]);
 
+  useEffect(() => {
+    setPage(0);
+    setRefEntries([]);
+    setCount(-1);
+  }, [showTxsWithReceipt]);
+
   if (error) {
     return <Alert sx={{ margin: '30px' }} severity="error" variant="filled">{error.message}</Alert>
   }

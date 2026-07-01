@@ -102,7 +102,6 @@ export const Keys: React.FC = () => {
   }, [parent, page]);
 
   useEffect(() => {
-    window.localStorage.setItem(constants.KEYS_FILTERS_KEY, JSON.stringify(filters));
     setCount(-1);
   }, [filters]);
 
@@ -113,7 +112,6 @@ export const Keys: React.FC = () => {
     setPage(0);
     setCount(-1);
     setRefEntries([]);
-    window.localStorage.setItem(constants.KEYS_MODE, mode);
   }, [mode]);
 
   if (error) {
@@ -213,7 +211,6 @@ export const Keys: React.FC = () => {
   ) => {
     const value = parseInt(event.target.value, 10);
     setRowsPerPage(value);
-    window.localStorage.setItem(constants.KEYS_ROWS_PER_PAGE, value.toString());
     setRefEntries([]);
     setPage(0);
   };

@@ -20,6 +20,9 @@ RUN cd operator; go build -a -o manager cmd/main.go
 FROM ubuntu:24.04
 WORKDIR /
 COPY --from=builder --chown=65532:65532 /workspace/operator/manager .
+
+# Trivy ignore list for risk-accepted findings, picked up by image scanners
+COPY .trivyignore /.trivyignore
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]

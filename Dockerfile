@@ -181,6 +181,9 @@ COPY --from=full-builder /usr/local/wasmer/lib/libwasmer.so /usr/local/wasmer/li
 # Copy the build artifacts from the builder stage
 COPY --from=full-builder /app/build /app
 
+# Trivy ignore list for risk-accepted findings, picked up by image scanners
+COPY .trivyignore /.trivyignore
+
 RUN mkdir /app/jna && chmod -R g+rwx /app/jna && chown -R 1001:1001 /app/jna
 
 USER 1001:1001

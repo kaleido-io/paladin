@@ -195,16 +195,37 @@ test.describe('Privacy Groups', () => {
     });
 
     test.describe('Edit actions for messages', () => {
+      test.describe.configure({ mode: 'serial' });
+
+      test.beforeEach(async ({ page }) => {
+        await resetMockServer();
+        await gotoPrivacyGroupMessages(page);
+      });
 
       test('Send message', async ({ page }) => {
-
-        // Switch to "Edit" mode
+        // Switch to "Edit" mode so Send is available
         await page.locator('#settings').click();
         await page.locator('#editMode').click();
         await page.locator('.MuiBackdrop-root').click();
 
-        // There should be an action to deploy
-        await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
+        await page.getByRole('button', { name: 'Send' }).click();
+
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('textbox', { name: 'Privacy Group ID' }).fill(formatPrivacyGroupId(1));
+        await dialog.getByRole('textbox', { name: 'Topic' }).fill('e2e-topic');
+        await dialog.getByRole('textbox', { name: 'Data' }).fill('{"hello":"e2e"}');
+        await dialog.getByRole('button', { name: 'Send' }).click();
+
+        const expectedMessageId = formatMessageId(51);
+        await page.waitForURL(`**/ui/privacy-groups/messages/${expectedMessageId}`);
+        await expect(page.getByRole('tab', { name: '0000...0051' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Back to Messages' })).toBeVisible();
+
+        // New message should appear first in the list (newest by sent)
+        await page.getByRole('button', { name: 'Back to Messages' }).click();
+        await page.waitForURL('**/ui/privacy-groups/messages');
+        await expect(page.getByRole('button', { name: '000000...0051' })).toBeVisible();
+        await expect(page.getByRole('row').nth(1).getByRole('cell', { name: 'e2e-topic' })).toBeVisible();
       });
     });
 

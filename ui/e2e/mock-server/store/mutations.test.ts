@@ -155,4 +155,33 @@ describe('mutable store mutations', () => {
     assert.equal(got.id, created.id);
     assert.equal(got.name, 'newgroup');
   });
+
+  it('pgroup_sendMessage persists and returns the message id', async () => {
+    const baselineCount = loadCollection('privacy-group-messages').length;
+    const groupId = '0xe000000000000000000000000000000000000000000000000000000000000001';
+
+    const messageId = (await handleRpcMethod('pgroup_sendMessage', [
+      {
+        domain: 'pente',
+        group: groupId,
+        topic: 'e2e-topic',
+        data: { hello: 'e2e' },
+      },
+    ])) as string;
+
+    assert.equal(typeof messageId, 'string');
+    assert.match(messageId, /^[0-9a-fA-F-]{36}$/);
+    assert.equal(loadCollection('privacy-group-messages').length, baselineCount + 1);
+
+    const listed = (await handleRpcMethod('pgroup_queryMessages', [
+      {
+        equal: [{ field: 'id', value: messageId }],
+        limit: 1,
+      },
+    ])) as Record<string, unknown>[];
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].id, messageId);
+    assert.equal(listed[0].topic, 'e2e-topic');
+    assert.equal(listed[0].group, groupId);
+  });
 });

@@ -24,6 +24,7 @@ import { handleListField } from './listField.js';
 import { handleQueryList } from './queryList.js';
 import { getMethodConfig } from './registry.js';
 import type { MethodConfig } from './registry.js';
+import { handleSendPrivacyGroupMessage } from './sendPrivacyGroupMessage.js';
 import { handleUpdateField } from './updateField.js';
 
 export const handleRpcMethod = async (
@@ -61,6 +62,8 @@ const dispatchMethod = (config: MethodConfig, params: unknown[]): unknown => {
       return handleUpdateField(config, params);
     case 'createPrivacyGroup':
       return handleCreatePrivacyGroup(params);
+    case 'sendPrivacyGroupMessage':
+      return handleSendPrivacyGroupMessage(params);
     default:
       return [];
   }

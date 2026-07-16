@@ -294,7 +294,7 @@
     "field": "started",
     "value": false
   },
-  "pgroup_sendMessage": { "type": "empty", "returnValue": null },
+  "pgroup_sendMessage": { "type": "sendPrivacyGroupMessage" },
   "pgroup_createGroup": { "type": "createPrivacyGroup" },
   "pgroup_startMessageListener": {
     "type": "updateField",

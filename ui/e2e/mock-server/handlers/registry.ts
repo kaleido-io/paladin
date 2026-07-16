@@ -45,7 +45,8 @@ export interface MethodConfig {
     | 'create'
     | 'delete'
     | 'updateField'
-    | 'createPrivacyGroup';
+    | 'createPrivacyGroup'
+    | 'sendPrivacyGroupMessage';
   collection?: string;
   queryParamIndex?: number;
   field?: string;

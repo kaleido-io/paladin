@@ -15,12 +15,16 @@
 // limitations under the License.
 
 import { loadStatic } from '../store/dataStore.js';
+import { handleCreate } from './create.js';
+import { handleCreatePrivacyGroup } from './createPrivacyGroup.js';
+import { handleDelete } from './delete.js';
 import { handleDerivedQuery } from './derivedQuery.js';
 import { handleGetByField } from './getByField.js';
 import { handleListField } from './listField.js';
 import { handleQueryList } from './queryList.js';
 import { getMethodConfig } from './registry.js';
 import type { MethodConfig } from './registry.js';
+import { handleUpdateField } from './updateField.js';
 
 export const handleRpcMethod = async (
   method: string,
@@ -49,6 +53,14 @@ const dispatchMethod = (config: MethodConfig, params: unknown[]): unknown => {
       return config.file !== undefined ? loadStatic(config.file) : config.returnValue ?? null;
     case 'empty':
       return config.returnValue ?? [];
+    case 'create':
+      return handleCreate(config, params);
+    case 'delete':
+      return handleDelete(config, params);
+    case 'updateField':
+      return handleUpdateField(config, params);
+    case 'createPrivacyGroup':
+      return handleCreatePrivacyGroup(params);
     default:
       return [];
   }

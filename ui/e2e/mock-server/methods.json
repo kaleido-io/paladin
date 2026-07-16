@@ -234,19 +234,97 @@
   },
   "ptx_sendTransaction": { "type": "empty", "returnValue": null },
   "ptx_storeABI": { "type": "empty", "returnValue": null },
-  "ptx_createBlockchainEventListener": { "type": "empty", "returnValue": null },
-  "ptx_deleteBlockchainEventListener": { "type": "empty", "returnValue": null },
-  "ptx_startBlockchainEventListener": { "type": "empty", "returnValue": null },
-  "ptx_stopBlockchainEventListener": { "type": "empty", "returnValue": null },
-  "ptx_createReceiptListener": { "type": "empty", "returnValue": null },
-  "ptx_deleteReceiptListener": { "type": "empty", "returnValue": null },
-  "ptx_startReceiptListener": { "type": "empty", "returnValue": null },
-  "ptx_stopReceiptListener": { "type": "empty", "returnValue": null },
+  "ptx_createBlockchainEventListener": {
+    "type": "create",
+    "collection": "event-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "stampCreated": true,
+    "returnValue": true
+  },
+  "ptx_deleteBlockchainEventListener": {
+    "type": "delete",
+    "collection": "event-listeners",
+    "paramIndex": 0,
+    "keyField": "name"
+  },
+  "ptx_startBlockchainEventListener": {
+    "type": "updateField",
+    "collection": "event-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": true
+  },
+  "ptx_stopBlockchainEventListener": {
+    "type": "updateField",
+    "collection": "event-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": false
+  },
+  "ptx_createReceiptListener": {
+    "type": "create",
+    "collection": "receipt-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "stampCreated": true,
+    "returnValue": true
+  },
+  "ptx_deleteReceiptListener": {
+    "type": "delete",
+    "collection": "receipt-listeners",
+    "paramIndex": 0,
+    "keyField": "name"
+  },
+  "ptx_startReceiptListener": {
+    "type": "updateField",
+    "collection": "receipt-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": true
+  },
+  "ptx_stopReceiptListener": {
+    "type": "updateField",
+    "collection": "receipt-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": false
+  },
   "pgroup_sendMessage": { "type": "empty", "returnValue": null },
-  "pgroup_createGroup": { "type": "empty", "returnValue": null },
-  "pgroup_startMessageListener": { "type": "empty", "returnValue": null },
-  "pgroup_stopMessageListener": { "type": "empty", "returnValue": null },
-  "pgroup_createMessageListener": { "type": "empty", "returnValue": null },
-  "pgroup_deleteMessageListener": { "type": "empty", "returnValue": null },
+  "pgroup_createGroup": { "type": "createPrivacyGroup" },
+  "pgroup_startMessageListener": {
+    "type": "updateField",
+    "collection": "privacy-group-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": true
+  },
+  "pgroup_stopMessageListener": {
+    "type": "updateField",
+    "collection": "privacy-group-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "field": "started",
+    "value": false
+  },
+  "pgroup_createMessageListener": {
+    "type": "create",
+    "collection": "privacy-group-listeners",
+    "paramIndex": 0,
+    "keyField": "name",
+    "stampCreated": true,
+    "returnValue": true
+  },
+  "pgroup_deleteMessageListener": {
+    "type": "delete",
+    "collection": "privacy-group-listeners",
+    "paramIndex": 0,
+    "keyField": "name"
+  },
   "pstate_transferPrivateState": { "type": "empty", "returnValue": null }
 }

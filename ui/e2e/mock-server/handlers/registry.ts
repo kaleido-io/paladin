@@ -35,7 +35,17 @@ export interface PreFilterConfig {
 }
 
 export interface MethodConfig {
-  type: 'query' | 'derivedQuery' | 'getByField' | 'listField' | 'static' | 'empty';
+  type:
+    | 'query'
+    | 'derivedQuery'
+    | 'getByField'
+    | 'listField'
+    | 'static'
+    | 'empty'
+    | 'create'
+    | 'delete'
+    | 'updateField'
+    | 'createPrivacyGroup';
   collection?: string;
   queryParamIndex?: number;
   field?: string;
@@ -44,6 +54,14 @@ export interface MethodConfig {
   file?: string;
   returnValue?: unknown;
   preFilter?: PreFilterConfig;
+  /** Primary key field for create / delete / updateField mutations. */
+  keyField?: string;
+  /** When true, stamp `created` with an ISO timestamp if the create payload omits it. */
+  stampCreated?: boolean;
+  /** Literal value to set for updateField (e.g. started: true). */
+  value?: unknown;
+  /** Param index for the updateField value when `value` is not set. Defaults to 1. */
+  valueParamIndex?: number;
 }
 
 const rootDir = dirname(fileURLToPath(import.meta.url));

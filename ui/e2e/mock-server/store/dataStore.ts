@@ -28,6 +28,8 @@ let fieldMaps: Record<string, FieldMap> | null = null;
 const readJson = <T>(path: string): T =>
   JSON.parse(readFileSync(path, 'utf-8')) as T;
 
+const deepClone = <T>(value: T): T => structuredClone(value);
+
 export const getFieldMaps = (): Record<string, FieldMap> => {
   if (fieldMaps === null) {
     fieldMaps = readJson<Record<string, FieldMap>>(join(rootDir, '../fields.json'));
@@ -47,7 +49,7 @@ export const loadCollection = (collection: string): Record<string, unknown>[] =>
   }
 
   const filePath = join(rootDir, 'data', `${collection}.json`);
-  const data = readJson<Record<string, unknown>[]>(filePath);
+  const data = deepClone(readJson<Record<string, unknown>[]>(filePath));
   collectionCache.set(collection, data);
   return data;
 };
@@ -64,8 +66,56 @@ export const loadStatic = (relativePath: string): unknown => {
   return data;
 };
 
-export const clearStoreCache = (): void => {
+/** Discard in-memory caches so the next load reloads fixtures from disk. */
+export const resetStore = (): void => {
   collectionCache.clear();
   staticCache.clear();
   fieldMaps = null;
+};
+
+/** @deprecated Prefer resetStore(); kept for callers that still use the old name. */
+export const clearStoreCache = resetStore;
+
+export const upsertItem = (
+  collection: string,
+  item: Record<string, unknown>,
+  keyField: string
+): void => {
+  const items = loadCollection(collection);
+  const keyValue = item[keyField];
+  const index = items.findIndex((existing) => existing[keyField] === keyValue);
+  if (index >= 0) {
+    items[index] = item;
+  } else {
+    items.push(item);
+  }
+};
+
+export const deleteItem = (
+  collection: string,
+  keyField: string,
+  keyValue: unknown
+): boolean => {
+  const items = loadCollection(collection);
+  const index = items.findIndex((existing) => existing[keyField] === keyValue);
+  if (index < 0) {
+    return false;
+  }
+  items.splice(index, 1);
+  return true;
+};
+
+export const updateItem = (
+  collection: string,
+  keyField: string,
+  keyValue: unknown,
+  patch: Record<string, unknown>
+): boolean => {
+  const items = loadCollection(collection);
+  const item = items.find((existing) => existing[keyField] === keyValue);
+  if (item === undefined) {
+    return false;
+  }
+  Object.assign(item, patch);
+  return true;
 };

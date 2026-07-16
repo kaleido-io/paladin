@@ -7,7 +7,7 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:query": "node --import tsx --test mock-server/query/applyQuery.test.ts",
+    "test:query": "node --import tsx --test mock-server/query/applyQuery.test.ts mock-server/store/mutations.test.ts",
     "mock-server": "tsx mock-server/server.ts",
     "generate-fixtures": "tsx mock-server/scripts/generate-fixtures.ts"
   },

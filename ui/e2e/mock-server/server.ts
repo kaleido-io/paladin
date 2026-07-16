@@ -16,6 +16,7 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { handleRpcMethod } from './handlers/dispatch.js';
+import { resetStore } from './store/dataStore.js';
 import type { JsonRpcRequest, JsonRpcResponse } from './types.js';
 
 const port = Number(process.env.MOCK_RPC_PORT ?? 31999);
@@ -35,6 +36,12 @@ const sendJson = (res: ServerResponse, status: number, body: unknown) => {
 
 const server = createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
+    sendJson(res, 200, { status: 'ok' });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/reset') {
+    resetStore();
     sendJson(res, 200, { status: 'ok' });
     return;
   }

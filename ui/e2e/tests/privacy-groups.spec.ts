@@ -24,6 +24,7 @@ import {
   formatPrivacyGroupAddress,
   formatPrivacyGroupId,
 } from '../helpers/format.js';
+import { resetMockServer } from '../helpers/mockServer.js';
 
 test.describe('Privacy Groups', () => {
   test.describe('Groups', () => {
@@ -97,6 +98,40 @@ test.describe('Privacy Groups', () => {
       // Check order is inverted
       await expect(page.getByRole('row').nth(1).getByRole('button', { name: '0xe000...0019' })).toBeVisible();
       await expect(page.getByRole('row').nth(10).getByRole('button', { name: '0xe000...0010' })).toBeVisible();
+    });
+
+    test.describe('Edit actions for groups', () => {
+      test.describe.configure({ mode: 'serial' });
+
+      test.beforeEach(async ({ page }) => {
+        await resetMockServer();
+        await gotoPrivacyGroups(page);
+      });
+
+      test('Create privacy group', async ({ page }) => {
+        // Switch to "Edit" mode so Create is available
+        await page.locator('#settings').click();
+        await page.locator('#editMode').click();
+        await page.locator('.MuiBackdrop-root').click();
+
+        await page.getByRole('button', { name: 'Create', exact: true }).click();
+
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('e2egroup');
+        await dialog.getByRole('textbox', { name: 'Member Name' }).fill('alice@node1');
+        await dialog.getByRole('button', { name: 'Add' }).click();
+        await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+        // Should navigate to the new privacy group details
+        await page.waitForURL(/\/ui\/privacy-groups\/groups\/0x[a-fA-F0-9]{64}$/);
+        await expect(page.getByRole('tab', { name: /e2egroup/ })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Back to Privacy Groups' })).toBeVisible();
+
+        // New group should appear in the list
+        await page.getByRole('button', { name: 'Back to Privacy Groups' }).click();
+        await page.waitForURL('**/ui/privacy-groups/groups');
+        await expect(page.getByRole('cell', { name: 'e2egroup' })).toBeVisible();
+      });
     });
 
   });

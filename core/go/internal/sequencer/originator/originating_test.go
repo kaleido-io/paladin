@@ -293,6 +293,7 @@ func Test_sendDelegationRequest_HandleEventError_ReturnsWrappedError(t *testing.
 	pt := &components.PrivateTransaction{ID: txnID}
 	expectedErr := fmt.Errorf("delegated event handling failed")
 	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
+	mockTxn.On("GetCurrentState").Return(transaction.State_Pending)
 	mockTxn.On("GetPrivateTransaction").Return(pt)
 	mockTxn.On("GetID").Return(txnID)
 	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(expectedErr)
@@ -392,13 +393,14 @@ func Test_sendDelegationRequest_TransportError_ReturnsError(t *testing.T) {
 	builder := NewOriginatorBuilderForTesting(t, State_Sending).WithMockTransportWriter(t)
 	txn := testutil.NewPrivateTransactionBuilderForTesting().Build()
 	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
+	mockTxn.On("GetCurrentState").Return(transaction.State_Pending)
 	mockTxn.On("GetID").Return(txn.ID)
 	mockTxn.On("GetPrivateTransaction").Return(txn)
 	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(nil)
 	o, mocks := builder.Transactions(mockTxn).CurrentActiveCoordinator("coordinator@node1").Build()
 
 	mocks.TransportWriter.EXPECT().
-		SendDelegationRequest(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		SendDelegationRequest(mock.Anything, mock.Anything, mock.Anything).
 		Return(fmt.Errorf("transport error"))
 
 	err := sendDelegationRequest(ctx, o)
@@ -600,6 +602,7 @@ func Test_action_FailoverToNextCoordinator_WithPriorityList_AdvancesCoordinatorA
 	txID := uuid.New()
 	pt := &components.PrivateTransaction{ID: txID}
 	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
+	mockTxn.On("GetCurrentState").Return(transaction.State_Pending)
 	mockTxn.On("GetID").Return(txID)
 	mockTxn.On("GetPrivateTransaction").Return(pt)
 	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(nil)
@@ -613,7 +616,7 @@ func Test_action_FailoverToNextCoordinator_WithPriorityList_AdvancesCoordinatorA
 		Build()
 
 	mocks.TransportWriter.EXPECT().
-		SendDelegationRequest(mock.Anything, "B", mock.Anything, mock.Anything).
+		SendDelegationRequest(mock.Anything, "B", mock.Anything).
 		Return(nil).Once()
 
 	err := action_FailoverToNextCoordinator(ctx, o, nil)
@@ -629,6 +632,7 @@ func Test_action_FailoverToNextCoordinator_WrapAround_CyclesBackToStart(t *testi
 	txID := uuid.New()
 	pt := &components.PrivateTransaction{ID: txID}
 	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
+	mockTxn.On("GetCurrentState").Return(transaction.State_Pending)
 	mockTxn.On("GetID").Return(txID)
 	mockTxn.On("GetPrivateTransaction").Return(pt)
 	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(nil)
@@ -641,7 +645,7 @@ func Test_action_FailoverToNextCoordinator_WrapAround_CyclesBackToStart(t *testi
 		Build()
 
 	mocks.TransportWriter.EXPECT().
-		SendDelegationRequest(mock.Anything, "C", mock.Anything, mock.Anything).
+		SendDelegationRequest(mock.Anything, "C", mock.Anything).
 		Return(nil).Once()
 
 	err := action_FailoverToNextCoordinator(ctx, o, nil)
@@ -656,6 +660,7 @@ func Test_action_FailoverToNextCoordinator_EmptyPriorityList_DelegatesWithoutRes
 	txID := uuid.New()
 	pt := &components.PrivateTransaction{ID: txID}
 	mockTxn := originatortransactionmocks.NewOriginatorTransaction(t)
+	mockTxn.On("GetCurrentState").Return(transaction.State_Pending)
 	mockTxn.On("GetID").Return(txID)
 	mockTxn.On("GetPrivateTransaction").Return(pt)
 	mockTxn.On("HandleEvent", mock.Anything, mock.Anything).Return(nil)
@@ -668,7 +673,7 @@ func Test_action_FailoverToNextCoordinator_EmptyPriorityList_DelegatesWithoutRes
 		Build()
 
 	mocks.TransportWriter.EXPECT().
-		SendDelegationRequest(mock.Anything, "static-coordinator", mock.Anything, mock.Anything).
+		SendDelegationRequest(mock.Anything, "static-coordinator", mock.Anything).
 		Return(nil).Once()
 
 	err := action_FailoverToNextCoordinator(ctx, o, nil)

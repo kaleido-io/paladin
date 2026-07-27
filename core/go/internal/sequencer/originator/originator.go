@@ -18,6 +18,7 @@ package originator
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/LFDT-Paladin/paladin/config/pkg/confutil"
 	"github.com/LFDT-Paladin/paladin/config/pkg/pldconf"
@@ -77,11 +78,13 @@ type originator struct {
 	blockRange          uint64
 	contractAddress     *pldtypes.EthAddress
 	inactiveGracePeriod int // expressed as a multiple of heartbeat intervals
+	resolveRetryBackoff time.Duration
 
 	/* Dependencies */
 	transportWriter   transport.TransportWriter
 	engineIntegration common.EngineIntegration
 	metrics           metrics.DistributedSequencerMetrics
+	clock             common.Clock
 }
 
 func NewOriginator(
@@ -102,6 +105,8 @@ func NewOriginator(
 		engineIntegration:   engineIntegration,
 		metrics:             metrics,
 		inactiveGracePeriod: confutil.IntMin(configuration.InactiveGracePeriod, pldconf.SequencerMinimum.InactiveGracePeriod, *pldconf.SequencerDefaults.InactiveGracePeriod),
+		resolveRetryBackoff: confutil.DurationMin(configuration.RequestTimeout, pldconf.SequencerMinimum.RequestTimeout, *pldconf.SequencerDefaults.RequestTimeout),
+		clock:               common.RealClock(),
 	}
 
 	switch selectionConfig.Mode {
@@ -173,11 +178,19 @@ func (o *originator) propagateEventToTransaction(ctx context.Context, event tran
 
 	switch e := event.(type) {
 	case *transaction.AssembleRequestReceivedEvent:
-		return o.transportWriter.SendAssembleRejection(ctx, e.GetTransactionID(), e.RequestID, e.Coordinator,
-			engineProto.RejectionReason_TRANSACTION_UNKNOWN, 0, 0)
+		return o.transportWriter.SendAssembleRejection(ctx, e.Coordinator, &engineProto.AssembleRejection{
+			TransactionId:     e.GetTransactionID().String(),
+			AssembleRequestId: e.RequestID.String(),
+			ContractAddress:   o.contractAddress.HexString(),
+			RejectionReason:   engineProto.RejectionReason_TRANSACTION_UNKNOWN,
+		})
 	case *transaction.PreDispatchRequestReceivedEvent:
-		return o.transportWriter.SendPreDispatchRejection(ctx, e.GetTransactionID(), e.RequestID, e.Coordinator,
-			engineProto.RejectionReason_TRANSACTION_UNKNOWN)
+		return o.transportWriter.SendPreDispatchRejection(ctx, e.Coordinator, &engineProto.PreDispatchRejection{
+			TransactionId:   e.GetTransactionID().String(),
+			RequestId:       e.RequestID.String(),
+			ContractAddress: o.contractAddress.HexString(),
+			RejectionReason: engineProto.RejectionReason_TRANSACTION_UNKNOWN,
+		})
 	default:
 		// Other events can be safely ignored
 		return nil

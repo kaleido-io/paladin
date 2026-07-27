@@ -33,7 +33,7 @@ import (
 
 func TestNewTransaction_NilPrivateTransaction_ReturnsError(t *testing.T) {
 	ctx := context.Background()
-	_, err := NewTransaction(ctx, nil, nil, nil, nil, nil, func(_ context.Context) {}, func() int64 { return 0 })
+	_, err := NewTransaction(ctx, nil, "node1", nil, nil, nil, nil, func(_ context.Context) {}, func() int64 { return 0 }, common.RealClock(), time.Second)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot create transaction without private tx")
 }
@@ -46,7 +46,7 @@ func TestNewTransaction_Success_ReturnsOriginatorTransaction(t *testing.T) {
 	queue := func(context.Context, common.Event) {}
 	m := metrics.InitMetrics(context.Background(), prometheus.NewRegistry())
 
-	ot, err := NewTransaction(ctx, pt, recorder, queue, engine, m, func(_ context.Context) {}, func() int64 { return 0 })
+	ot, err := NewTransaction(ctx, pt, "node1", recorder, queue, engine, m, func(_ context.Context) {}, func() int64 { return 0 }, common.RealClock(), time.Second)
 	require.NoError(t, err)
 	require.NotNil(t, ot)
 	assert.Equal(t, pt.ID, ot.GetID())
@@ -88,11 +88,13 @@ func TestTransaction_GetStatus_ReturnsStatusWithEndorsements(t *testing.T) {
 	builder := NewTransactionBuilderForTesting(t, State_Initial)
 	txn, _ := builder.BuildWithMocks()
 	txn.pt.PostAssembly = &components.TransactionPostAssembly{
-		AttestationPlan: []*prototk.AttestationRequest{
-			{Name: "att1", AttestationType: prototk.AttestationType_ENDORSE, Parties: []string{"party1"}, VerifierType: "v1"},
-		},
-		Endorsements: []*prototk.AttestationResult{
-			{Name: "att1", Verifier: &prototk.ResolvedVerifier{Lookup: "party1", VerifierType: "v1"}},
+		AssembleResponse: &prototk.TransactionPostAssembly{
+			AttestationPlan: []*prototk.AttestationRequest{
+				{Name: "att1", AttestationType: prototk.AttestationType_ENDORSE, Parties: []string{"party1"}, VerifierType: "v1"},
+			},
+			Endorsements: []*prototk.AttestationResult{
+				{Name: "att1", Verifier: &prototk.ResolvedVerifier{Lookup: "party1", VerifierType: "v1"}},
+			},
 		},
 	}
 	txn.stateMachine.SetCurrentState(State_Assembling)

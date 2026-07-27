@@ -91,6 +91,8 @@ type TransactionBuilderForTesting struct {
 	baseLedgerRevertRetryThreshold     int
 	assembleErrorCount                 int
 	assembleErrorRetryThreshhold       int
+	signErrorCount                     int
+	signErrorRetryThreshhold           int
 	endorseToleranceByRequirement      map[string]int
 	revertCount                        int
 	currentBlockHeight                 int64
@@ -195,12 +197,12 @@ func (b *TransactionBuilderForTesting) NumberOfOutputStates(num int) *Transactio
 	return b
 }
 
-func (b *TransactionBuilderForTesting) InputStateIDs(stateIDs ...pldtypes.HexBytes) *TransactionBuilderForTesting {
+func (b *TransactionBuilderForTesting) InputStateIDs(stateIDs ...string) *TransactionBuilderForTesting {
 	b.privateTransactionBuilder.InputStateIDs(stateIDs...)
 	return b
 }
 
-func (b *TransactionBuilderForTesting) ReadStateIDs(stateIDs ...pldtypes.HexBytes) *TransactionBuilderForTesting {
+func (b *TransactionBuilderForTesting) ReadStateIDs(stateIDs ...string) *TransactionBuilderForTesting {
 	b.privateTransactionBuilder.ReadStateIDs(stateIDs...)
 	return b
 }
@@ -375,6 +377,16 @@ func (b *TransactionBuilderForTesting) AssembleErrorRetryThreshold(threshold int
 	return b
 }
 
+func (b *TransactionBuilderForTesting) SignErrorCount(count int) *TransactionBuilderForTesting {
+	b.signErrorCount = count
+	return b
+}
+
+func (b *TransactionBuilderForTesting) SignErrorRetryThreshold(threshold int) *TransactionBuilderForTesting {
+	b.signErrorRetryThreshhold = threshold
+	return b
+}
+
 func (b *TransactionBuilderForTesting) EndorseTolerance(tolerance int) *TransactionBuilderForTesting {
 	b.endorseToleranceByRequirement = map[string]int{"endorse-0": tolerance}
 	return b
@@ -405,7 +417,7 @@ func (b *TransactionBuilderForTesting) Address(address pldtypes.EthAddress) *Tra
 	return b
 }
 
-func (b *TransactionBuilderForTesting) PreAssembly(preAssembly *components.TransactionPreAssembly) *TransactionBuilderForTesting {
+func (b *TransactionBuilderForTesting) PreAssembly(preAssembly *prototk.TransactionPreAssembly) *TransactionBuilderForTesting {
 	b.privateTransactionBuilder.PreAssembly(preAssembly)
 	return b
 }
@@ -562,6 +574,7 @@ func (b *TransactionBuilderForTesting) Build() (*coordinatorTransaction, *transa
 		b.finalizingGracePeriod,
 		b.baseLedgerRevertRetryThreshold,
 		b.assembleErrorRetryThreshhold,
+		b.signErrorRetryThreshhold,
 		b.grapher,
 		b.stateVisibilityTracker,
 		b.dependencyTracker,
@@ -580,6 +593,7 @@ func (b *TransactionBuilderForTesting) Build() (*coordinatorTransaction, *transa
 	txn.revertReason = b.revertReason
 	txn.revertCount = b.revertCount
 	txn.assembleErrorCount = b.assembleErrorCount
+	txn.signErrorCount = b.signErrorCount
 	if b.endorseToleranceByRequirement != nil {
 		txn.endorseToleranceByRequirement = b.endorseToleranceByRequirement
 	}
@@ -604,7 +618,7 @@ func (b *TransactionBuilderForTesting) Build() (*coordinatorTransaction, *transa
 
 	if privateTransaction.PostAssembly != nil {
 		for _, state := range privateTransaction.PostAssembly.OutputStates {
-			err := b.grapher.AddMinter(ctx, []*components.FullState{state}, txn.pt.ID)
+			err := b.grapher.AddMinter(ctx, []*prototk.EndorsableState{state}, txn.pt.ID)
 			require.NoError(b.t, err)
 		}
 	}
@@ -620,7 +634,7 @@ func (b *TransactionBuilderForTesting) BuildAssembleSuccessEvent() *AssembleSucc
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: b.txn.pt.ID,
 		},
-		PostAssembly: b.BuildPostAssembly(),
+		PostAssembly: b.BuildPostAssembly().AssembleResponse,
 		RequestID:    b.txn.pendingAssembleRequest.IdempotencyKey(),
 	}
 }
@@ -630,7 +644,7 @@ func (b *TransactionBuilderForTesting) BuildAssembleRevertEvent() *AssembleRever
 		BaseCoordinatorEvent: BaseCoordinatorEvent{
 			TransactionID: b.txn.pt.ID,
 		},
-		PostAssembly: b.BuildPostAssembly(),
+		PostAssembly: b.BuildPostAssembly().AssembleResponse,
 		RequestID:    b.txn.pendingAssembleRequest.IdempotencyKey(),
 	}
 }
@@ -693,6 +707,6 @@ func (b *TransactionBuilderForTesting) BuildPostAssembly() *components.Transacti
 	return b.privateTransactionBuilder.BuildPostAssembly()
 }
 
-func (b *TransactionBuilderForTesting) BuildPreAssembly() *components.TransactionPreAssembly {
+func (b *TransactionBuilderForTesting) BuildPreAssembly() *prototk.TransactionPreAssembly {
 	return b.privateTransactionBuilder.BuildPreAssembly()
 }

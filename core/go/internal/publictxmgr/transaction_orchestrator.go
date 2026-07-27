@@ -195,9 +195,9 @@ func NewOrchestrator(
 // setState records a new orchestrator state and the time it was entered.
 func (oc *orchestrator) setState(s OrchestratorState) {
 	oc.stateMux.Lock()
+	defer oc.stateMux.Unlock()
 	oc.state = s
 	oc.stateEntryTime = time.Now()
-	oc.stateMux.Unlock()
 }
 
 func (oc *orchestrator) getState() OrchestratorState {

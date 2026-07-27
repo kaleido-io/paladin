@@ -388,6 +388,16 @@ func TestQueryPeers(t *testing.T) {
 	require.Regexp(t, "PD010721", err)
 }
 
+func TestQueryPeersSortErrorNoPeers(t *testing.T) {
+	// With no active peers the per-peer EvalQuery loop never runs, so an invalid sort field is not
+	// caught during matching — it must instead surface from SortValueSetInPlace.
+	ctx := context.Background()
+	tm := &transportManager{peers: map[string]*peer{}}
+
+	_, err := tm.queryPeers(ctx, query.NewQueryBuilder().Limit(1).Sort("wrong").Query())
+	require.Regexp(t, "PD010700.*wrong", err)
+}
+
 func TestConnectionRace(t *testing.T) {
 
 	connWaiting := make(chan struct{})

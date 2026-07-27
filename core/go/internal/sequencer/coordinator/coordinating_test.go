@@ -591,6 +591,42 @@ func Test_action_cancelCurrentlyAssemblingTransaction_WithAssemblingTransaction_
 	require.NoError(t, err)
 }
 
+func Test_action_cancelCurrentlyAssemblingTransaction_AssemblingTxNotInMap_ReturnsNil(t *testing.T) {
+	// assemblyInFlight is set but the assembling transaction is no longer tracked in the map
+	// (e.g. it was already removed) — the action must no-op rather than dereference a nil txn.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).AssemblingTransaction(uuid.New()).Build()
+	err := action_cancelCurrentlyAssemblingTransaction(ctx, c, nil)
+	require.NoError(t, err)
+}
+
+func Test_action_ImportStatesAndLocks_NilSnapshot_ReturnsNil(t *testing.T) {
+	// A heartbeat with no coordinator snapshot carries nothing to import — the action must no-op.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Prepared).Build()
+	err := action_ImportStatesAndLocks(ctx, c, &common.HeartbeatReceivedEvent{
+		CoordinatorSnapshot: nil,
+	})
+	require.NoError(t, err)
+}
+
+func Test_selectNextTransactionToAssemble_HandleEventError_Propagates(t *testing.T) {
+	// When the selected transaction fails to handle its SelectedEvent, the error must propagate
+	// and the assembly slot must not be marked in-flight.
+	ctx := t.Context()
+	txID := uuid.New()
+	txn := coordinatortransactionmocks.NewCoordinatorTransaction(t)
+	txn.EXPECT().GetID().Return(txID)
+	txn.EXPECT().HandleEvent(mock.Anything, mock.AnythingOfType("*transaction.SelectedEvent")).Return(fmt.Errorf("pop"))
+
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).PooledTransactions(txn).Build()
+
+	err := c.selectNextTransactionToAssemble(ctx)
+	require.Error(t, err)
+	assert.Regexp(t, "pop", err)
+	assert.False(t, c.assemblyInFlight)
+}
+
 func Test_action_PoolTransaction_WhenTxnNotInMap_NoOp(t *testing.T) {
 	ctx := t.Context()
 	builder := NewCoordinatorBuilderForTesting(t, State_Idle)

@@ -81,7 +81,7 @@ var SequencerDefaults = SequencerConfig{
 	ClosingGracePeriod:                confutil.P(2),
 	CoordinatorEventQueueSize:         confutil.P(100),
 	CoordinatorPriorityEventQueueSize: confutil.P(500),
-	DelegationBatchInterval:           confutil.P("100ms"),
+	DelegationBatchInterval:           confutil.P("50ms"),
 	DispatchMaxBatchSize:              confutil.P(100),
 	HeartbeatInterval:                 confutil.P("10s"),
 	IdleSequencerCleanupInterval:      confutil.P("1m"),

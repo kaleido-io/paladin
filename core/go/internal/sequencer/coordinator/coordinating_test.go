@@ -594,6 +594,42 @@ func Test_action_cancelCurrentlyAssemblingTransaction_WithAssemblingTransaction_
 	require.NoError(t, err)
 }
 
+func Test_action_cancelCurrentlyAssemblingTransaction_AssemblingTxNotInMap_ReturnsNil(t *testing.T) {
+	// assemblyInFlight is set but the assembling transaction is no longer tracked in the map
+	// (e.g. it was already removed) — the action must no-op rather than dereference a nil txn.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).AssemblingTransaction(uuid.New()).Build()
+	err := action_cancelCurrentlyAssemblingTransaction(ctx, c, nil)
+	require.NoError(t, err)
+}
+
+func Test_action_ImportStatesAndLocks_NilSnapshot_ReturnsNil(t *testing.T) {
+	// A heartbeat with no coordinator snapshot carries nothing to import — the action must no-op.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Prepared).Build()
+	err := action_ImportStatesAndLocks(ctx, c, &common.HeartbeatReceivedEvent{
+		CoordinatorSnapshot: nil,
+	})
+	require.NoError(t, err)
+}
+
+func Test_selectNextTransactionToAssemble_HandleEventError_Propagates(t *testing.T) {
+	// When the selected transaction fails to handle its SelectedEvent, the error must propagate
+	// and the assembly slot must not be marked in-flight.
+	ctx := t.Context()
+	txID := uuid.New()
+	txn := coordinatortransactionmocks.NewCoordinatorTransaction(t)
+	txn.EXPECT().GetID().Return(txID)
+	txn.EXPECT().HandleEvent(mock.Anything, mock.AnythingOfType("*transaction.SelectedEvent")).Return(fmt.Errorf("pop"))
+
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).PooledTransactions(txn).Build()
+
+	err := c.selectNextTransactionToAssemble(ctx)
+	require.Error(t, err)
+	assert.Regexp(t, "pop", err)
+	assert.False(t, c.assemblyInFlight)
+}
+
 func Test_action_PoolTransaction_WhenTxnNotInMap_NoOp(t *testing.T) {
 	ctx := t.Context()
 	builder := NewCoordinatorBuilderForTesting(t, State_Idle)
@@ -650,6 +686,41 @@ func Test_addToDelegatedTransactions_PreviousTransactionInPreAssemblyState_Estab
 	err := c.addToDelegatedTransactions(ctx, originator, []*components.PrivateTransaction{existingTxn, newTxn}, "", c.newCoordinatorTransaction)
 
 	require.NoError(t, err)
+}
+
+// A partial delegation request from an originator carries only the un-assembled (Pending/Delegated)
+// FIFO suffix; already-assembled predecessors are omitted. This test confirms that such a partial
+// batch still establishes the new transaction's preassembly dependency on its immediate predecessor,
+// because the predecessor is the first element of the suffix and is already coordinated (Pooled).
+func Test_addToDelegatedTransactions_PartialSuffixBatch_EstablishesDependencyOnKnownPredecessor(t *testing.T) {
+	ctx := t.Context()
+	originator := "sender@senderNode"
+	builder := NewCoordinatorBuilderForTesting(t, State_Idle)
+	c, mocks := builder.Build()
+	mocks.Domain.On("FixedSigningIdentity").Return("")
+	mocks.DomainAPI.On("ContractConfig").Return(&prototk.ContractConfig{
+		CoordinatorSelection: prototk.ContractConfig_COORDINATOR_SENDER,
+	})
+
+	// The predecessor is already coordinated and still in a pre-assembly state (Pooled).
+	mockPreviousTxn := coordinatortransactionmocks.NewCoordinatorTransaction(t)
+	previousTxnID := uuid.New()
+	mockPreviousTxn.EXPECT().GetCurrentState().Return(transaction.State_Pooled)
+	mockPreviousTxn.EXPECT().GetID().Return(previousTxnID)
+	c.transactionsByID[previousTxnID] = mockPreviousTxn
+
+	// Partial suffix batch: [knownPredecessor, newTxn]. The predecessor's own (assembled) predecessor
+	// is deliberately absent from the batch.
+	existingTxn := testutil.NewPrivateTransactionBuilderForTesting().Address(builder.GetContractAddress()).Originator(originator).NumberOfRequiredEndorsers(1).BuildSparse()
+	existingTxn.ID = previousTxnID
+	newTxn := testutil.NewPrivateTransactionBuilderForTesting().Address(builder.GetContractAddress()).Originator(originator).NumberOfRequiredEndorsers(1).BuildSparse()
+
+	err := c.addToDelegatedTransactions(ctx, originator, []*components.PrivateTransaction{existingTxn, newTxn}, "", c.newCoordinatorTransaction)
+	require.NoError(t, err)
+
+	prereq, ok := c.dependencyTracker.GetPreassemblyDeps().GetPrerequisite(ctx, newTxn.ID)
+	require.True(t, ok, "new transaction must depend on its predecessor even in a partial batch")
+	assert.Equal(t, previousTxnID, prereq, "dependency must point at the immediate predecessor in the suffix")
 }
 
 func Test_addToDelegatedTransactions_PreviousTransactionInPreAssemblyState_DoesNotRequireHandleEvent(t *testing.T) {

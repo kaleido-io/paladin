@@ -18,6 +18,9 @@ package coordinator
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/LFDT-Paladin/paladin/config/pkg/confutil"
@@ -591,6 +594,42 @@ func Test_action_cancelCurrentlyAssemblingTransaction_WithAssemblingTransaction_
 	require.NoError(t, err)
 }
 
+func Test_action_cancelCurrentlyAssemblingTransaction_AssemblingTxNotInMap_ReturnsNil(t *testing.T) {
+	// assemblyInFlight is set but the assembling transaction is no longer tracked in the map
+	// (e.g. it was already removed) — the action must no-op rather than dereference a nil txn.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).AssemblingTransaction(uuid.New()).Build()
+	err := action_cancelCurrentlyAssemblingTransaction(ctx, c, nil)
+	require.NoError(t, err)
+}
+
+func Test_action_ImportStatesAndLocks_NilSnapshot_ReturnsNil(t *testing.T) {
+	// A heartbeat with no coordinator snapshot carries nothing to import — the action must no-op.
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Prepared).Build()
+	err := action_ImportStatesAndLocks(ctx, c, &common.HeartbeatReceivedEvent{
+		CoordinatorSnapshot: nil,
+	})
+	require.NoError(t, err)
+}
+
+func Test_selectNextTransactionToAssemble_HandleEventError_Propagates(t *testing.T) {
+	// When the selected transaction fails to handle its SelectedEvent, the error must propagate
+	// and the assembly slot must not be marked in-flight.
+	ctx := t.Context()
+	txID := uuid.New()
+	txn := coordinatortransactionmocks.NewCoordinatorTransaction(t)
+	txn.EXPECT().GetID().Return(txID)
+	txn.EXPECT().HandleEvent(mock.Anything, mock.AnythingOfType("*transaction.SelectedEvent")).Return(fmt.Errorf("pop"))
+
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Idle).PooledTransactions(txn).Build()
+
+	err := c.selectNextTransactionToAssemble(ctx)
+	require.Error(t, err)
+	assert.Regexp(t, "pop", err)
+	assert.False(t, c.assemblyInFlight)
+}
+
 func Test_action_PoolTransaction_WhenTxnNotInMap_NoOp(t *testing.T) {
 	ctx := t.Context()
 	builder := NewCoordinatorBuilderForTesting(t, State_Idle)
@@ -647,6 +686,41 @@ func Test_addToDelegatedTransactions_PreviousTransactionInPreAssemblyState_Estab
 	err := c.addToDelegatedTransactions(ctx, originator, []*components.PrivateTransaction{existingTxn, newTxn}, "", c.newCoordinatorTransaction)
 
 	require.NoError(t, err)
+}
+
+// A partial delegation request from an originator carries only the un-assembled (Pending/Delegated)
+// FIFO suffix; already-assembled predecessors are omitted. This test confirms that such a partial
+// batch still establishes the new transaction's preassembly dependency on its immediate predecessor,
+// because the predecessor is the first element of the suffix and is already coordinated (Pooled).
+func Test_addToDelegatedTransactions_PartialSuffixBatch_EstablishesDependencyOnKnownPredecessor(t *testing.T) {
+	ctx := t.Context()
+	originator := "sender@senderNode"
+	builder := NewCoordinatorBuilderForTesting(t, State_Idle)
+	c, mocks := builder.Build()
+	mocks.Domain.On("FixedSigningIdentity").Return("")
+	mocks.DomainAPI.On("ContractConfig").Return(&prototk.ContractConfig{
+		CoordinatorSelection: prototk.ContractConfig_COORDINATOR_SENDER,
+	})
+
+	// The predecessor is already coordinated and still in a pre-assembly state (Pooled).
+	mockPreviousTxn := coordinatortransactionmocks.NewCoordinatorTransaction(t)
+	previousTxnID := uuid.New()
+	mockPreviousTxn.EXPECT().GetCurrentState().Return(transaction.State_Pooled)
+	mockPreviousTxn.EXPECT().GetID().Return(previousTxnID)
+	c.transactionsByID[previousTxnID] = mockPreviousTxn
+
+	// Partial suffix batch: [knownPredecessor, newTxn]. The predecessor's own (assembled) predecessor
+	// is deliberately absent from the batch.
+	existingTxn := testutil.NewPrivateTransactionBuilderForTesting().Address(builder.GetContractAddress()).Originator(originator).NumberOfRequiredEndorsers(1).BuildSparse()
+	existingTxn.ID = previousTxnID
+	newTxn := testutil.NewPrivateTransactionBuilderForTesting().Address(builder.GetContractAddress()).Originator(originator).NumberOfRequiredEndorsers(1).BuildSparse()
+
+	err := c.addToDelegatedTransactions(ctx, originator, []*components.PrivateTransaction{existingTxn, newTxn}, "", c.newCoordinatorTransaction)
+	require.NoError(t, err)
+
+	prereq, ok := c.dependencyTracker.GetPreassemblyDeps().GetPrerequisite(ctx, newTxn.ID)
+	require.True(t, ok, "new transaction must depend on its predecessor even in a partial batch")
+	assert.Equal(t, previousTxnID, prereq, "dependency must point at the immediate predecessor in the suffix")
 }
 
 func Test_addToDelegatedTransactions_PreviousTransactionInPreAssemblyState_DoesNotRequireHandleEvent(t *testing.T) {
@@ -1353,4 +1427,101 @@ func Test_nudgeHandoverRequest_WithPendingRequest_CallsNudge(t *testing.T) {
 	err := c.nudgeHandoverRequest(ctx)
 
 	require.NoError(t, err)
+}
+
+// Part A: signing-identity synchronization. The signingIdentityState leaf mutex guards concurrent
+// access to value/used from the accessor, the rotation writer, and the flush guard.
+
+func Test_getCoordinatorSigningIdentity_SetsUsedAndReturnsValue(t *testing.T) {
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Active).Build()
+
+	// Seed the initial signing identity the way the Active state transition does; this sets value and clears used.
+	require.NoError(t, action_NewSigningIdentity(ctx, c, nil))
+	require.NotEmpty(t, c.signingIdentity.value)
+	assert.False(t, c.signingIdentity.used, "used must be false before the accessor is called")
+
+	got := c.getCoordinatorSigningIdentity()
+
+	assert.Equal(t, c.signingIdentity.value, got, "accessor must return the current signing identity value")
+	assert.True(t, c.signingIdentity.used, "accessor must mark the signing identity as used")
+}
+
+func Test_action_NewSigningIdentity_RotatesValueAndClearsUsed(t *testing.T) {
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Active).Build()
+
+	// Seed the initial signing identity, then consume it so used is true, capturing the value to prove rotation changes it.
+	require.NoError(t, action_NewSigningIdentity(ctx, c, nil))
+	c.getCoordinatorSigningIdentity()
+	require.True(t, c.signingIdentity.used)
+	prev := c.signingIdentity.value
+	require.NotEmpty(t, prev)
+
+	err := action_NewSigningIdentity(ctx, c, nil)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, prev, c.signingIdentity.value, "rotation must generate a new signing identity value")
+	assert.NotEmpty(t, c.signingIdentity.value, "rotated signing identity value must be non-empty")
+	assert.False(t, c.signingIdentity.used, "rotation must clear the used flag")
+}
+
+// Test_getCoordinatorSigningIdentity_ConcurrentWithRotation is the Part A race test: the accessor,
+// the rotation writer, and the flush guard all touch signingIdentityState concurrently. It must run
+// clean under -race, and every value the accessor returns must be a well-formed identity string.
+func Test_getCoordinatorSigningIdentity_ConcurrentWithRotation(t *testing.T) {
+	ctx := t.Context()
+	c, _ := NewCoordinatorBuilderForTesting(t, State_Active).Build()
+
+	// Seed an initial identity so readers never observe the pre-rotation empty value.
+	require.NoError(t, action_NewSigningIdentity(ctx, c, nil))
+
+	const (
+		readers    = 8
+		rotators   = 4
+		guards     = 2
+		iterations = 200
+	)
+
+	var malformed atomic.Bool
+	var wg sync.WaitGroup
+
+	for i := 0; i < readers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				got := c.getCoordinatorSigningIdentity()
+				if got == "" || !strings.HasPrefix(got, "domains.") {
+					malformed.Store(true)
+				}
+			}
+		}()
+	}
+
+	for range rotators {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				if err := action_NewSigningIdentity(ctx, c, nil); err != nil {
+					malformed.Store(true)
+				}
+			}
+		}()
+	}
+
+	for i := 0; i < guards; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				_ = guard_MustFlushToRotateSigningIdentity(ctx, c)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	assert.False(t, malformed.Load(), "every returned signing identity must be a well-formed non-empty domains.* value")
 }

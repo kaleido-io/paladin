@@ -63,7 +63,7 @@ func (s *ChainedDependenciesSuite) buildCoordinator() {
 	s.c, s.mocks = s.builder.Build()
 	s.mocks.EngineIntegration.EXPECT().GetBlockHeight(mock.Anything).Return(int64(0))
 	s.mocks.EngineIntegration.On("ResolveStatesForTransaction", mock.Anything, mock.Anything).Return(nil).Maybe()
-	s.mocks.SyncPoints.On("PersistDispatchBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	s.mocks.SyncPoints.On("PersistDispatchBatch", mock.Anything, mock.Anything).Return(nil).Maybe()
 	s.mocks.SyncPoints.On("QueueTransactionFinalize", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 	s.mocks.SequencerManager.On("BuildNullifiers", mock.Anything, mock.Anything).Return(nil, nil).Maybe()
 	s.mocks.Domain.On("FixedSigningIdentity").Return("")

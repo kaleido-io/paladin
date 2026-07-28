@@ -254,6 +254,7 @@ func TestNewTransaction_Success_ReturnsTransaction(t *testing.T) {
 		sequencertransportmocks.NewTransportWriter(t),
 		clock,
 		func(ctx context.Context, event common.Event) {},
+		func(uuid.UUID, bool) {},
 		nil,
 		func(ctx context.Context, id uuid.UUID) (State, bool) { return State(0), false },
 		func(context.Context, ...string) {}, // notifyEndorserCandidates
@@ -307,6 +308,7 @@ func TestNewTransaction_PublicAPI_ReturnsTransaction(t *testing.T) {
 		sequencertransportmocks.NewTransportWriter(t),
 		clock,
 		func(ctx context.Context, event common.Event) {},
+		func(uuid.UUID, bool) {},
 		nil,
 		func(ctx context.Context, id uuid.UUID) (State, bool) { return State(0), false },
 		func(context.Context, ...string) {}, // notifyEndorserCandidates
@@ -356,7 +358,7 @@ func TestTransaction_HasDispatchedPublicTransaction_TrueWhenSetAndIntentIsSend(t
 			},
 		}).
 		Build()
-	assert.True(t, txn.HasDispatchedPublicTransaction())
+	assert.True(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSend(t *testing.T) {
@@ -368,7 +370,7 @@ func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSe
 			},
 		}).
 		Build()
-	assert.False(t, txn.HasDispatchedPublicTransaction())
+	assert.False(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenNil(t *testing.T) {
@@ -380,7 +382,7 @@ func TestTransaction_HasDispatchedPublicTransaction_FalseWhenNil(t *testing.T) {
 		}).
 		Build()
 
-	assert.False(t, txn.HasDispatchedPublicTransaction())
+	assert.False(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestDependsOn_InitializedFromPrivateTransaction(t *testing.T) {
@@ -506,6 +508,7 @@ func TestNewTransaction_ChainedDependsOn_InvalidUUIDIsSkipped(t *testing.T) {
 		clock,
 		func(ctx context.Context, event common.Event) {},
 		nil,
+		func(context.Context, uuid.UUID, common.Event) error { return nil },
 		func(ctx context.Context, id uuid.UUID) (State, bool) { return State(0), false },
 		func(context.Context, ...string) {},
 		sequencercommonmocks.NewEngineIntegration(t),

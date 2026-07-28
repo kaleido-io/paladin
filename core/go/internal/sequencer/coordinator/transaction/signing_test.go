@@ -16,9 +16,11 @@ package transaction
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
+	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/common"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -272,6 +274,26 @@ func TestCoordinator_Assembling_SignedFastForward_AppliesAssemblyAndSignature(t 
 	require.NoError(t, err)
 	assert.Equal(t, State_Signing, txn.GetCurrentState())
 	assert.Len(t, txn.pt.PostAssembly.AssembleResponse.GetSignatures(), 1)
+}
+
+func TestCoordinator_Assembling_SignedFastForward_ApplyPostAssemblyError(t *testing.T) {
+	// When the piggybacked plan fails to apply (e.g. resolving states errors), action_AssembleAndSign
+	// must propagate the error and never reach applySignature.
+	ctx := context.Background()
+	txn, mocks := NewTransactionBuilderForTesting(t, State_Assembling).
+		Domain("test-domain").
+		QueueEventForCoordinator(func(context.Context, common.Event) {}).
+		Build()
+
+	mocks.SyncPoints.On("QueueTransactionFinalize", ctx, mock.Anything, mock.Anything, mock.Anything).Return()
+	mocks.EngineIntegration.EXPECT().ResolveStatesForTransaction(mock.Anything, txn.pt).Return(errors.New("write lock error"))
+
+	err := action_AssembleAndSign(ctx, txn, &SignedEvent{
+		BaseCoordinatorEvent: BaseCoordinatorEvent{TransactionID: txn.pt.ID},
+		RequestID:            uuid.New(),
+		PostAssembly:         &prototk.TransactionPostAssembly{AssemblyResult: prototk.AssembleTransactionResponse_OK},
+	})
+	require.ErrorContains(t, err, "write lock error")
 }
 
 func TestCoordinator_Assembling_SignedFastForward_NilPostAssemblyDropped(t *testing.T) {

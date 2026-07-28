@@ -28,11 +28,11 @@ type SequencerConfig struct {
 	ClosingGracePeriod                *int              `json:"closingGracePeriod"`
 	CoordinatorEventQueueSize         *int              `json:"coordinatorEventQueueSize"`
 	CoordinatorPriorityEventQueueSize *int              `json:"coordinatorPriorityEventQueueSize"`
+	DispatchMaxBatchSize              *int              `json:"dispatchMaxBatchSize"`
 	HeartbeatInterval                 *string           `json:"heartbeatInterval"`
 	IdleSequencerCleanupInterval      *string           `json:"idleSequencerCleanupInterval"`
 	InactiveGracePeriod               *int              `json:"inactiveGracePeriod"`
 	MaxDispatchAhead                  *int              `json:"maxDispatchAhead"`
-	MaxDispatchBatchSize              *int              `json:"maxDispatchBatchSize"`
 	MaxInflightTransactions           *int              `json:"maxInflightTransactions"`
 	OriginatorEventQueueSize          *int              `json:"originatorEventQueueSize"`
 	OriginatorPriorityEventQueueSize  *int              `json:"originatorPriorityEventQueueSize"`
@@ -54,11 +54,11 @@ type SequencerMinimumConfig struct {
 	ClosingGracePeriod                int
 	CoordinatorEventQueueSize         int
 	CoordinatorPriorityEventQueueSize int
+	DispatchMaxBatchSize              int
 	HeartbeatInterval                 time.Duration
 	IdleSequencerCleanupInterval      time.Duration
 	InactiveGracePeriod               int
 	MaxDispatchAhead                  int
-	MaxDispatchBatchSize              int
 	MaxInflightTransactions           int
 	OriginatorEventQueueSize          int
 	OriginatorPriorityEventQueueSize  int
@@ -79,11 +79,11 @@ var SequencerDefaults = SequencerConfig{
 	ClosingGracePeriod:                confutil.P(2),
 	CoordinatorEventQueueSize:         confutil.P(100),
 	CoordinatorPriorityEventQueueSize: confutil.P(500),
+	DispatchMaxBatchSize:              confutil.P(100),
 	HeartbeatInterval:                 confutil.P("10s"),
 	IdleSequencerCleanupInterval:      confutil.P("1m"),
 	InactiveGracePeriod:               confutil.P(2),
 	MaxDispatchAhead:                  confutil.P(50),
-	MaxDispatchBatchSize:              confutil.P(20),
 	MaxInflightTransactions:           confutil.P(500),
 	OriginatorEventQueueSize:          confutil.P(50),
 	OriginatorPriorityEventQueueSize:  confutil.P(500),
@@ -109,11 +109,11 @@ var SequencerMinimum = SequencerMinimumConfig{
 	ClosingGracePeriod:                1,
 	CoordinatorEventQueueSize:         1,
 	CoordinatorPriorityEventQueueSize: 1,
+	DispatchMaxBatchSize:              1,
 	HeartbeatInterval:                 1 * time.Second,
 	IdleSequencerCleanupInterval:      10 * time.Second,
 	InactiveGracePeriod:               1,
 	MaxDispatchAhead:                  1,
-	MaxDispatchBatchSize:              1,
 	MaxInflightTransactions:           1,
 	OriginatorEventQueueSize:          1,
 	OriginatorPriorityEventQueueSize:  1,

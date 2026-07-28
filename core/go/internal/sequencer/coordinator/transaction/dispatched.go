@@ -34,10 +34,10 @@ func action_NotifyDispatched(ctx context.Context, t *coordinatorTransaction, _ c
 	return t.transportWriter.SendDispatched(ctx, t.originatorNode, msg)
 }
 
-// guard_HasDispatchedPublicTransaction reports whether dispatching this transaction will send a public
+// guard_WillDispatchPublicTransaction reports whether dispatching this transaction will send a public
 // transaction (rather than producing new private/prepared transactions), gating whether it counts
 // towards the coordinator's dispatch-ahead limit.
-func guard_HasDispatchedPublicTransaction(_ context.Context, t *coordinatorTransaction) bool {
+func guard_WillDispatchPublicTransaction(_ context.Context, t *coordinatorTransaction) bool {
 	return t.pt.PreparedPublicTransaction != nil &&
 		t.pt.PreAssembly.TransactionSpecification.Intent == prototk.TransactionSpecification_SEND_TRANSACTION
 }

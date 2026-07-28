@@ -31,8 +31,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// action_DispatchPrepare handles Event_Dispatched in State_Ready_For_Dispatch by building the transaction's
-// dispatch, which the dispatch loop then detaches and persists off-lock.
+// action_DispatchPrepare handles Event_Dispatched in State_Ready_For_Dispatch by preparing the transaction's
+// dispatch artifacts (a public, private, or prepared transaction). These prepared artifacts are read from the
+// transaction by the dispatch loop under lock and included in a batch, but the actual DB persist of the batch
+// does not hold the lock.
 func action_DispatchPrepare(ctx context.Context, t *coordinatorTransaction, _ common.Event) error {
 	return t.dispatchPrepare(ctx)
 }

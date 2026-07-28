@@ -118,7 +118,7 @@ type coordinator struct {
 	coordinatorSelectionBlockRange uint64
 	maxInflightTransactions        int
 	maxDispatchAhead               int
-	maxDispatchBatchSize           int
+	dispatchMaxBatchSize           int
 	coordinatorSelection           prototk.ContractConfig_CoordinatorSelection
 
 	/* Dependencies */
@@ -187,7 +187,7 @@ func NewCoordinator(
 	coordinatorPriorityEventQueueSize := confutil.IntMin(configuration.CoordinatorPriorityEventQueueSize, pldconf.SequencerMinimum.CoordinatorPriorityEventQueueSize, *pldconf.SequencerDefaults.CoordinatorPriorityEventQueueSize)
 	c.maxInflightTransactions = confutil.IntMin(configuration.MaxInflightTransactions, pldconf.SequencerMinimum.MaxInflightTransactions, *pldconf.SequencerDefaults.MaxInflightTransactions)
 	c.maxDispatchAhead = confutil.IntMinIfPositive(configuration.MaxDispatchAhead, pldconf.SequencerMinimum.MaxDispatchAhead, *pldconf.SequencerDefaults.MaxDispatchAhead)
-	c.maxDispatchBatchSize = confutil.IntMin(configuration.MaxDispatchBatchSize, pldconf.SequencerMinimum.MaxDispatchBatchSize, *pldconf.SequencerDefaults.MaxDispatchBatchSize)
+	c.dispatchMaxBatchSize = confutil.IntMin(configuration.DispatchMaxBatchSize, pldconf.SequencerMinimum.DispatchMaxBatchSize, *pldconf.SequencerDefaults.DispatchMaxBatchSize)
 	c.requestTimeout = confutil.DurationMin(configuration.RequestTimeout, pldconf.SequencerMinimum.RequestTimeout, *pldconf.SequencerDefaults.RequestTimeout)
 	c.stateTimeout = confutil.DurationMin(configuration.StateTimeout, pldconf.SequencerMinimum.StateTimeout, *pldconf.SequencerDefaults.StateTimeout)
 	c.blockHeightTolerance = confutil.Uint64Min(configuration.BlockHeightTolerance, pldconf.SequencerMinimum.BlockHeightTolerance, *pldconf.SequencerDefaults.BlockHeightTolerance)

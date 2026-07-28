@@ -837,7 +837,7 @@ var stateDefinitionsMap = StateDefinitions{
 	},
 	State_Dispatched: {
 		OnTransitionTo: []ActionRule{
-			{If: guard_HasDispatchedPublicTransaction, Action: action_MarkDispatchedInFlight},
+			{If: guard_WillDispatchPublicTransaction, Action: action_MarkDispatchedInFlight},
 			{Action: action_NotifyDispatched},
 			{Action: action_CleanUpAssemblyPayload},
 		},

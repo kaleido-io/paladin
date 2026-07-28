@@ -392,13 +392,13 @@ func TestSetDispatchedInFlight_AddAndRemove(t *testing.T) {
 	assert.Equal(t, 0, len(c.inFlightTxns))
 }
 
-// TestDispatchLoop_CapsBatchSize verifies the dispatch loop never pulls more than maxDispatchBatchSize
+// TestDispatchLoop_CapsBatchSize verifies the dispatch loop never pulls more than dispatchMaxBatchSize
 // transactions per batch, splitting a larger queue into multiple batches while preserving pull order.
 func TestDispatchLoop_CapsBatchSize(t *testing.T) {
 	builder := NewCoordinatorBuilderForTesting(t, State_Active)
 	config := builder.GetSequencerConfig()
 	config.MaxDispatchAhead = confutil.P(50)
-	config.MaxDispatchBatchSize = confutil.P(2)
+	config.DispatchMaxBatchSize = confutil.P(2)
 	builder.OverrideSequencerConfig(config)
 
 	c, mocks := builder.Build()
@@ -451,7 +451,7 @@ func TestDispatchLoop_CapsBatchSize(t *testing.T) {
 	}
 
 	require.Len(t, batches, 2, "expected exactly two committed batches")
-	assert.Len(t, batches[0], 2, "first batch must be capped at MaxDispatchBatchSize")
+	assert.Len(t, batches[0], 2, "first batch must be capped at DispatchMaxBatchSize")
 	assert.Len(t, batches[1], 1, "second batch holds the remaining transaction")
 
 	var gotOrder []uuid.UUID

@@ -361,7 +361,7 @@ func TestTransaction_HasDispatchedPublicTransaction_TrueWhenSetAndIntentIsSend(t
 			},
 		}).
 		Build()
-	assert.True(t, guard_HasDispatchedPublicTransaction(t.Context(), txn))
+	assert.True(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSend(t *testing.T) {
@@ -373,7 +373,7 @@ func TestTransaction_HasDispatchedPublicTransaction_FalseWhenSetAndIntentIsNotSe
 			},
 		}).
 		Build()
-	assert.False(t, guard_HasDispatchedPublicTransaction(t.Context(), txn))
+	assert.False(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestTransaction_HasDispatchedPublicTransaction_FalseWhenNil(t *testing.T) {
@@ -385,7 +385,7 @@ func TestTransaction_HasDispatchedPublicTransaction_FalseWhenNil(t *testing.T) {
 		}).
 		Build()
 
-	assert.False(t, guard_HasDispatchedPublicTransaction(t.Context(), txn))
+	assert.False(t, guard_WillDispatchPublicTransaction(t.Context(), txn))
 }
 
 func TestDependsOn_InitializedFromPrivateTransaction(t *testing.T) {

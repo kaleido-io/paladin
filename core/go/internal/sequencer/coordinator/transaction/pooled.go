@@ -39,6 +39,11 @@ func (t *coordinatorTransaction) initializeForNewAssembly(ctx context.Context) e
 	t.dependencyTracker.GetChainedDeps().ForgetChainedChild(ctx, t.pt.ID)
 	// Clear post-assembly dependencies. Chained dependencies are tracked separately and persist.
 	t.pendingPreDispatchRequest = nil
+	// Deliberately do NOT clear pendingDispatch / pendingRemoteStateDistributions here. Dispatch is a point
+	// of no return: once dispatchPrepare has stashed a dispatch it will be persisted, and the dispatch loop
+	// reads it via PendingDispatch. A repool that runs before the loop reads it must leave the stash in
+	// place so the prepared work is not silently discarded; a genuine re-dispatch re-runs dispatchPrepare
+	// and overwrites the stash before the next read.
 	t.grapher.ForgetTransactionAndLocks(ctx, t.pt.ID)
 	t.clearTimeoutSchedules()
 	t.resetEndorsementRequests(ctx)
@@ -163,21 +168,26 @@ func action_FinalizeOnRevertedChainedDependencyAtCreation(ctx context.Context, t
 		state, ok := t.getCoordinatorTransactionState(ctx, depID)
 		if ok && state == State_Reverted {
 			log.L(ctx).Infof("finalizing TX %s at creation due to chained dependency %s already reverted", t.pt.ID, depID)
-			t.syncPoints.QueueTransactionFinalize(ctx,
-				&syncpoints.TransactionFinalizeRequest{
-					Domain:          t.pt.Domain,
-					ContractAddress: t.pt.Address,
-					Originator:      t.originator,
-					TransactionID:   t.pt.ID,
-					FailureMessage:  i18n.NewError(ctx, msgs.MsgTxMgrDependencyFailed, depID).Error(),
-				},
-				func(ctx context.Context) {
-					log.L(ctx).Debugf("finalized TX %s due to chained dependency failure at creation", t.pt.ID)
-				},
-				func(ctx context.Context, err error) {
-					log.L(ctx).Errorf("error finalizing TX %s due to chained dependency failure at creation: %s", t.pt.ID, err)
-				},
-			)
+			var tryFinalize func()
+			tryFinalize = func() {
+				t.syncPoints.QueueTransactionFinalize(ctx,
+					&syncpoints.TransactionFinalizeRequest{
+						Domain:          t.pt.Domain,
+						ContractAddress: t.pt.Address,
+						Originator:      t.originator,
+						TransactionID:   t.pt.ID,
+						FailureMessage:  i18n.NewError(ctx, msgs.MsgTxMgrDependencyFailed, depID).Error(),
+					},
+					func(ctx context.Context) {
+						log.L(ctx).Debugf("finalized TX %s due to chained dependency failure at creation", t.pt.ID)
+					},
+					func(ctx context.Context, err error) {
+						log.L(ctx).Errorf("error finalizing TX %s due to chained dependency failure at creation: %s", t.pt.ID, err)
+						tryFinalize()
+					},
+				)
+			}
+			tryFinalize()
 			return nil
 		}
 	}
@@ -189,10 +199,13 @@ func action_NotifyOriginatorOfChainedDependencyFailureAtCreation(ctx context.Con
 		state, ok := t.getCoordinatorTransactionState(ctx, depID)
 		if ok && state == State_Reverted {
 			failureMessage := i18n.NewError(ctx, msgs.MsgTxMgrDependencyFailed, depID).Error()
-			return t.transportWriter.SendTransactionConfirmed(
-				ctx, t.pt.ID, t.originatorNode, &t.pt.Address, nil,
-				engine.TransactionConfirmed_OUTCOME_REVERTED, nil, failureMessage, false,
-			)
+			return t.transportWriter.SendTransactionConfirmed(ctx, t.originatorNode, &engine.TransactionConfirmed{
+				Id:              uuid.New().String(),
+				TransactionId:   t.pt.ID.String(),
+				ContractAddress: t.pt.Address.HexString(),
+				Outcome:         engine.TransactionConfirmed_OUTCOME_REVERTED,
+				FailureMessage:  failureMessage,
+			})
 		}
 	}
 	return nil

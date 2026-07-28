@@ -29,6 +29,7 @@ type SequencerConfig struct {
 	CoordinatorEventQueueSize         *int              `json:"coordinatorEventQueueSize"`
 	CoordinatorPriorityEventQueueSize *int              `json:"coordinatorPriorityEventQueueSize"`
 	DelegationBatchInterval           *string           `json:"delegationBatchInterval"`
+	DispatchMaxBatchSize              *int              `json:"dispatchMaxBatchSize"`
 	HeartbeatInterval                 *string           `json:"heartbeatInterval"`
 	IdleSequencerCleanupInterval      *string           `json:"idleSequencerCleanupInterval"`
 	InactiveGracePeriod               *int              `json:"inactiveGracePeriod"`
@@ -55,6 +56,7 @@ type SequencerMinimumConfig struct {
 	CoordinatorEventQueueSize         int
 	CoordinatorPriorityEventQueueSize int
 	DelegationBatchInterval           time.Duration
+	DispatchMaxBatchSize              int
 	HeartbeatInterval                 time.Duration
 	IdleSequencerCleanupInterval      time.Duration
 	InactiveGracePeriod               int
@@ -80,6 +82,7 @@ var SequencerDefaults = SequencerConfig{
 	CoordinatorEventQueueSize:         confutil.P(100),
 	CoordinatorPriorityEventQueueSize: confutil.P(500),
 	DelegationBatchInterval:           confutil.P("100ms"),
+	DispatchMaxBatchSize:              confutil.P(100),
 	HeartbeatInterval:                 confutil.P("10s"),
 	IdleSequencerCleanupInterval:      confutil.P("1m"),
 	InactiveGracePeriod:               confutil.P(2),
@@ -110,6 +113,7 @@ var SequencerMinimum = SequencerMinimumConfig{
 	CoordinatorEventQueueSize:         1,
 	CoordinatorPriorityEventQueueSize: 1,
 	DelegationBatchInterval:           10 * time.Millisecond,
+	DispatchMaxBatchSize:              1,
 	HeartbeatInterval:                 1 * time.Second,
 	IdleSequencerCleanupInterval:      10 * time.Second,
 	InactiveGracePeriod:               1,

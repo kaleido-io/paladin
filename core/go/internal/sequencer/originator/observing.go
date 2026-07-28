@@ -166,8 +166,11 @@ func (o *originator) hasDroppedTransactions(ctx context.Context, snapshot *commo
 		// coordinator has had the chance to include it in a snapshot. The first-delegation time is reset if
 		// the transaction is redirected to a different coordinator, so the grace restarts on each handover
 		// but is not extended by the partial FIFO resend to the same coordinator.
+		//
+		// A 10% buffer is added to the heartbeat interval to allow for network delays where the delegation has
+		// arrived at the coordinator the instant after a heartbeat has been sent.
 		firstDelegated := txn.GetFirstDelegatedTime()
-		if firstDelegated == nil || o.clock.Now().Sub(*firstDelegated) < o.heartbeatInterval {
+		if firstDelegated == nil || o.clock.Now().Sub(*firstDelegated) < o.heartbeatInterval*11/10 {
 			continue
 		}
 		if !transactionFoundInSnapshot(snapshot, txn) {

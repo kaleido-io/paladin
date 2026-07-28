@@ -41,7 +41,7 @@ const (
 	Event_OriginatorCreated         EventType = iota + 300 // fired once by Start to drive the initial coordinator selection
 	Event_TransactionCreated                               // a new transaction has been created and is ready to be sent to the coordinator TODO maybe name something like Intent created?
 	Event_DelegationRequestRejected                        // pushed by transport_client when a DelegationResponse arrives with Accepted == false
-	Event_DelegateFlush                                    // fired by the delegation batching goroutine when the batch timer coalesces one or more delegation requests
+	Event_DelegateSendBatch                                    // fired by the delegation batching goroutine when the batch timer coalesces one or more delegation requests
 )
 
 // Type aliases for the generic statemachine types, specialized for originator
@@ -192,7 +192,7 @@ var stateDefinitionsMap = StateDefinitions{
 			// coordinator. If the coordinator is still in Elect or Prepared it will accept the
 			// delegation and manage the handover itself.
 			{Action: action_StartDelegationLoop},
-			{Action: action_SignalDelegateAll},
+			{Action: action_NotifyFullDelegation},
 		},
 		OnTransitionFrom: []ActionRule{
 			// Stop the batching goroutine when leaving Sending (all transactions confirmed/reverted).
@@ -205,16 +205,16 @@ var stateDefinitionsMap = StateDefinitions{
 					Validator: validator_TransactionDoesNotExist,
 					Actions: []ActionRule{
 						{Action: action_TransactionCreated},
-						{Action: action_SignalDelegateNew},
+						{Action: action_NotifyPartialDelegation},
 					},
 				}},
 			},
-			Event_DelegateFlush: {
+			Event_DelegateSendBatch: {
 				Match: statemachine.MatchFirst,
 				Handlers: []EventHandler{{
 					// The batching goroutine has coalesced one or more delegation requests; send the
 					// single (full or partial) delegation now.
-					Actions: []ActionRule{{Action: action_FlushDelegation}},
+					Actions: []ActionRule{{Action: action_SendDelegation}},
 				}},
 			},
 			common.Event_HeartbeatReceived: {
@@ -257,7 +257,7 @@ var stateDefinitionsMap = StateDefinitions{
 						validator_HasDroppedTransactions,
 					),
 					Actions: []ActionRule{
-						{Action: action_SignalDelegateAll},
+						{Action: action_NotifyFullDelegation},
 					},
 				}},
 			},
@@ -292,7 +292,7 @@ var stateDefinitionsMap = StateDefinitions{
 						{Action: action_HandleDelegationRejected},
 						// We always redelegate, regardless of whether the current active coordinator has changed.
 						// Full resend: a redirect to a (possibly new) coordinator may need the complete backlog.
-						{Action: action_SignalDelegateAll},
+						{Action: action_NotifyFullDelegation},
 					},
 				}},
 			},
@@ -314,7 +314,7 @@ var stateDefinitionsMap = StateDefinitions{
 					// A transaction has finished resolving its verifiers and is now eligible for delegation.
 					Validator: validator_OriginatorTransactionStateTransitionFromResolving,
 					Actions: []ActionRule{
-						{Action: action_SignalDelegateNew},
+						{Action: action_NotifyPartialDelegation},
 					},
 				}},
 			},

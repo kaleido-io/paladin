@@ -234,10 +234,10 @@ func (b *OriginatorBuilderForTesting) Build() (*originator, *OriginatorDependenc
 	switch b.state {
 	case State_Sending:
 		// In Sending the batching goroutine would own these channels. Synchronous ProcessEvent-based
-		// tests don't run the goroutine, so create the channels here to let signalDelegate raise its
-		// dirty flags; drive delegation with runDelegationTick to simulate a batch tick.
-		originator.delegateFullSignal = make(chan struct{}, 1)
-		originator.delegatePartialSignal = make(chan struct{}, 1)
+		// tests don't run the goroutine; create the channels here so actions can write to them and
+		// test functions read them
+		originator.notifyFullDelegation = make(chan struct{}, 1)
+		originator.notifyPartialDelegation = make(chan struct{}, 1)
 	}
 
 	if b.currentActiveCoordinator != nil {

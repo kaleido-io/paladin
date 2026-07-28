@@ -31,14 +31,25 @@ import (
 )
 
 // runDelegationTick simulates one tick of the batching goroutine against a synchronously-driven
-// originator: it drains the dirty flags, decides via chooseFlush, and processes the resulting
-// DelegateFlushEvent (if any) through the event loop, returning whether a flush was sent.
+// originator: it reads both notification cannels exactly as delegationLoop does (full wins over partial) and
+// processes the resulting DelegateSendBatchEvent (if any) through the event loop, returning whether
+// a delegation request was sent.
 func runDelegationTick(t *testing.T, ctx context.Context, o *originator) bool {
-	send, isFull := chooseFlush(drainSignal(o.delegateFullSignal), drainSignal(o.delegatePartialSignal))
-	if send {
-		require.NoError(t, o.stateMachineEventLoop.ProcessEvent(ctx, &DelegateFlushEvent{Full: isFull}))
+	var partialSend, fullSend bool
+	select {
+	case <-o.notifyPartialDelegation:
+		partialSend = true
+	default:
 	}
-	return send
+	select {
+	case <-o.notifyFullDelegation:
+		fullSend = true
+	default:
+	}
+	if partialSend || fullSend {
+		require.NoError(t, o.stateMachineEventLoop.ProcessEvent(ctx, &DelegateSendBatchEvent{Full: fullSend}))
+	}
+	return partialSend || fullSend
 }
 
 // ── State_Initial ─────────────────────────────────────────────────────────────

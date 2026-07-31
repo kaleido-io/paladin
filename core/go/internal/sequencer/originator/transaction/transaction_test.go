@@ -171,6 +171,31 @@ func TestTransaction_GetLastDelegatedTime_ReturnsUpdatedTime(t *testing.T) {
 	assert.NotNil(t, time1, "GetLastDelegatedTime should return a non-nil value")
 }
 
+func TestTransaction_GetFirstDelegatedTime_InitiallyNil(t *testing.T) {
+	// Test that GetFirstDelegatedTime returns nil for a newly created transaction
+	builder := NewTransactionBuilderForTesting(t, State_Initial)
+	txn, _ := builder.BuildWithMocks()
+
+	firstDelegatedTime := txn.GetFirstDelegatedTime()
+	assert.Nil(t, firstDelegatedTime, "GetFirstDelegatedTime should return nil for a newly created transaction")
+}
+
+func TestTransaction_GetFirstDelegatedTime_ReturnsSetTime(t *testing.T) {
+	// Test that GetFirstDelegatedTime returns the time recorded on first delegation
+	ctx := context.Background()
+	builder := NewTransactionBuilderForTesting(t, State_Pending)
+	txn, _ := builder.BuildWithMocks()
+
+	require.NoError(t, action_Delegated(ctx, txn, &DelegatedEvent{
+		BaseEvent:   BaseEvent{TransactionID: txn.pt.ID},
+		Coordinator: "coord@node1",
+	}))
+
+	firstDelegatedTime := txn.GetFirstDelegatedTime()
+	require.NotNil(t, firstDelegatedTime, "GetFirstDelegatedTime should return a non-nil value after delegation")
+	assert.Equal(t, txn.firstDelegatedTime, firstDelegatedTime, "GetFirstDelegatedTime should return the recorded first-delegation time")
+}
+
 func TestTransaction_Hash_ErrorWhenPrivateTransactionIsNil(t *testing.T) {
 	// Test that Hash returns an error when PrivateTransaction is nil
 	ctx := context.Background()

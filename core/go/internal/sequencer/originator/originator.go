@@ -73,12 +73,23 @@ type originator struct {
 	coordinatorPriorityList            []string // COORDINATOR_ENDORSER mode: priority-ordered list computed independently from endorserCandidates + effectiveBlockHeight + blockRangeSize
 	failoverIndex                      int      // COORDINATOR_ENDORSER mode: the next position in coordinatorPriorityList to try when the current active coordinator exceeds the inactive grace period
 
+	/* Delegation batching - a goroutine started/stopped on entry/exit to State_Sending that coalesces
+	   delegation requests. notifyFullDelegation/notifyPartialDelegation are length-1 channels notified
+	   (non-blocking) by actions on the event loop; the goroutine drains them on each batch tick and
+	   enqueues a DelegateSendBatchEvent. All fields are owned by the event-loop goroutine. */
+	notifyFullDelegation    chan struct{}
+	notifyPartialDelegation chan struct{}
+	delegationLoopCancel    context.CancelFunc
+	delegationLoopDone      chan struct{} // per-run done channel; nil = never started / already stopped+waited
+
 	/* Config */
-	nodeName            string
-	blockRange          uint64
-	contractAddress     *pldtypes.EthAddress
-	inactiveGracePeriod int // expressed as a multiple of heartbeat intervals
-	resolveRetryBackoff time.Duration
+	nodeName                string
+	blockRange              uint64
+	contractAddress         *pldtypes.EthAddress
+	inactiveGracePeriod     int // expressed as a multiple of heartbeat intervals
+	resolveRetryBackoff     time.Duration
+	delegationBatchInterval time.Duration
+	heartbeatInterval       time.Duration // grace before a delegated-but-unsnapshotted transaction counts as dropped
 
 	/* Dependencies */
 	transportWriter   transport.TransportWriter
@@ -97,16 +108,18 @@ func NewOriginator(
 	selectionConfig *common.CoordinatorSelectionConfig,
 ) *originator {
 	o := &originator{
-		nodeName:            nodeName,
-		transactionsByID:    make(map[uuid.UUID]transaction.OriginatorTransaction),
-		transportWriter:     transportWriter,
-		blockRange:          confutil.Uint64Min(configuration.BlockRange, pldconf.SequencerMinimum.BlockRange, *pldconf.SequencerDefaults.BlockRange),
-		contractAddress:     contractAddress,
-		engineIntegration:   engineIntegration,
-		metrics:             metrics,
-		inactiveGracePeriod: confutil.IntMin(configuration.InactiveGracePeriod, pldconf.SequencerMinimum.InactiveGracePeriod, *pldconf.SequencerDefaults.InactiveGracePeriod),
-		resolveRetryBackoff: confutil.DurationMin(configuration.RequestTimeout, pldconf.SequencerMinimum.RequestTimeout, *pldconf.SequencerDefaults.RequestTimeout),
-		clock:               common.RealClock(),
+		nodeName:                nodeName,
+		transactionsByID:        make(map[uuid.UUID]transaction.OriginatorTransaction),
+		transportWriter:         transportWriter,
+		blockRange:              confutil.Uint64Min(configuration.BlockRange, pldconf.SequencerMinimum.BlockRange, *pldconf.SequencerDefaults.BlockRange),
+		contractAddress:         contractAddress,
+		engineIntegration:       engineIntegration,
+		metrics:                 metrics,
+		inactiveGracePeriod:     confutil.IntMin(configuration.InactiveGracePeriod, pldconf.SequencerMinimum.InactiveGracePeriod, *pldconf.SequencerDefaults.InactiveGracePeriod),
+		resolveRetryBackoff:     confutil.DurationMin(configuration.RequestTimeout, pldconf.SequencerMinimum.RequestTimeout, *pldconf.SequencerDefaults.RequestTimeout),
+		delegationBatchInterval: confutil.DurationMin(configuration.DelegationBatchInterval, pldconf.SequencerMinimum.DelegationBatchInterval, *pldconf.SequencerDefaults.DelegationBatchInterval),
+		heartbeatInterval:       confutil.DurationMin(configuration.HeartbeatInterval, pldconf.SequencerMinimum.HeartbeatInterval, *pldconf.SequencerDefaults.HeartbeatInterval),
+		clock:                   common.RealClock(),
 	}
 
 	switch selectionConfig.Mode {

@@ -134,19 +134,38 @@ func TestReliableMessageResendRealDB(t *testing.T) {
 		return nil
 	})
 
+	// Build lookup maps for each node's expected state distributions.
+	// The fullScan is paginated and DB query latency can push a later message past the
+	// reliableMessageResend eligibility threshold before an earlier one, so messages may
+	// arrive out of order within a node. Verify by StateID lookup rather than by index.
+	node2Expected := make(map[string]*components.StateDistribution)
+	node3Expected := make(map[string]*components.StateDistribution)
+	for iSD, sd := range sds {
+		if iSD%2 == 0 {
+			node2Expected[sd.StateID] = sd
+		} else {
+			node3Expected[sd.StateID] = sd
+		}
+	}
+
 	// Check each peer dispatches two messages twice (with the send retry kicking in)
 	for range 2 {
 		for iSD := range sds {
 			var msg *prototk.PaladinMsg
+			var expected map[string]*components.StateDistribution
 			if iSD%2 == 0 {
 				msg = <-sentMessagesNode2
+				expected = node2Expected
 			} else {
 				msg = <-sentMessagesNode3
+				expected = node3Expected
 			}
 			var receivedSD components.StateDistributionWithData
 			err := json.Unmarshal(msg.Payload, &receivedSD)
 			require.NoError(t, err)
-			require.Equal(t, sds[iSD], &receivedSD.StateDistribution)
+			expectedSD, ok := expected[receivedSD.StateID]
+			require.True(t, ok, "received unexpected StateID %s", receivedSD.StateID)
+			require.Equal(t, expectedSD, &receivedSD.StateDistribution)
 			var receivedState pldapi.State
 			err = json.Unmarshal(receivedSD.StateData, &receivedState)
 			require.NoError(t, err)
@@ -386,6 +405,16 @@ func TestQueryPeers(t *testing.T) {
 
 	_, err = tm.queryPeers(ctx, query.NewQueryBuilder().Query())
 	require.Regexp(t, "PD010721", err)
+}
+
+func TestQueryPeersSortErrorNoPeers(t *testing.T) {
+	// With no active peers the per-peer EvalQuery loop never runs, so an invalid sort field is not
+	// caught during matching — it must instead surface from SortValueSetInPlace.
+	ctx := context.Background()
+	tm := &transportManager{peers: map[string]*peer{}}
+
+	_, err := tm.queryPeers(ctx, query.NewQueryBuilder().Limit(1).Sort("wrong").Query())
+	require.Regexp(t, "PD010700.*wrong", err)
 }
 
 func TestConnectionRace(t *testing.T) {

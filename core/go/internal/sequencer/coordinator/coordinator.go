@@ -38,6 +38,7 @@ import (
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
+	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/retry"
 )
 
 // signingIdentityState groups the coordinator's current signing key with a flag that tracks
@@ -119,6 +120,7 @@ type coordinator struct {
 	assembleErrorRetryThreshhold   int
 	signErrorRetryThreshhold       int
 	requestTimeout                 time.Duration
+	prepareRetry                   *retry.Retry
 	stateTimeout                   time.Duration
 	nodeName                       string
 	coordinatorSelectionBlockRange uint64
@@ -134,7 +136,6 @@ type coordinator struct {
 	transportWriter       transport.TransportWriter
 	clock                 common.Clock
 	engineIntegration     common.EngineIntegration
-	buildNullifiers       func(context.Context, []*components.StateDistributionWithData) ([]*components.NullifierUpsert, error)
 	newPrivateTransaction func(context.Context, []*components.ValidatedTransaction) error
 	syncPoints            syncpoints.SyncPoints
 	metrics               metrics.DistributedSequencerMetrics
@@ -144,6 +145,7 @@ type coordinator struct {
 	dispatchQueue      chan queuedDispatch
 	dispatchLoopCancel context.CancelFunc // non-nil iff this coordinator owns a running loop
 	dispatchLoopDone   chan struct{}      // per-run done channel; nil = never started / already stopped+waited
+	dispatchRetry      *retry.Retry       // indefinite retry of the per-batch stage+commit in the dispatch loop
 	inFlightTxns       map[uuid.UUID]struct{}
 	inFlightMutex      *sync.Cond
 }
@@ -153,7 +155,6 @@ func NewCoordinator(
 	domainAPI components.DomainSmartContract,
 	dsw components.DomainStateWriter,
 	allComponents components.AllComponents,
-	buildNullifiers func(context.Context, []*components.StateDistributionWithData) ([]*components.NullifierUpsert, error),
 	newPrivateTransaction func(context.Context, []*components.ValidatedTransaction) error,
 	transportWriter transport.TransportWriter,
 	clock common.Clock,
@@ -175,7 +176,6 @@ func NewCoordinator(
 		domainAPI:                          domainAPI,
 		dsw:                                dsw,
 		components:                         allComponents,
-		buildNullifiers:                    buildNullifiers,
 		newPrivateTransaction:              newPrivateTransaction,
 		transportWriter:                    transportWriter,
 		contractAddress:                    contractAddress,
@@ -205,8 +205,10 @@ func NewCoordinator(
 	c.baseLedgerRevertRetryThreshold = confutil.IntMin(configuration.BaseLedgerRevertRetryThreshold, pldconf.SequencerMinimum.BaseLedgerRevertRetryThreshold, *pldconf.SequencerDefaults.BaseLedgerRevertRetryThreshold)
 	c.assembleErrorRetryThreshhold = confutil.IntMin(configuration.AssembleErrorRetryThreshold, pldconf.SequencerMinimum.AssembleErrorRetryThreshold, *pldconf.SequencerDefaults.AssembleErrorRetryThreshold)
 	c.signErrorRetryThreshhold = confutil.IntMin(configuration.SignErrorRetryThreshold, pldconf.SequencerMinimum.SignErrorRetryThreshold, *pldconf.SequencerDefaults.SignErrorRetryThreshold)
+	c.prepareRetry = retry.NewRetryLimited(&configuration.PrepareRetry, pldconf.GenericRetryDefaults)
 	c.maxInflightTransactions = confutil.IntMin(configuration.MaxInflightTransactions, pldconf.SequencerMinimum.MaxInflightTransactions, *pldconf.SequencerDefaults.MaxInflightTransactions)
 	c.coordinatorSelectionBlockRange = confutil.Uint64Min(configuration.BlockRange, pldconf.SequencerMinimum.BlockRange, *pldconf.SequencerDefaults.BlockRange)
+	c.dispatchRetry = retry.NewRetryIndefinite(&configuration.DispatchCommitRetry, &pldconf.GenericRetryDefaults.RetryConfig)
 
 	// Initialize coordinator selection state from pre-resolved config.
 	c.coordinatorSelection = selectionConfig.Mode

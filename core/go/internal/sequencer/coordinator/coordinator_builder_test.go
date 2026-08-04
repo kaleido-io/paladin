@@ -388,7 +388,6 @@ func (b *CoordinatorBuilderForTesting) Build() (*coordinator, *CoordinatorDepend
 		mocks.DomainStateWriter,
 		mocks.AllComponents,
 		nil,
-		nil,
 		transportWriter,
 		clock,
 		mocks.EngineIntegration,

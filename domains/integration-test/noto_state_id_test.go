@@ -149,6 +149,8 @@ func (s *notoTestSuite) TestNotoCrossContractStateIDCollision() {
 	// same salt, owner and amount as the junk coin in token B.
 	log.L(ctx).Infof("Receiving a coin with identical data in token A (the attacker's payment)")
 	var storedInTokenA pldapi.State
+	// this step requires the sender using a modified Paladin that re-uses a salt, rather than generating
+	// a genuinely random one. Simulating that by calling pstate_storeState directly.
 	rpcerr = paladinClient.CallRPC(ctx, &storedInTokenA, "pstate_storeState",
 		notoDomain.Name(),
 		tokenA.Address,

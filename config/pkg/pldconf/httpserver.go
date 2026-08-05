@@ -64,8 +64,8 @@ type DebugServerConfig struct {
 
 var DebugServerDefaults = DebugServerConfig{
 	Enabled:              confutil.P(false),
-	BlockProfileRate:     confutil.P(0),
-	MutexProfileFraction: confutil.P(0),
+	BlockProfileRate:     confutil.P(1),
+	MutexProfileFraction: confutil.P(1),
 	HTTPServerConfig:     HTTPDefaults,
 }
 

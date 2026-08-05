@@ -37,7 +37,6 @@ import (
 
 type CoordinatorTransaction interface {
 	HandleEvent(ctx context.Context, event common.Event) error
-	PendingDispatch(ctx context.Context) *syncpoints.PendingDispatch
 	GetID() uuid.UUID
 	GetCurrentState() State
 	GetSnapshot(ctx context.Context) (*engineProto.SnapshotPooledTransaction, *engineProto.SnapshotDispatchedTransaction, *engineProto.SnapshotConfirmedTransaction, *engineProto.SnapshotRevertedTransaction)
@@ -84,9 +83,6 @@ type coordinatorTransaction struct {
 	pendingEndorsementRequests   map[string]map[string]*common.IdempotentRequest //map of attestationRequest names to a map of parties to a struct containing information about the active pending request
 	pendingPreDispatchRequest    *common.IdempotentRequest
 
-	pendingDispatch                 *syncpoints.TransactionDispatch
-	pendingRemoteStateDistributions []*components.StateDistribution
-
 	//Configuration
 	blockHeightTolerance           uint64
 	requestTimeout                 time.Duration
@@ -111,7 +107,8 @@ type coordinatorTransaction struct {
 	domainAPI                         components.DomainSmartContract
 	dsw                               components.DomainStateWriter
 	queueEventForCoordinator          func(context.Context, common.Event)
-	setDispatchedInFlight             func(txID uuid.UUID, inFlight bool) // called synchronously as the transaction enters/leaves State_Dispatched having dispatched a public transaction
+	enqueueForDispatch                func(context.Context, CoordinatorTransaction, *syncpoints.PendingDispatch) // called from dispatchPrepareAndQueue to place this transaction and its built dispatch onto the coordinator's dispatch queue
+	setDispatchedInFlight             func(txID uuid.UUID, inFlight bool)                                       // called synchronously as the transaction enters/leaves State_Dispatched having dispatched a public transaction
 	coordinatorTransactionHandleEvent func(context.Context, uuid.UUID, common.Event) error
 	getCoordinatorTransactionState    func(context.Context, uuid.UUID) (State, bool)
 	notifyEndorserCandidates          func(context.Context, ...string) // called once when endorsement requests are first sent; passes endorser node names to the coordinator for pool updates
@@ -127,6 +124,7 @@ func NewTransaction(ctx context.Context,
 	transportWriter transport.TransportWriter,
 	clock common.Clock,
 	queueEventForCoordinator func(context.Context, common.Event),
+	enqueueForDispatch func(context.Context, CoordinatorTransaction, *syncpoints.PendingDispatch),
 	setDispatchedInFlight func(txID uuid.UUID, inFlight bool),
 	coordinatorTransactionHandleEvent func(context.Context, uuid.UUID, common.Event) error,
 	getCoordinatorTransactionState func(context.Context, uuid.UUID) (State, bool),
@@ -161,6 +159,7 @@ func NewTransaction(ctx context.Context,
 		transportWriter,
 		clock,
 		queueEventForCoordinator,
+		enqueueForDispatch,
 		setDispatchedInFlight,
 		coordinatorTransactionHandleEvent,
 		getCoordinatorTransactionState,
@@ -197,6 +196,7 @@ func newTransaction(
 	transportWriter transport.TransportWriter,
 	clock common.Clock,
 	queueEventForCoordinator func(context.Context, common.Event),
+	enqueueForDispatch func(context.Context, CoordinatorTransaction, *syncpoints.PendingDispatch),
 	setDispatchedInFlight func(txID uuid.UUID, inFlight bool),
 	coordinatorTransactionHandleEvent func(context.Context, uuid.UUID, common.Event) error,
 	getCoordinatorTransactionState func(context.Context, uuid.UUID) (State, bool),
@@ -231,6 +231,7 @@ func newTransaction(
 		transportWriter:                   transportWriter,
 		clock:                             clock,
 		queueEventForCoordinator:          queueEventForCoordinator,
+		enqueueForDispatch:                enqueueForDispatch,
 		setDispatchedInFlight:             setDispatchedInFlight,
 		coordinatorTransactionHandleEvent: coordinatorTransactionHandleEvent,
 		getCoordinatorTransactionState:    getCoordinatorTransactionState,

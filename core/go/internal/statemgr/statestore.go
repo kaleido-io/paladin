@@ -25,6 +25,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/log"
 	"github.com/LFDT-Paladin/paladin/config/pkg/pldconf"
 	"github.com/LFDT-Paladin/paladin/core/internal/components"
+	statemetrics "github.com/LFDT-Paladin/paladin/core/internal/statemgr/metrics"
 	"github.com/LFDT-Paladin/paladin/core/pkg/persistence"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/cache"
@@ -34,17 +35,21 @@ import (
 )
 
 type stateManager struct {
-	p                 persistence.Persistence
-	bgCtx             context.Context
-	cancelCtx         context.CancelFunc
-	conf              *pldconf.StateStoreConfig
-	domainManager     components.DomainManager
-	txManager         components.TXManager
-	transportManager  components.TransportManager
-	abiSchemaCache    cache.Cache[string, components.Schema]
-	rpcModule         *rpcserver.RPCModule
-	domainContextLock sync.Mutex
-	domainContexts    map[uuid.UUID]*domainQueryContext
+	p                persistence.Persistence
+	bgCtx            context.Context
+	cancelCtx        context.CancelFunc
+	conf             *pldconf.StateStoreConfig
+	domainManager    components.DomainManager
+	txManager        components.TXManager
+	transportManager components.TransportManager
+	abiSchemaCache   cache.Cache[string, components.Schema]
+	// validatedStateCache holds validated state content (data + labels) keyed by content hash. It is a
+	// per-process singleton shared across the coordinator and originator roles.
+	validatedStateCache cache.Cache[string, *components.StateWithLabels]
+	metrics             statemetrics.StateManagerMetrics
+	rpcModule           *rpcserver.RPCModule
+	domainContextLock   sync.Mutex
+	domainContexts      map[uuid.UUID]*domainQueryContext
 }
 
 type logStateSpendRecords []*pldapi.StateSpendRecord
@@ -87,11 +92,17 @@ func (lr logStateInfoRecords) String() string {
 	return strings.Join(summary, ",")
 }
 
-func NewStateManager(ctx context.Context, conf *pldconf.StateStoreConfig, p persistence.Persistence) components.StateManager {
+func NewStateManager(ctx context.Context, conf *pldconf.StateStoreConfig, p persistence.Persistence, metrics statemetrics.StateManagerMetrics) components.StateManager {
+	if metrics == nil {
+		metrics = statemetrics.NewNoop()
+	}
 	ss := &stateManager{
 		p:              p,
 		conf:           conf,
 		abiSchemaCache: cache.NewCache[string, components.Schema](&conf.SchemaCache, &pldconf.StateStoreConfigDefaults.SchemaCache),
+		validatedStateCache: cache.NewCache[string, *components.StateWithLabels](
+			&conf.ValidatedStateCache, &pldconf.StateStoreConfigDefaults.ValidatedStateCache),
+		metrics:        metrics,
 		domainContexts: make(map[uuid.UUID]*domainQueryContext),
 	}
 	ss.bgCtx, ss.cancelCtx = context.WithCancel(log.WithComponent(ctx, "statemanager"))

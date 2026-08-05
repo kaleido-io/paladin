@@ -28,14 +28,47 @@ import (
 	"github.com/LFDT-Paladin/paladin/config/pkg/confutil"
 	"github.com/LFDT-Paladin/paladin/config/pkg/pldconf"
 	"github.com/LFDT-Paladin/paladin/core/mocks/componentsmocks"
+	"github.com/LFDT-Paladin/paladin/core/mocks/statemgrmetricsmocks"
 	"github.com/LFDT-Paladin/paladin/core/pkg/persistence"
 	"github.com/LFDT-Paladin/paladin/core/pkg/persistence/mockpersistence"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldapi"
 	"github.com/LFDT-Paladin/paladin/sdk/go/pkg/pldtypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm/clause"
 )
+
+// newTestMetrics returns a permissive metrics mock that records every IncValidatedStateCache call
+// (inspected by cacheCounts) without imposing call expectations.
+func newTestMetrics() *statemgrmetricsmocks.StateManagerMetrics {
+	mm := &statemgrmetricsmocks.StateManagerMetrics{}
+	mm.On("IncValidatedStateCache", mock.Anything).Return()
+	return mm
+}
+
+// cacheCounts tallies validated-state cache hits and misses recorded by the metrics mock.
+func cacheCounts(mm *statemgrmetricsmocks.StateManagerMetrics) (hits, misses int) {
+	for _, c := range mm.Calls {
+		if c.Method != "IncValidatedStateCache" {
+			continue
+		}
+		if c.Arguments.String(0) == "hit" {
+			hits++
+		} else {
+			misses++
+		}
+	}
+	return
+}
+
+func TestNewStateManagerNilMetricsDefaultsToNoop(t *testing.T) {
+	p, err := mockpersistence.NewSQLMockProvider()
+	require.NoError(t, err)
+	ss := NewStateManager(context.Background(), &pldconf.StateStoreConfig{}, p.P, nil)
+	require.NotNil(t, ss)
+	require.NotNil(t, ss.(*stateManager).metrics)
+}
 
 type mockComponents struct {
 	domainManager    *componentsmocks.DomainManager
@@ -65,7 +98,7 @@ func newDBTestStateManager(t *testing.T) (context.Context, *stateManager, *mockC
 
 	p, pDone, err := persistence.NewUnitTestPersistence(ctx, "statemgr")
 	require.NoError(t, err)
-	ss := NewStateManager(ctx, &pldconf.StateStoreConfig{}, p)
+	ss := NewStateManager(ctx, &pldconf.StateStoreConfig{}, p, newTestMetrics())
 
 	m := newMockComponents(t)
 
@@ -90,7 +123,7 @@ func newDBMockStateManager(t *testing.T) (context.Context, *stateManager, sqlmoc
 	ctx := context.Background()
 	p, err := mockpersistence.NewSQLMockProvider()
 	require.NoError(t, err)
-	ss := NewStateManager(ctx, &pldconf.StateStoreConfig{}, p.P)
+	ss := NewStateManager(ctx, &pldconf.StateStoreConfig{}, p.P, newTestMetrics())
 
 	m := newMockComponents(t)
 

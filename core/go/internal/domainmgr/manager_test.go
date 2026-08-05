@@ -98,7 +98,7 @@ func newTestDomainManager(t *testing.T, realDB bool, conf *pldconf.DomainManager
 	if realDB {
 		p, pDone, err = persistence.NewUnitTestPersistence(ctx, "domainmgr")
 		require.NoError(t, err)
-		realStateManager = statemgr.NewStateManager(ctx, &pldconf.StateStoreConfig{}, p)
+		realStateManager = statemgr.NewStateManager(ctx, &pldconf.StateStoreConfig{}, p, nil)
 		allComponents.On("StateManager").Return(realStateManager)
 		_, _ = realStateManager.PreInit(allComponents)
 	} else {

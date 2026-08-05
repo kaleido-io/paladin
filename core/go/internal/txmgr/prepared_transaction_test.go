@@ -72,7 +72,7 @@ func writeStates(t *testing.T, txm *txManager, dbTX persistence.DBTX, testSchema
 }
 
 func newRealStateManager(t *testing.T, mc *mockComponents) components.StateManager {
-	stateMgr := statemgr.NewStateManager(context.Background(), &pldconf.StateStoreConfig{}, mc.c.Persistence())
+	stateMgr := statemgr.NewStateManager(context.Background(), &pldconf.StateStoreConfig{}, mc.c.Persistence(), nil)
 	_, err := stateMgr.PreInit(mc.c)
 	require.NoError(t, err)
 	err = stateMgr.PostInit(mc.c)

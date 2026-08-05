@@ -231,14 +231,15 @@ stateDiagram-v2
     Resolving --> Pending : VerifiersResolved
     Pending --> Confirmed : ConfirmedSuccess
     Pending --> Confirmed : ConfirmedReverted
-    Pending --> Delegated : Delegated
+    Pending --> Delegated : DelegationAcknowledged
+    Pending --> Dispatched : Dispatched
     Delegated --> Confirmed : ConfirmedSuccess
     Delegated --> Confirmed : ConfirmedReverted
-    Delegated --> Assembling : AssembleRequestReceived
+    Delegated --> Pending : DelegationSent
     Delegated --> Dispatched : Dispatched
     Assembling --> Confirmed : ConfirmedSuccess
     Assembling --> Confirmed : ConfirmedReverted
-    Assembling --> Delegated : Delegated
+    Assembling --> Pending : DelegationSent
     Assembling --> Signing : AssembleSuccess [HasLocalSignRequirement]
     Assembling --> Endorsement_Gathering : AssembleSuccess
     Assembling --> Reverted : AssembleRevert
@@ -246,41 +247,41 @@ stateDiagram-v2
     Assembling --> Delegated : AssembleError
     Signing --> Confirmed : ConfirmedSuccess
     Signing --> Confirmed : ConfirmedReverted
-    Signing --> Delegated : Delegated
+    Signing --> Pending : DelegationSent
     Signing --> Endorsement_Gathering : SignSuccess
     Signing --> Delegated : SignError
     Signing --> Assembling : AssembleRequestReceived
     Endorsement_Gathering --> Confirmed : ConfirmedSuccess
     Endorsement_Gathering --> Confirmed : ConfirmedReverted
-    Endorsement_Gathering --> Delegated : Delegated
+    Endorsement_Gathering --> Pending : DelegationSent
     Endorsement_Gathering --> Assembling : AssembleRequestReceived
     Endorsement_Gathering --> Prepared : PreDispatchRequestReceived
     Prepared --> Confirmed : ConfirmedSuccess
     Prepared --> Confirmed : ConfirmedReverted
-    Prepared --> Delegated : Delegated
+    Prepared --> Pending : DelegationSent
     Prepared --> Dispatched : Dispatched
     Prepared --> Assembling : AssembleRequestReceived
     Dispatched --> Confirmed : ConfirmedSuccess
     Dispatched --> Delegated : ConfirmedReverted
     Dispatched --> Confirmed : ConfirmedReverted
-    Dispatched --> Delegated : Delegated
+    Dispatched --> Pending : DelegationSent
     Dispatched --> Sequenced : NonceAssigned
     Dispatched --> Submitted : Submitted
     Dispatched --> Assembling : AssembleRequestReceived
     Sequenced --> Confirmed : ConfirmedSuccess
     Sequenced --> Delegated : ConfirmedReverted
     Sequenced --> Confirmed : ConfirmedReverted
-    Sequenced --> Delegated : Delegated
+    Sequenced --> Pending : DelegationSent
     Sequenced --> Submitted : Submitted
     Sequenced --> Assembling : AssembleRequestReceived
     Submitted --> Confirmed : ConfirmedSuccess
     Submitted --> Delegated : ConfirmedReverted
     Submitted --> Confirmed : ConfirmedReverted
-    Submitted --> Delegated : Delegated
+    Submitted --> Pending : DelegationSent
     Submitted --> Assembling : AssembleRequestReceived
     Parked --> Confirmed : ConfirmedSuccess
     Parked --> Confirmed : ConfirmedReverted
-    Parked --> Delegated : Delegated
+    Parked --> Pending : DelegationSent
     Parked --> Pending : Resumed
     Confirmed --> Final : Finalize
     Reverted --> Final : Finalize
@@ -299,7 +300,8 @@ stateDiagram-v2
 | **ConfirmedReverted** | |
 | **ConfirmedSuccess** | |
 | **Created** | |
-| **Delegated** | |
+| **DelegationAcknowledged** | |
+| **DelegationSent** | |
 | **Dispatched** | |
 | **Finalize** | |
 | **NonceAssigned** | |

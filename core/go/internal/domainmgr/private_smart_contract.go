@@ -304,6 +304,7 @@ func (dc *domainContract) ResolvePotentialStates(ctx context.Context, dsw compon
 		postAssembly.InfoStates, infoResolved, err = dc.resolvePotentialStates(ctx, dsw, readTX, tx, infoStatesPotential)
 	}
 	if err == nil {
+		// TODO AM: future change- do we drop this and instead pull the private state data out of the state visibility tracker
 		postAssembly.StatesToStage = append(outputResolved, infoResolved...)
 	}
 	if err == nil && log.IsDebugEnabled() {

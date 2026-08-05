@@ -753,7 +753,7 @@ func TestFullTransactionRealDBOK(t *testing.T) {
 
 	// Output state5 was written to the DomainStateWriter (unflushed). It is NOT yet visible
 	// via FindAvailableStates because the DomainQueryContext only sees confirmed DB states and its
-	// own snapshot (from ImportSnapshot). The DSW's unflushed pool is not merged here.
+	// own snapshot (from its assembly context). The DSW's unflushed pool is not merged here.
 	stateRes, err := domain.FindAvailableStates(td.ctx, &prototk.FindAvailableStatesRequest{
 		StateQueryContext: td.c.id,
 		SchemaId:          ptx.PostAssembly.AssembleResponse.GetOutputStatesPotential()[0].SchemaId,

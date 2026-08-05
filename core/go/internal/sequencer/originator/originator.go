@@ -27,6 +27,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/metrics"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/originator/transaction"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/statemachine"
+	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/stateview"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer/transport"
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
@@ -47,6 +48,10 @@ type Originator interface {
 
 	GetTxStatus(ctx context.Context, txID uuid.UUID) (status components.PrivateTxStatus, err error)
 	GetCurrentState() State
+
+	// StateViewClient returns the client that state query responses/errors from coordinators
+	// are routed to, directly from the transport handler (off the event loop).
+	StateViewClient() stateview.Client
 
 	WaitForDone(ctx context.Context)
 }
@@ -96,6 +101,7 @@ type originator struct {
 	engineIntegration common.EngineIntegration
 	metrics           metrics.DistributedSequencerMetrics
 	clock             common.Clock
+	stateViewClient   stateview.Client
 }
 
 func NewOriginator(
@@ -121,6 +127,8 @@ func NewOriginator(
 		heartbeatInterval:       confutil.DurationMin(configuration.HeartbeatInterval, pldconf.SequencerMinimum.HeartbeatInterval, *pldconf.SequencerDefaults.HeartbeatInterval),
 		clock:                   common.RealClock(),
 	}
+	requestTimeout := confutil.DurationMin(configuration.RequestTimeout, pldconf.SequencerMinimum.RequestTimeout, *pldconf.SequencerDefaults.RequestTimeout)
+	o.stateViewClient = stateview.NewClient(contractAddress.HexString(), transportWriter, requestTimeout, o.clock)
 
 	switch selectionConfig.Mode {
 	case prototk.ContractConfig_COORDINATOR_STATIC:
@@ -165,6 +173,12 @@ func (o *originator) GetCurrentState() State {
 	o.RLock()
 	defer o.RUnlock()
 	return o.stateMachineEventLoop.GetCurrentState()
+}
+
+// StateViewClient returns the state query client. It is safe to call from any goroutine —
+// the client is immutable after construction and internally thread-safe.
+func (o *originator) StateViewClient() stateview.Client {
+	return o.stateViewClient
 }
 
 func (o *originator) QueueEvent(ctx context.Context, event common.Event) {

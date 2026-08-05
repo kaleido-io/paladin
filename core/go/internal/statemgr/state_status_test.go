@@ -34,8 +34,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// snapLock is a test-only convenience for describing a state lock before conversion to its proto
-// wire form in ImportSnapshot.
+// snapLock is a test-only convenience for describing a coordinator state lock: CREATE locks make a
+// state an ahead-of-chain query candidate, SPEND locks exclude it and feed the spend exclusion set.
 type snapLock struct {
 	State       pldtypes.HexBytes
 	Transaction uuid.UUID
@@ -118,6 +118,18 @@ func newTestDomainContext(t *testing.T, ctx context.Context, ss *stateManager, n
 	return contractAddress, dqc.(*domainQueryContext)
 }
 
+// newTestAssemblyContext opens an assembly domain context wired to a remote view onto the view
+// owner's in-memory states; the view's spent state IDs are fetched lazily as the spend exclusion
+// set on the first query. The caller supplies the contract address (needed to build the view
+// beforehand) and owns Close.
+func newTestAssemblyContext(t *testing.T, ctx context.Context, ss *stateManager, name string, customHashFunction bool, contractAddress *pldtypes.EthAddress, view components.RemoteStateView) *domainQueryContext {
+	md := componentsmocks.NewDomain(t)
+	md.On("Name").Return(name)
+	md.On("CustomHashFunction").Return(customHashFunction)
+	dqc := ss.NewDomainQueryContextWithRemoteView(ctx, md, *contractAddress, view)
+	return dqc.(*domainQueryContext)
+}
+
 func newTestDomainStateWriter(t *testing.T, ctx context.Context, ss *stateManager, name string, customHashFunction bool) (*pldtypes.EthAddress, *domainStateWriter) {
 	md := componentsmocks.NewDomain(t)
 	md.On("Name").Return(name)
@@ -142,6 +154,7 @@ func TestStateLockingQuery(t *testing.T) {
 	schemaID := schema.ID()
 
 	contractAddress, dqc := newTestDomainContext(t, ctx, ss, "domain1", false)
+	seqQual := pldapi.StateStatusQualifier(dqc.ID().String())
 
 	widgets := makeWidgets(t, ctx, ss, "domain1", contractAddress, schemaID, []string{
 		`{"size": 11111, "color": "red",  "price": 100}`,
@@ -168,28 +181,40 @@ func TestStateLockingQuery(t *testing.T) {
 		}
 	}
 
-	// importSnapshot is a helper that calls ImportSnapshot with the given states and locks.
+	// importSnapshot mirrors what the coordinator view provides for an assembly: the CREATE-locked,
+	// not-spend-locked states become ahead-of-chain query candidates served by the querier, and the
+	// SPEND-locked IDs become the DB exclusion set. A view is fixed for a context's life, so each
+	// send closes the current context and opens a fresh one, updating dqc and its seqQual accordingly.
 	importSnapshot := func(states []*prototk.EndorsableState, locks []*snapLock) {
-		protoStates := make([]*prototk.SnapshotState, len(states))
-		for i, u := range states {
-			protoStates[i] = &prototk.SnapshotState{State: u}
-		}
-		protoLocks := make([]*prototk.SnapshotStateLock, len(locks))
-		for i, l := range locks {
-			txStr := l.Transaction.String()
-			protoLocks[i] = &prototk.SnapshotStateLock{
-				StateId:     l.State.String(),
-				Transaction: &txStr,
-				Type:        l.Type,
+		spendLocked := make(map[string]bool)
+		createLocked := make(map[string]bool)
+		var spending []pldtypes.HexBytes
+		for _, l := range locks {
+			switch l.Type {
+			case prototk.SnapshotStateLock_SPEND:
+				spendLocked[l.State.String()] = true
+				spending = append(spending, l.State)
+			case prototk.SnapshotStateLock_CREATE:
+				createLocked[l.State.String()] = true
 			}
 		}
-		require.NoError(t, dqc.ImportSnapshot(ctx, &prototk.StateSnapshot{
-			States: protoStates,
-			Locks:  protoLocks,
-		}))
+		var candidates []*prototk.SnapshotState
+		for _, u := range states {
+			if !createLocked[u.Id] || spendLocked[u.Id] {
+				continue
+			}
+			id, err := pldtypes.ParseHexBytes(ctx, u.Id)
+			require.NoError(t, err)
+			sw, err := schema.ProcessState(ctx, contractAddress, pldtypes.RawJSON(u.StateDataJson), id, false, true)
+			require.NoError(t, err)
+			candidates = append(candidates, snapshotStateOf(sw, 0))
+		}
+		dqc.Close(ctx)
+		dqc = newTestAssemblyContext(t, ctx, ss, "domain1", false, contractAddress,
+			&testRemoteView{ss: ss, domainName: "domain1", candidates: candidates, spentStateIDs: spending})
+		seqQual = pldapi.StateStatusQualifier(dqc.ID().String())
 	}
 
-	seqQual := pldapi.StateStatusQualifier(dqc.ID().String())
 	all := query.NewQueryBuilder().Query()
 
 	checkQuery(all, pldapi.StateStatusAll, 0, 1, 2, 3, 4)
@@ -232,9 +257,9 @@ func TestStateLockingQuery(t *testing.T) {
 	checkQuery(all, seqQual, 1, 2, 4)                     // unchanged
 
 	// Write widget[5] to DB (unconfirmed) via WritePreVerifiedStates, then import it into
-	// the DomainQueryContext snapshot so the seqQual query can see the creating state.
+	// a fresh DomainQueryContext snapshot so the seqQual query can see the creating state.
 	// This mirrors what the coordinator does: the DSW flushes the state to DB, then the
-	// assembler's DQC receives a snapshot via ImportSnapshot.
+	// assembler opens an assembly context hydrated with a refs snapshot.
 	txID1 := uuid.New()
 	widget5State := genWidget(t, schemaID, `{"size": 66666, "color": "blue", "price": 600}`)
 	var widget5States []*pldapi.State
@@ -260,7 +285,7 @@ func TestStateLockingQuery(t *testing.T) {
 	checkQuery(all, pldapi.StateStatusSpent, 0)              // unchanged
 	checkQuery(all, seqQual, 1, 2, 4, 5)                     // added 5 (via snapshot)
 
-	// Add a spend lock for widget[5]: re-import the full snapshot with both create and spend locks.
+	// Add a spend lock for widget[5]: open a new snapshot with both create and spend locks.
 	txID2 := uuid.New()
 	importSnapshot(
 		[]*prototk.EndorsableState{widget5State},
@@ -277,7 +302,7 @@ func TestStateLockingQuery(t *testing.T) {
 	checkQuery(all, pldapi.StateStatusSpent, 0)              // unchanged
 	checkQuery(all, seqQual, 1, 2, 4)                        // removed 5
 
-	// Cancel the spend lock by re-importing without it (ImportSnapshot replaces the whole snapshot).
+	// Cancel the spend lock by opening a new snapshot without it (each snapshot is a whole new view).
 	importSnapshot(
 		[]*prototk.EndorsableState{widget5State},
 		[]*snapLock{{State: widgets[5].ID, Transaction: txID1, Type: prototk.SnapshotStateLock_CREATE}},
@@ -318,7 +343,7 @@ func TestStateLockingQuery(t *testing.T) {
 	checkQuery(all, pldapi.StateStatusSpent, 0)              // unchanged
 	checkQuery(all, seqQual, 1, 2, 4, 5)                     // unchanged (5 now confirmed in DB)
 
-	// Import widget[3] into the snapshot: it's unconfirmed in DB (never confirmed above) but
+	// Import widget[3] via a new snapshot: it's unconfirmed in DB (never confirmed above) but
 	// the seqQual can see it once the coordinator sends its snapshot.
 	txID13 := uuid.New()
 	importSnapshot(

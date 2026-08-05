@@ -377,12 +377,10 @@ func (as *abiSchema) ProcessState(ctx context.Context, contractAddress *pldtypes
 		id = pldtypes.HexBytes(hash)
 	}
 
-	now := pldtypes.TimestampNow()
 	state := &components.StateWithLabels{
 		State: &pldapi.State{
 			StateBase: pldapi.StateBase{
 				ID:              id,
-				Created:         now,
 				DomainName:      as.DomainName,
 				Schema:          as.Schema.ID,
 				ContractAddress: contractAddress,
@@ -404,7 +402,8 @@ func (as *abiSchema) ProcessState(ctx context.Context, contractAddress *pldtypes
 	}
 	state.Labels = psd.labels
 	state.Int64Labels = psd.int64Labels
-	state.LabelValues = addStateBaseLabels(psd.labelValues, id, now)
+	psd.labelValues[".id"] = id.HexString()
+	state.LabelValues = psd.labelValues
 	return state, nil
 }
 

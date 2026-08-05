@@ -175,41 +175,46 @@ stateDiagram-v2
     Resolving --> Pending
     Pending --> Confirmed
     Pending --> Delegated
+    Pending --> Dispatched
     Delegated --> Confirmed
-    Delegated --> Assembling
+    Delegated --> Pending
     Delegated --> Dispatched
     Assembling --> Confirmed
-    Assembling --> Delegated
+    Assembling --> Pending
     Assembling --> Signing
     Assembling --> Endorsement_Gathering
     Assembling --> Reverted
     Assembling --> Parked
+    Assembling --> Delegated
     Signing --> Confirmed
-    Signing --> Delegated
+    Signing --> Pending
     Signing --> Endorsement_Gathering
+    Signing --> Delegated
     Signing --> Assembling
     Endorsement_Gathering --> Confirmed
-    Endorsement_Gathering --> Delegated
+    Endorsement_Gathering --> Pending
     Endorsement_Gathering --> Assembling
     Endorsement_Gathering --> Prepared
     Prepared --> Confirmed
-    Prepared --> Delegated
+    Prepared --> Pending
     Prepared --> Dispatched
     Prepared --> Assembling
     Dispatched --> Confirmed
     Dispatched --> Delegated
+    Dispatched --> Pending
     Dispatched --> Sequenced
     Dispatched --> Submitted
     Dispatched --> Assembling
     Sequenced --> Confirmed
     Sequenced --> Delegated
+    Sequenced --> Pending
     Sequenced --> Submitted
     Sequenced --> Assembling
     Submitted --> Confirmed
     Submitted --> Delegated
+    Submitted --> Pending
     Submitted --> Assembling
     Parked --> Confirmed
-    Parked --> Delegated
     Parked --> Pending
     Confirmed --> Final
     Reverted --> Final

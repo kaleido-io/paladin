@@ -33,6 +33,11 @@ packages:
   github.com/LFDT-Paladin/paladin/core/internal/metrics:
     config:
       all: true
+  github.com/LFDT-Paladin/paladin/core/internal/statemgr/metrics:
+    config:
+      all: true
+      pkgname: statemgrmetricsmocks
+      dir: mocks/statemgrmetricsmocks
   github.com/LFDT-Paladin/paladin/core/internal/rpcauthmgr:
     config:
       all: true
@@ -87,3 +92,6 @@ packages:
     config:
       pkgname: statemachinemocks
       dir: mocks/statemachinemocks
+  github.com/LFDT-Paladin/paladin/core/internal/sequencer/stateview:
+    config:
+      all: true

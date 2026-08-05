@@ -37,6 +37,7 @@ import (
 	"github.com/LFDT-Paladin/paladin/core/internal/rpcauthmgr"
 	"github.com/LFDT-Paladin/paladin/core/internal/sequencer"
 	"github.com/LFDT-Paladin/paladin/core/internal/statemgr"
+	statemetrics "github.com/LFDT-Paladin/paladin/core/internal/statemgr/metrics"
 	"github.com/LFDT-Paladin/paladin/core/internal/transportmgr"
 	"github.com/LFDT-Paladin/paladin/core/internal/txmgr"
 	"github.com/LFDT-Paladin/paladin/core/pkg/blockindexer"
@@ -192,7 +193,8 @@ func (cm *componentManager) Init() (err error) {
 		err = cm.wrapIfErr(err, msgs.MsgComponentKeyManagerInitError)
 	}
 	if err == nil {
-		cm.stateManager = statemgr.NewStateManager(cm.bgCtx, &cm.conf.StateStore, cm.persistence)
+		metricsRegistry := cm.metricsManager.Registry()
+		cm.stateManager = statemgr.NewStateManager(cm.bgCtx, &cm.conf.StateStore, cm.persistence, statemetrics.InitMetrics(cm.bgCtx, metricsRegistry))
 		cm.initResults["state_manager"], err = cm.stateManager.PreInit(cm)
 		err = cm.wrapIfErr(err, msgs.MsgComponentStateManagerInitError)
 	}

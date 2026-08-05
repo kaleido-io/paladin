@@ -73,7 +73,7 @@ func newMockComponents(t *testing.T, realDB bool) *mockComponents {
 		mc.p = p
 		mc.c.On("Persistence").Return(p).Maybe()
 
-		stateManager := statemgr.NewStateManager(context.Background(), &pldconf.StateStoreConfig{}, p)
+		stateManager := statemgr.NewStateManager(context.Background(), &pldconf.StateStoreConfig{}, p, nil)
 		_, err = stateManager.PreInit(mc.c)
 		require.NoError(t, err)
 		err = stateManager.PostInit(mc.c)

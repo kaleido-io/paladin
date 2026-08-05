@@ -18,6 +18,7 @@ package statemgr
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/LFDT-Paladin/paladin/common/go/pkg/i18n"
@@ -481,7 +482,7 @@ func (ss *stateManager) processStateForSet(ctx context.Context, domainName strin
 	return schema.ProcessState(ctx, &contractAddress, data, id, customHashFunction, withLabels)
 }
 
-// validateStates validates proto-native states against their schemas at the write-buffer / mint trust
+// validateStates validates proto-native states against their schemas at the resolve/mint trust
 // boundary, recomputing each state hash and extracting label values.
 func (ss *stateManager) validateStates(ctx context.Context, domainName string, contractAddress pldtypes.EthAddress, customHashFunction bool, dbTX persistence.DBTX, states ...*prototk.EndorsableState) ([]*components.StateWithLabels, error) {
 	withValues := make([]*components.StateWithLabels, len(states))
@@ -495,21 +496,96 @@ func (ss *stateManager) validateStates(ctx context.Context, domainName string, c
 	return withValues, nil
 }
 
-// validateAndConvertEndorsableState validates a single proto-native state at a cross-node trust boundary.
-// This function also acts as the single point of conversion to the more strongly typed components.StateWithLabels
+// copyContentOnly returns a shallow copy of a validated state whose State pointer is duplicated so
+// the caller may stamp Created (and stage a Nullifier) without mutating the shared, read-only cache
+// entry. Data, Labels and LabelValues remain shared — callers treat them as read-only, or replace
+// the LabelValues field wholesale (never mutate the map in place).
+func copyContentOnly(vs *components.StateWithLabels) *components.StateWithLabels {
+	stateCopy := *vs.State
+	return &components.StateWithLabels{
+		State:       &stateCopy,
+		LabelValues: vs.LabelValues,
+	}
+}
+
+func (ss *stateManager) cacheGetValidated(cacheKey string) (*components.StateWithLabels, bool) {
+	cached, ok := ss.validatedStateCache.Get(cacheKey)
+	if ok {
+		ss.metrics.IncValidatedStateCache("hit")
+	} else {
+		ss.metrics.IncValidatedStateCache("miss")
+	}
+	return cached, ok
+}
+
+// validatedCacheParams parses a proto state's id/schema and derives its validatedStateCache key. An
+// empty cacheKey means the state is not cacheable: only content-addressed, label-bearing states whose
+// claimed ID is hash-verified against content in ProcessState may be cached. customHashFunction states
+// pre-verify their own hash and are never cached; label-free callers (ValidateStates) must not receive
+// the label-bearing cached value.
+func (ss *stateManager) validatedCacheParams(ctx context.Context, domainName string, contractAddress pldtypes.EthAddress, customHashFunction bool, es *prototk.EndorsableState, withLabels bool) (schemaID pldtypes.Bytes32, stateID pldtypes.HexBytes, cacheKey string, err error) {
+	if schemaID, err = pldtypes.ParseBytes32Ctx(ctx, es.GetSchemaId()); err != nil {
+		return
+	}
+	if idStr := es.GetId(); idStr != "" {
+		if stateID, err = pldtypes.ParseHexBytes(ctx, idStr); err != nil {
+			return
+		}
+	}
+	if withLabels && !customHashFunction && stateID != nil {
+		cacheKey = validatedStateCacheKey(domainName, contractAddress, stateID)
+	}
+	return
+}
+
+// validateAndConvertEndorsableState returns the validated, strongly-typed form of a proto-native state
+// at a cross-node trust boundary, reading it through validatedStateCache: a hit returns a copy of the
+// previously-validated entry, a miss validates and caches. It is the read-through entry point — callers
+// that have already looked the id up (the ref-fetch path) call buildAndCacheValidatedState directly.
 func (ss *stateManager) validateAndConvertEndorsableState(ctx context.Context, domainName string, contractAddress pldtypes.EthAddress, customHashFunction bool, dbTX persistence.DBTX, es *prototk.EndorsableState, withLabels bool) (*components.StateWithLabels, error) {
-	schemaID, err := pldtypes.ParseBytes32Ctx(ctx, es.GetSchemaId())
+	_, _, cacheKey, err := ss.validatedCacheParams(ctx, domainName, contractAddress, customHashFunction, es, withLabels)
 	if err != nil {
 		return nil, err
 	}
-	var stateID pldtypes.HexBytes
-	if idStr := es.GetId(); idStr != "" {
-		stateID, err = pldtypes.ParseHexBytes(ctx, idStr)
-		if err != nil {
-			return nil, err
+	if cacheKey != "" {
+		if cached, ok := ss.cacheGetValidated(cacheKey); ok {
+			return copyContentOnly(cached), nil
 		}
 	}
-	return ss.processStateForSet(ctx, domainName, contractAddress, customHashFunction, dbTX, stateID, schemaID, pldtypes.RawJSON(es.GetStateDataJson()), withLabels)
+	return ss.buildAndCacheValidatedState(ctx, domainName, contractAddress, customHashFunction, dbTX, es, withLabels)
+}
+
+// buildAndCacheValidatedState validates and converts a proto-native state, then populates the
+// content-only cache entry when the state is cacheable.
+func (ss *stateManager) buildAndCacheValidatedState(ctx context.Context, domainName string, contractAddress pldtypes.EthAddress, customHashFunction bool, dbTX persistence.DBTX, es *prototk.EndorsableState, withLabels bool) (*components.StateWithLabels, error) {
+	schemaID, stateID, cacheKey, err := ss.validatedCacheParams(ctx, domainName, contractAddress, customHashFunction, es, withLabels)
+	if err != nil {
+		return nil, err
+	}
+	vs, err := ss.processStateForSet(ctx, domainName, contractAddress, customHashFunction, dbTX, stateID, schemaID, pldtypes.RawJSON(es.GetStateDataJson()), withLabels)
+	if err != nil {
+		return nil, err
+	}
+	if cacheKey != "" {
+		// The entry is content-only by construction: ProcessState does not set Created (it is
+		// context-specific, not content), so the shared cache never holds a wall-clock time. Each
+		// caller stamps the created its context needs on the copy it receives. The entry is read-only.
+		ss.validatedStateCache.Set(cacheKey, vs)
+		return copyContentOnly(vs), nil
+	}
+	return vs, nil
+}
+
+func validatedStateCacheKey(domainName string, contractAddress pldtypes.EthAddress, stateID pldtypes.HexBytes) string {
+	// Build "domain:0x<address>:0x<stateID>" into a single buffer, hex-encoding the
+	// address and state ID directly to avoid the intermediate String() allocations.
+	buf := make([]byte, 0, len(domainName)+6+len(contractAddress)*2+len(stateID)*2)
+	buf = append(buf, domainName...)
+	buf = append(buf, ':', '0', 'x')
+	buf = hex.AppendEncode(buf, contractAddress[:])
+	buf = append(buf, ':', '0', 'x')
+	buf = hex.AppendEncode(buf, stateID)
+	return string(buf)
 }
 
 // ValidateStates verifies states against their schemas without persisting them,

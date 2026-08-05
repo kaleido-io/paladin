@@ -21,6 +21,7 @@ def transports = [
 
 def signingmodules = [
     'signingmodules/example/build/libs',
+    'signingmodules/kaleidokms/build/libs',
 ]
 
 def rpcAuths = [
@@ -42,6 +43,7 @@ def assembleSubprojects = [
     ':registries:evm',
     ':rpcauth:basicauth',
     ':signingmodules:example',
+    ':signingmodules:kaleidokms',
     ':transports:grpc',
     ':ui:client',
 ]

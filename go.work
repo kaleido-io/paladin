@@ -15,6 +15,7 @@ use (
 	./rpcauth/basicauth
 	./sdk/go
 	./signingmodules/example
+	./signingmodules/kaleidokms
 	./test
 	./testinfra
 	./toolkit/go

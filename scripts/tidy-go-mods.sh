@@ -32,6 +32,7 @@ OTHER_MODULES=(
   registries/static
   rpcauth/basicauth
   signingmodules/example
+  signingmodules/kaleidokms
   test
   testinfra
   transports/grpc

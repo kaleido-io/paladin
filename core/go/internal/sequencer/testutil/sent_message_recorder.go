@@ -17,6 +17,7 @@ package testutil
 
 import (
 	"context"
+	"sync"
 
 	engineProto "github.com/LFDT-Paladin/paladin/core/pkg/proto/engine"
 	"github.com/LFDT-Paladin/paladin/toolkit/pkg/prototk"
@@ -26,6 +27,10 @@ import (
 // SentMessageRecorder implements TransportWriter for use in tests.
 // It records outgoing messages (both coordinator-side and originator-side) so tests can assert on what was sent.
 type SentMessageRecorder struct {
+	// lock guards every field below: messages are recorded from event-loop and batching goroutines
+	// while test assertions (often inside assert.Eventually) read concurrently.
+	lock sync.RWMutex
+
 	// Coordinator-side tracking
 	hasSentAssembleRequest                        bool
 	sentAssembleRequestIdempotencyKey             uuid.UUID
@@ -70,6 +75,8 @@ func NewSentMessageRecorder() *SentMessageRecorder {
 }
 
 func (r *SentMessageRecorder) Reset(ctx context.Context) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentAssembleRequest = false
 	r.sentAssembleRequestIdempotencyKey = uuid.UUID{}
 	r.numberOfSentAssembleRequests = 0
@@ -101,46 +108,68 @@ func (r *SentMessageRecorder) StartLoopbackWriter() {}
 func (r *SentMessageRecorder) WaitForDone(ctx context.Context) {}
 
 func (r *SentMessageRecorder) HasSentAssembleRequest() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleRequest
 }
 
 func (r *SentMessageRecorder) HasSentDispatchConfirmationRequest() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentDispatchConfirmationRequest
 }
 
 func (r *SentMessageRecorder) NumberOfSentAssembleRequests() int {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.numberOfSentAssembleRequests
 }
 
 func (r *SentMessageRecorder) NumberOfSentEndorsementRequests() int {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.numberOfSentEndorsementRequests
 }
 
 func (r *SentMessageRecorder) SentEndorsementRequestsForPartyIdempotencyKey(party string) uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentEndorsementRequestsForPartyIdempotencyKey[party]
 }
 
 func (r *SentMessageRecorder) NumberOfEndorsementRequestsForParty(party string) int {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.numberOfEndorsementRequestsForParty[party]
 }
 
 func (r *SentMessageRecorder) NumberOfSentDispatchConfirmationRequests() int {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.numberOfSentDispatchConfirmationRequests
 }
 
 func (r *SentMessageRecorder) SentAssembleRequestIdempotencyKey() uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentAssembleRequestIdempotencyKey
 }
 
 func (r *SentMessageRecorder) SentDispatchConfirmationRequestIdempotencyKey() uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentDispatchConfirmationRequestIdempotencyKey
 }
 
 func (r *SentMessageRecorder) AssembleKeyForTx(txID uuid.UUID) uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.assembleKeyByTxID[txID]
 }
 
 func (r *SentMessageRecorder) EndorseKeyForTxAndParty(txID uuid.UUID, party string) uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	if m, ok := r.endorseKeyByTxIDAndParty[txID]; ok {
 		return m[party]
 	}
@@ -148,18 +177,26 @@ func (r *SentMessageRecorder) EndorseKeyForTxAndParty(txID uuid.UUID, party stri
 }
 
 func (r *SentMessageRecorder) DispatchConfirmKeyForTx(txID uuid.UUID) uuid.UUID {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.dispatchConfirmKeyByTxID[txID]
 }
 
 func (r *SentMessageRecorder) SentHeartbeatCount() int {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentHeartbeatCount
 }
 
 func (r *SentMessageRecorder) HasSentHeartbeat() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentHeartbeatCount > 0
 }
 
 func (r *SentMessageRecorder) SendAssembleRequest(ctx context.Context, node string, msg *engineProto.AssembleRequest) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentAssembleRequest = true
 	idempotencyKey, _ := uuid.Parse(msg.AssembleRequestId)
 	txID, _ := uuid.Parse(msg.TransactionId)
@@ -170,6 +207,8 @@ func (r *SentMessageRecorder) SendAssembleRequest(ctx context.Context, node stri
 }
 
 func (r *SentMessageRecorder) SendEndorsementRequest(ctx context.Context, node string, msg *engineProto.EndorsementRequest) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	party := msg.Party
 	idempotencyKey, _ := uuid.Parse(msg.IdempotencyKey)
 	txID, _ := uuid.Parse(msg.TransactionId)
@@ -188,6 +227,8 @@ func (r *SentMessageRecorder) SendEndorsementRequest(ctx context.Context, node s
 }
 
 func (r *SentMessageRecorder) SendPreDispatchRequest(ctx context.Context, node string, msg *engineProto.PreDispatchRequest) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentDispatchConfirmationRequest = true
 	idempotencyKey, _ := uuid.Parse(msg.Id)
 	r.sentDispatchConfirmationRequestIdempotencyKey = idempotencyKey
@@ -199,11 +240,15 @@ func (r *SentMessageRecorder) SendPreDispatchRequest(ctx context.Context, node s
 }
 
 func (r *SentMessageRecorder) SendHeartbeat(ctx context.Context, node string, msg *engineProto.CoordinatorHeartbeatNotification) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.sentHeartbeatCount++
 	return nil
 }
 
 func (r *SentMessageRecorder) SendAssembleResponse(ctx context.Context, node string, msg *engineProto.AssembleResponse) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	switch msg.GetPostAssembly().GetAssemblyResult() {
 	case prototk.AssembleTransactionResponse_OK:
 		r.hasSentAssembleSuccessResponse = true
@@ -216,73 +261,105 @@ func (r *SentMessageRecorder) SendAssembleResponse(ctx context.Context, node str
 }
 
 func (r *SentMessageRecorder) HasSentAssembleSuccessResponse() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleSuccessResponse
 }
 
 func (r *SentMessageRecorder) HasSentAssembleRevertResponse() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleRevertResponse
 }
 
 func (r *SentMessageRecorder) HasSentAssembleParkResponse() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleParkResponse
 }
 
 func (r *SentMessageRecorder) SendAssembleError(ctx context.Context, node string, msg *engineProto.AssembleError) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentAssembleError = true
 	return nil
 }
 
 func (r *SentMessageRecorder) SendSignResponse(ctx context.Context, node string, msg *engineProto.SignResponse) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.sentSignResponses = append(r.sentSignResponses, msg)
 	return nil
 }
 
 func (r *SentMessageRecorder) SendSignError(ctx context.Context, node string, msg *engineProto.SignError) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentSignError = true
 	return nil
 }
 
 func (r *SentMessageRecorder) SentSignResponses() []*engineProto.SignResponse {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.sentSignResponses
 }
 
 func (r *SentMessageRecorder) HasSentSignError() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentSignError
 }
 
 func (r *SentMessageRecorder) SendAssembleRejection(ctx context.Context, node string, msg *engineProto.AssembleRejection) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentAssembleRejection = true
 	return nil
 }
 
 func (r *SentMessageRecorder) SendPreDispatchRejection(ctx context.Context, node string, msg *engineProto.PreDispatchRejection) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentPreDispatchRejection = true
 	r.preDispatchRejectionReason = msg.RejectionReason
 	return nil
 }
 
 func (r *SentMessageRecorder) HasSentPreDispatchRejection() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentPreDispatchRejection
 }
 
 func (r *SentMessageRecorder) PreDispatchRejectionReason() engineProto.RejectionReason {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.preDispatchRejectionReason
 }
 
 func (r *SentMessageRecorder) HasSentAssembleRejection() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleRejection
 }
 
 func (r *SentMessageRecorder) HasSentAssembleError() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentAssembleError
 }
 
 func (r *SentMessageRecorder) SendPreDispatchResponse(ctx context.Context, node string, msg *engineProto.PreDispatchResponse) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentConfirmationResponse = true
 	return nil
 }
 
 func (r *SentMessageRecorder) HasSentPreDispatchResponse() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentConfirmationResponse
 }
 
@@ -299,6 +376,8 @@ func (r *SentMessageRecorder) SendTransactionConfirmed(ctx context.Context, node
 }
 
 func (r *SentMessageRecorder) SendDelegationRequest(ctx context.Context, node string, msg *engineProto.DelegationRequest) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentDelegationRequest = true
 	for _, del := range msg.Transactions {
 		id, err := uuid.Parse(del.GetId())
@@ -311,10 +390,14 @@ func (r *SentMessageRecorder) SendDelegationRequest(ctx context.Context, node st
 }
 
 func (r *SentMessageRecorder) HasSentDelegationRequest() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentDelegationRequest
 }
 
 func (r *SentMessageRecorder) HasDelegatedTransaction(txid uuid.UUID) bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	for _, id := range r.delegatedTransactionIDs {
 		if id == txid {
 			return true
@@ -332,11 +415,15 @@ func (r *SentMessageRecorder) SendDelegationRejection(ctx context.Context, node 
 }
 
 func (r *SentMessageRecorder) SendHandoverRequest(ctx context.Context, node string, msg *engineProto.CoordinatorHandoverRequest) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.hasSentHandoverRequest = true
 	return nil
 }
 
 func (r *SentMessageRecorder) HasSentHandoverRequest() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.hasSentHandoverRequest
 }
 

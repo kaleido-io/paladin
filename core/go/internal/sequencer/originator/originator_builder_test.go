@@ -232,7 +232,12 @@ func (b *OriginatorBuilderForTesting) Build() (*originator, *OriginatorDependenc
 
 	originator.stateMachineEventLoop.StateMachine().SetCurrentState(b.state)
 	switch b.state {
-	// Any state specific setup can be done here
+	case State_Sending:
+		// In Sending the batching goroutine would own these channels. Synchronous ProcessEvent-based
+		// tests don't run the goroutine; create the channels here so actions can write to them and
+		// test functions read them
+		originator.notifyFullDelegation = make(chan struct{}, 1)
+		originator.notifyPartialDelegation = make(chan struct{}, 1)
 	}
 
 	if b.currentActiveCoordinator != nil {

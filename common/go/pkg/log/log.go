@@ -70,11 +70,11 @@ type Entry struct {
 	fields []any              // pending key/value pairs, encoded lazily on emit
 }
 
-// materialize binds any pending fields onto the base logger. The clone+encode cost
+// addFields binds any pending fields onto the base logger. The clone+encode cost
 // (SugaredLogger.With) is paid here, only after an emit has passed its level gate, so
 // WithField/WithComponent/etc. on suppressed levels allocate nothing beyond the pending
 // slice. Field order matches sequential .With() calls, so output is byte-identical.
-func (e *Entry) materialize() *zap.SugaredLogger {
+func (e *Entry) addFields() *zap.SugaredLogger {
 	if len(e.fields) == 0 {
 		return e.logger
 	}
@@ -94,77 +94,77 @@ func (e *Entry) Tracef(format string, args ...any) {
 	if !atomLevel.Enabled(LevelTrace) {
 		return
 	}
-	e.materialize().Logf(LevelTrace, format, args...)
+	e.addFields().Logf(LevelTrace, format, args...)
 }
 func (e *Entry) Debugf(format string, args ...any) {
 	if !atomLevel.Enabled(zapcore.DebugLevel) {
 		return
 	}
-	e.materialize().Debugf(format, args...)
+	e.addFields().Debugf(format, args...)
 }
 func (e *Entry) Infof(format string, args ...any) {
 	if !atomLevel.Enabled(zapcore.InfoLevel) {
 		return
 	}
-	e.materialize().Infof(format, args...)
+	e.addFields().Infof(format, args...)
 }
 func (e *Entry) Printf(format string, args ...any) {
 	if !atomLevel.Enabled(zapcore.InfoLevel) {
 		return
 	}
-	e.materialize().Infof(format, args...)
+	e.addFields().Infof(format, args...)
 }
 func (e *Entry) Warnf(format string, args ...any) {
 	if !atomLevel.Enabled(zapcore.WarnLevel) {
 		return
 	}
-	e.materialize().Warnf(format, args...)
+	e.addFields().Warnf(format, args...)
 }
 func (e *Entry) Errorf(format string, args ...any) {
 	if !atomLevel.Enabled(zapcore.ErrorLevel) {
 		return
 	}
-	e.materialize().Errorf(format, args...)
+	e.addFields().Errorf(format, args...)
 }
 
 // Fatalf/Panicf delegate to zap's native terminal methods, which log then
 // os.Exit(1) / panic(message) exactly as logrus did.
-func (e *Entry) Fatalf(format string, args ...any) { e.materialize().Fatalf(format, args...) }
-func (e *Entry) Panicf(format string, args ...any) { e.materialize().Panicf(format, args...) }
+func (e *Entry) Fatalf(format string, args ...any) { e.addFields().Fatalf(format, args...) }
+func (e *Entry) Panicf(format string, args ...any) { e.addFields().Panicf(format, args...) }
 
 // Print-style methods
 func (e *Entry) Trace(args ...any) {
 	if !atomLevel.Enabled(LevelTrace) {
 		return
 	}
-	e.materialize().Log(LevelTrace, args...)
+	e.addFields().Log(LevelTrace, args...)
 }
 func (e *Entry) Debug(args ...any) {
 	if !atomLevel.Enabled(zapcore.DebugLevel) {
 		return
 	}
-	e.materialize().Debug(args...)
+	e.addFields().Debug(args...)
 }
 func (e *Entry) Info(args ...any) {
 	if !atomLevel.Enabled(zapcore.InfoLevel) {
 		return
 	}
-	e.materialize().Info(args...)
+	e.addFields().Info(args...)
 }
 func (e *Entry) Warn(args ...any) {
 	if !atomLevel.Enabled(zapcore.WarnLevel) {
 		return
 	}
-	e.materialize().Warn(args...)
+	e.addFields().Warn(args...)
 }
 func (e *Entry) Error(args ...any) {
 	if !atomLevel.Enabled(zapcore.ErrorLevel) {
 		return
 	}
-	e.materialize().Error(args...)
+	e.addFields().Error(args...)
 }
-func (e *Entry) Fatal(args ...any) { e.materialize().Fatal(args...) }
-func (e *Entry) Panic(args ...any) { e.materialize().Panic(args...) }
+func (e *Entry) Fatal(args ...any) { e.addFields().Fatal(args...) }
+func (e *Entry) Panic(args ...any) { e.addFields().Panic(args...) }
 
 // Field builders return a new *Entry (mirroring logrus's immutable chaining). Fields are
 // accumulated as loosely-typed key/value pairs and left un-encoded; the clone+encode is

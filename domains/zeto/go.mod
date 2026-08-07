@@ -33,6 +33,7 @@ require (
 	github.com/dchest/blake512 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hyperledger/firefly-common v1.5.9 // indirect
 	github.com/iden3/wasmer-go v0.0.1 // indirect
@@ -41,10 +42,15 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/nxadm/tail v1.4.11 // indirect
+	github.com/onsi/gomega v1.36.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/viper v1.20.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect

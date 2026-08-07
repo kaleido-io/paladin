@@ -12,7 +12,7 @@ require (
 	github.com/LFDT-Paladin/paladin/domains/zeto v0.0.0-00010101000000-000000000000
 	github.com/LFDT-Paladin/paladin/sdk/go v0.0.0-20250828150332-fbc1c1bc663b
 	github.com/LFDT-Paladin/paladin/toolkit v0.0.0-00010101000000-000000000000
-	github.com/go-resty/resty/v2 v2.14.0
+	github.com/go-resty/resty/v2 v2.16.5
 	github.com/google/uuid v1.6.0
 	github.com/hyperledger/firefly-signer v1.1.22
 	github.com/stretchr/testify v1.11.1
@@ -33,6 +33,7 @@ require (
 	github.com/dchest/blake512 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang-migrate/migrate/v4 v4.17.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
@@ -61,13 +62,14 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
-	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rs/cors v1.11.1 // indirect
+	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect

@@ -60,8 +60,9 @@ type peer struct {
 	lowestPendingSeqLock sync.Mutex
 	lowestPendingSeq     uint64
 
-	senderStarted atomic.Bool
-	senderDone    chan struct{}
+	senderStarted      atomic.Bool // is the sender goroutine alive?
+	senderDone         chan struct{}
+	transportActivated bool // does the transport plugin hold a connection for this peer?
 }
 
 type nameSortedPeers []*peer
@@ -135,8 +136,9 @@ func (tm *transportManager) reapPeer(p *peer) {
 	log.L(p.ctx).Infof("peer %s deactivating", p.Name)
 	p.close()
 
-	if p.senderStarted.Load() {
+	if p.transportActivated {
 		// Holding the lock while activating/deactivating ensures we never dual-activate in the transport
+		p.transportActivated = false
 		if _, err := p.transport.api.DeactivatePeer(p.ctx, &prototk.DeactivatePeerRequest{
 			NodeName: p.Name,
 		}); err != nil {
@@ -241,7 +243,7 @@ func (p *peer) startSender() (string, error) {
 		return "", i18n.NewError(p.ctx, msgs.MsgTransportNoTransportsConfiguredForNode, p.Name, registeredTransportNames)
 	}
 
-	// Activate the connection (the deactivate is deferred to the send loop)
+	// Activate the connection (the deactivate happens when the peer is reaped)
 	res, err := p.transport.api.ActivatePeer(p.ctx, &prototk.ActivatePeerRequest{
 		NodeName:         p.Name,
 		TransportDetails: remoteTransportDetails,
@@ -249,6 +251,7 @@ func (p *peer) startSender() (string, error) {
 	if err != nil {
 		return p.transport.name, err
 	}
+	p.transportActivated = true
 	if err = json.Unmarshal([]byte(res.PeerInfoJson), &p.Outbound); err != nil {
 		// We've already activated at this point, so we need to keep going - but this
 		// will mean there's no peer info, so we put it in as a string

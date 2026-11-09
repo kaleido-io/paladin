@@ -188,6 +188,7 @@ type StateConfirmRecord struct {
 	DomainName  string            `json:"-"                 gorm:"primaryKey"`
 	State       pldtypes.HexBytes `json:"-"                 gorm:"primaryKey"`
 	Transaction uuid.UUID         `docstruct:"StateConfirm" json:"transaction"`
+	Index       int               `json:"-"                 gorm:"column:idx"`
 }
 
 // A spend record is written when indexing the blockchain, and can be written regardless
@@ -205,6 +206,7 @@ type StateSpendRecord struct {
 	DomainName  string            `json:"-"                 gorm:"primaryKey"`
 	State       pldtypes.HexBytes `json:"-"                 gorm:"primaryKey"`
 	Transaction uuid.UUID         `docstruct:"StateSpend" json:"transaction"`
+	Index       int               `json:"-"                 gorm:"column:idx"`
 }
 
 // We also record when we simply read a state during a transaction, without creating or
@@ -214,6 +216,7 @@ type StateReadRecord struct {
 	DomainName  string            `json:"-"                 gorm:"primaryKey"`
 	State       pldtypes.HexBytes `json:"-"                 gorm:"primaryKey"`
 	Transaction uuid.UUID         `docstruct:"StateRead" json:"transaction"`
+	Index       int               `json:"-"                 gorm:"column:idx"`
 }
 
 // Transactions can also refer to state that never exists before or after the transaction.
@@ -223,6 +226,7 @@ type StateInfoRecord struct {
 	DomainName  string            `json:"-"                 gorm:"primaryKey"`
 	State       pldtypes.HexBytes `json:"-"                 gorm:"primaryKey"`
 	Transaction uuid.UUID         `docstruct:"StateConfirm" json:"transaction"`
+	Index       int               `json:"-"                 gorm:"column:idx"`
 }
 
 type StateLockType string

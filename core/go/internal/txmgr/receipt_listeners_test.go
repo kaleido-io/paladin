@@ -1926,7 +1926,7 @@ func TestGapClosedDeliversReceiptsQueuedBehindGap(t *testing.T) {
 	finalize(txID1)
 	require.Eventually(t, func() bool {
 		var gaps []*persistedReceiptGap
-		err := txm.p.DB(ctx).
+		err := txm.p.DB().WithContext(ctx).
 			Where("listener = ?", "listener1").
 			Where("source = ?", contract1).
 			Find(&gaps).Error
@@ -1944,7 +1944,7 @@ func TestGapClosedDeliversReceiptsQueuedBehindGap(t *testing.T) {
 	}
 
 	// 3. The missing state arrives, and the stale-gap check closes the gap
-	err = txm.p.DB(ctx).Exec("INSERT INTO states ( id, created, domain_name, contract_address ) VALUES ( ?, ?, ?, ? )",
+	err = txm.p.DB().WithContext(ctx).Exec("INSERT INTO states ( id, created, domain_name, contract_address ) VALUES ( ?, ?, ?, ? )",
 		missingStateID, pldtypes.TimestampNow(), "domain1", contract1,
 	).Error
 	require.NoError(t, err)
